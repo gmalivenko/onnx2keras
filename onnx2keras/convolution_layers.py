@@ -1,7 +1,7 @@
 import keras.layers
 import logging
 import tensorflow as tf
-from .utils import is_numpy
+from .utils import ensure_numpy_type
 
 
 def convert_conv(node, params, layers, node_name):
@@ -19,19 +19,14 @@ def convert_conv(node, params, layers, node_name):
         logger.debug('Conv with bias')
         # Has bias
         has_bias = True
-        W = layers[node.input[1]]
-        bias = layers[node.input[2]]
-
-        if not is_numpy(W) or not is_numpy(bias):
-            raise AttributeError('Weights or bias is not a numpy array.')
+        W = ensure_numpy_type(layers[node.input[1]])
+        bias = ensure_numpy_type(layers[node.input[2]])
 
     elif len(node.input) == 2:
         logger.debug('Conv without bias')
         has_bias = False
-        W = layers[node.input[1]]
+        W = ensure_numpy_type(layers[node.input[1]])
         bias = None
-        if not is_numpy(W):
-            raise AttributeError('Weights or bias is not a numpy array.')
 
     else:
         raise NotImplementedError('Not implemented')
@@ -142,19 +137,14 @@ def convert_convtranspose(node, params, layers, node_name):
         logger.debug('ConvTranspose with bias')
         # Has bias
         has_bias = True
-        W = layers[node.input[1]]
-        bias = layers[node.input[2]]
-
-        if not is_numpy(W) or not is_numpy(bias):
-            raise AttributeError('Weights or bias is not a numpy array.')
+        W = ensure_numpy_type(layers[node.input[1]])
+        bias = ensure_numpy_type(layers[node.input[2]])
 
     elif len(node.input) == 2:
         logger.debug('ConvTranspose without bias')
         has_bias = False
-        W = layers[node.input[1]]
+        W = ensure_numpy_type(layers[node.input[1]])
         bias = None
-        if not is_numpy(W):
-            raise AttributeError('Weights or bias is not a numpy array.')
 
     else:
         raise NotImplementedError('Not implemented')
@@ -172,8 +162,7 @@ def convert_convtranspose(node, params, layers, node_name):
             weights = [W, bias]
         else:
             weights = [W]
-                
-        n_groups = params['group']
+
         if params['group'] > 1:
             raise AttributeError('Cannot convert ConvTranspose2d with groups != 1')
 
@@ -213,7 +202,5 @@ def convert_convtranspose(node, params, layers, node_name):
                 name=node_name + '_crop'
             )
             layers[node_name] = crop(layers[node_name])
-
-
     else:
         raise AttributeError('Layer is not supported for now')
