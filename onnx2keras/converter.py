@@ -3,6 +3,7 @@ The ONNX to keras converter module
 """
 
 import keras
+import logging
 from onnx import numpy_helper
 
 from .layers import AVAILABLE_CONVERTERS
@@ -24,6 +25,9 @@ def onnx_node_attributes_to_dict(args):
         :param onnx_attr: ONNX attribute
         :return: Python data type
         """
+        if onnx_attr.HasField('t'):
+            return numpy_helper.to_array(getattr(onnx_attr, 't'))
+
         for attr_type in ['f', 'i', 's']:
             if onnx_attr.HasField(attr_type):
                 return getattr(onnx_attr, attr_type)
@@ -45,21 +49,27 @@ def onnx_to_keras(
     :param verbose: verbose output
     :return: Keras model
     """
+    if verbose:
+        logging.basicConfig(level=logging.DEBUG)
+
+    logger = logging.getLogger('onnx2keras')
+
+    logger.info('Converter is called.')
 
     onnx_weights = onnx_model.graph.initializer
     onnx_inputs = onnx_model.graph.input
     onnx_outputs = [i.name for i in onnx_model.graph.output]
     onnx_nodes = onnx_model.graph.node
 
+    logger.debug('Gathering weights to dictionary.')
     weights = {}
     for onnx_w in onnx_weights:
         onnx_extracted_weights_name = onnx_w.ListFields()[2][1]
         weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
-        if verbose:
-            print(
-                'Found weight {0} with shape {1}'.format(onnx_extracted_weights_name,
-                                                         weights[onnx_extracted_weights_name].shape)
-            )
+
+        logger.debug('Found weight {0} with shape {1}.'.format(
+                     onnx_extracted_weights_name,
+                     weights[onnx_extracted_weights_name].shape))
 
     layers = dict()
     keras_outputs = []
@@ -76,8 +86,7 @@ def onnx_to_keras(
 
                 keras_inputs.append(layers[input_name])
 
-                if verbose:
-                    print('Found input {0} with shape {1}'.format(input_name, input_shape))
+                logger.debug('Found input {0} with shape {1}'.format(input_name, input_shape))
 
     # Convert every operation separable
     for node in onnx_nodes:
@@ -85,19 +94,38 @@ def onnx_to_keras(
         node_name = str(node.output[0])
         node_params = onnx_node_attributes_to_dict(node.attribute)
 
-        if verbose:
-            print('Converting ONNX operation')
-            print('type:', node_type)
-            print('node_name:', node_name)
-            print('node_params:', node_params)
-            
+        logger.debug('...')
+        logger.debug('Converting ONNX operation')
+        logger.debug('type: %s', node_type)
+        logger.debug('node_name: %s', node_name)
+        logger.debug('node_params: %s', node_params)
+        logger.debug('...')
+
+        logger.debug('Check if all inputs are available:')
+        if len(node.input) == 0 and node_type != 'Constant':
+            raise AttributeError('Operation doesn\'t have an input. Aborting.')
+
+        for i, node_input in enumerate(node.input):
+            logger.debug('Check input %i (name %s).', i, node_input)
+            if node_input not in layers:
+                logger.debug('The input not found in layers / model inputs.')
+
+                if node_input in weights:
+                    logger.debug('Found in weights, add as a numpy constant.')
+                    layers[node_input] = weights[node_input]
+                else:
+                    raise AttributeError('Current node is not in weights / model inputs / layers.')
+        else:
+            logger.debug('... found all, continue')
+
         AVAILABLE_CONVERTERS[node_type](
             node,
             node_params,
             layers,
-            weights,
             node_name
         )
+
+        # Check for terminal nodes
         for noide_output in node.output:
             if noide_output in onnx_outputs:
                 keras_outputs.append(layers[node_name])
