@@ -1,6 +1,7 @@
 from onnx2keras import onnx_to_keras, check_torch_keras_error
 from relu import LayerReLUTest, FReLUTest
 from hard_tanh import LayerHardtanhTest, FHardtanhTest
+from leaky_relu import LayerLeakyReLUTest, FLeakyReLUTest
 
 import torch
 import numpy as np
@@ -8,8 +9,9 @@ import onnx
 
 if __name__ == '__main__':
     max_error = 0
-    for act_type in [LayerReLUTest, FReLUTest,
-                     LayerHardtanhTest, FHardtanhTest]:
+    for act_type in [LayerLeakyReLUTest, FLeakyReLUTest,
+                     LayerHardtanhTest, FHardtanhTest,
+                     LayerReLUTest, FReLUTest,]:
         for i in range(100):
             model = act_type()
             model.eval()
