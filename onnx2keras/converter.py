@@ -38,7 +38,7 @@ def onnx_node_attributes_to_dict(args):
     return {arg.name: onnx_attribute_to_dict(arg) for arg in args}
 
 
-def onnx_to_keras(onnx_model, input_names, verbose=True):
+def onnx_to_keras(onnx_model, input_names, verbose=True, change_ordering=False):
     """
     Convert ONNX graph to Keras model format
     :param onnx_model: loaded ONNX model
@@ -137,5 +137,46 @@ def onnx_to_keras(onnx_model, input_names, verbose=True):
 
     # Create model
     model = keras.models.Model(inputs=keras_inputs, outputs=keras_outputs)
-    print(model.summary())
+
+    if change_ordering:
+        import numpy as np
+        conf = model.get_config()
+
+        for layer in conf['layers']:
+            print(layer['config'])
+            if layer['config'] and 'batch_input_shape' in layer['config']:
+                layer['config']['batch_input_shape'] = \
+                    tuple(np.reshape(np.array(
+                        [
+                            [None] +
+                            list(layer['config']['batch_input_shape'][2:][:]) +
+                            [layer['config']['batch_input_shape'][1]]
+                        ]), -1
+                    ))
+            if layer['config'] and 'target_shape' in layer['config']:
+                if len(list(layer['config']['target_shape'][1:][:])) > 0:
+                    layer['config']['target_shape'] = \
+                        tuple(np.reshape(np.array(
+                            [
+                                list(layer['config']['target_shape'][1:][:]),
+                                layer['config']['target_shape'][0]
+                            ]), -1
+                        ), )
+
+            if layer['config'] and 'data_format' in layer['config']:
+                layer['config']['data_format'] = 'channels_last'
+            if layer['config'] and 'axis' in layer['config']:
+                layer['config']['axis'] = 3
+            print('after', layer['config'])
+
+        print('ok. try to make a new one')
+
+        keras.backend.set_image_data_format('channels_last')
+        model_tf_ordering = keras.models.Model.from_config(conf)
+
+        for dst_layer, src_layer in zip(model_tf_ordering.layers, model.layers):
+            dst_layer.set_weights(src_layer.get_weights())
+
+        model = model_tf_ordering
+
     return model
