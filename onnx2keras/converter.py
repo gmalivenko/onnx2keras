@@ -58,6 +58,14 @@ def onnx_to_keras(onnx_model, input_names, verbose=True):
     onnx_outputs = [i.name for i in onnx_model.graph.output]
     onnx_nodes = onnx_model.graph.node
 
+    logger.debug('List inputs:')
+    for i, input in enumerate(onnx_inputs):
+        logger.debug('Input {0} -> {1}.'.format(i, input.name))
+
+    logger.debug('List outputs:')
+    for i, output in enumerate(onnx_outputs):
+        logger.debug('Output {0} -> {1}.'.format(i, output))
+
     logger.debug('Gathering weights to dictionary.')
     weights = {}
     for onnx_w in onnx_weights:
@@ -122,11 +130,12 @@ def onnx_to_keras(onnx_model, input_names, verbose=True):
             node_name
         )
 
-        # Check for terminal nodes
-        for noide_output in node.output:
-            if noide_output in onnx_outputs:
-                keras_outputs.append(layers[node_name])
+    # Check for terminal nodes
+    for layer in layers:
+        if layer in onnx_outputs:
+            keras_outputs.append(layers[layer])
 
     # Create model
     model = keras.models.Model(inputs=keras_inputs, outputs=keras_outputs)
+    print(model.summary())
     return model
