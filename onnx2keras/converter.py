@@ -38,10 +38,7 @@ def onnx_node_attributes_to_dict(args):
     return {arg.name: onnx_attribute_to_dict(arg) for arg in args}
 
 
-def onnx_to_keras(
-    onnx_model, input_names,
-    verbose=True
-):
+def onnx_to_keras(onnx_model, input_names, verbose=True):
     """
     Convert ONNX graph to Keras model format
     :param onnx_model: loaded ONNX model

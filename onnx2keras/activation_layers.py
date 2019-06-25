@@ -1,6 +1,7 @@
 import keras.layers
 from .utils import ensure_tf_type
 
+
 def convert_relu(node, params, layers, node_name):
     """
     Convert ReLU activation layer
