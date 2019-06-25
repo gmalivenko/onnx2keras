@@ -1,6 +1,6 @@
 import keras.layers
 import logging
-from .utils import ensure_numpy_type
+from .utils import ensure_tf_type, ensure_numpy_type
 
 
 def convert_conv(node, params, layers, node_name):
@@ -30,7 +30,7 @@ def convert_conv(node, params, layers, node_name):
     else:
         raise NotImplementedError('Not implemented')
 
-    input_name = node.input[0]
+    input_0 = ensure_tf_type(layers[node.input[0]])
 
     if len(W.shape) == 5:  # 3D conv
         raise NotImplementedError('Not implemented')
@@ -45,8 +45,7 @@ def convert_conv(node, params, layers, node_name):
                 padding=(params['pads'][0], params['pads'][1]),
                 name=padding_name
             )
-            layers[padding_name] = padding_layer(layers[input_name])
-            input_name = padding_name
+            layers[padding_name] = input_0 = padding_layer(input_0)
 
         W = W.transpose(2, 3, 1, 0)
         height, width, channels_per_group, out_channels = W.shape
@@ -73,7 +72,7 @@ def convert_conv(node, params, layers, node_name):
                 bias_initializer='zeros', kernel_initializer='zeros',
                 name=node_name
             )
-            layers[node_name] = conv(layers[input_name])
+            layers[node_name] = conv(input_0)
 
         elif n_groups != 1:
             logger.debug('Number of groups more than 1, but less than number of in_channel, use group convolution')
@@ -97,7 +96,7 @@ def convert_conv(node, params, layers, node_name):
                 return layer
 
             lambda_layer = keras.layers.Lambda(target_layer)
-            layers[node_name] = lambda_layer(layers[input_name])
+            layers[node_name] = lambda_layer(input_0)
 
         else:
             if has_bias:
@@ -117,7 +116,7 @@ def convert_conv(node, params, layers, node_name):
                 bias_initializer='zeros', kernel_initializer='zeros',
                 name=node_name
             )
-            layers[node_name] = conv(layers[input_name])
+            layers[node_name] = conv(input_0)
 
     else:  # 1D conv
         raise NotImplementedError('Not implemented')
@@ -150,7 +149,7 @@ def convert_convtranspose(node, params, layers, node_name):
     else:
         raise NotImplementedError('Not implemented')
 
-    input_name = node.input[0]
+    input_0 = ensure_tf_type(layers[node.input[0]])
 
     if len(W.shape) == 5:  # 3D conv
         raise NotImplementedError('Not implemented')
@@ -184,11 +183,11 @@ def convert_convtranspose(node, params, layers, node_name):
             name=node_name
         )
 
-        layers[node_name] = conv(layers[input_name])
+        layers[node_name] = input_0 = conv(input_0)
 
         # Magic ad-hoc.
         # See the Keras issue: https://github.com/keras-team/keras/issues/6777
-        layers[node_name].set_shape(layers[node_name]._keras_shape)
+        input_0.set_shape(input_0._keras_shape)
 
         if 'output_padding' in params and (params['output_padding'][0] > 0 or params['output_padding'][1] > 0):
             raise AttributeError('Cannot convert ConvTranspose2d with output_padding != 0')
@@ -202,6 +201,6 @@ def convert_convtranspose(node, params, layers, node_name):
                 pads[:2],
                 name=node_name + '_crop'
             )
-            layers[node_name] = crop(layers[node_name])
+            layers[node_name] = crop(input_0)
     else:
         raise AttributeError('Layer is not supported for now')
