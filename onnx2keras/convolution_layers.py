@@ -1,6 +1,5 @@
 import keras.layers
 import logging
-import tensorflow as tf
 from .utils import ensure_numpy_type
 
 
@@ -81,9 +80,11 @@ def convert_conv(node, params, layers, node_name):
 
             # Example from https://kratzert.github.io/2017/02/24/finetuning-alexnet-with-tensorflow.html
             def target_layer(x, groups=params['group'], stride_y=params['strides'][0], stride_x=params['strides'][1]):
+                import tensorflow as tf
                 x = tf.transpose(x, [0, 2, 3, 1])
 
                 def convolve_lambda(i, k):
+                    import tensorflow as tf
                     return tf.nn.conv2d(i, k, strides=[1, stride_y, stride_x, 1], padding='VALID')
 
                 input_groups = tf.split(axis=3, num_or_size_splits=groups, value=x)

@@ -1,5 +1,4 @@
 import keras.layers
-import tensorflow as tf
 import logging
 from .utils import ensure_tf_type
 
