@@ -7,7 +7,9 @@ from .linear_layers import convert_gemm
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, convert_concat, convert_reshape
 from .constant_layers import convert_constant
 from .normalization_layers import convert_batchnorm, convert_instancenorm
-from .pooling_layers import convert_maxpool, convert_global_avg_pool
+from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
+from .padding_layers import convert_padding
+
 
 AVAILABLE_CONVERTERS = {
     'Conv': convert_conv,
@@ -32,10 +34,12 @@ AVAILABLE_CONVERTERS = {
     'BatchNormalization': convert_batchnorm,
     'InstanceNormalization': convert_instancenorm,
     'MaxPool': convert_maxpool,
+    'AveragePool': convert_avgpool,
     'GlobalAveragePool': convert_global_avg_pool,
     'Shape': convert_shape,
     'Gather': convert_gather,
     'Unsqueeze': convert_unsqueeze,
     'Concat': convert_concat,
     'Reshape': convert_reshape,
+    'Pad': convert_padding
 }
