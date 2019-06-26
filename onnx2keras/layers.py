@@ -4,7 +4,7 @@ from .activation_layers import convert_relu, convert_lrelu, convert_selu, \
 from .operation_layers import convert_clip, convert_exp, convert_reduce_sum, convert_log
 from .elementwise_layers import convert_elementwise_div, convert_elementwise_add, convert_elementwise_mul, convert_elementwise_sub
 from .linear_layers import convert_gemm
-from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, convert_concat, convert_reshape
+from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, convert_concat, convert_reshape, convert_flatten
 from .constant_layers import convert_constant
 from .normalization_layers import convert_batchnorm, convert_instancenorm
 from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
@@ -41,5 +41,6 @@ AVAILABLE_CONVERTERS = {
     'Unsqueeze': convert_unsqueeze,
     'Concat': convert_concat,
     'Reshape': convert_reshape,
-    'Pad': convert_padding
+    'Pad': convert_padding,
+    'Flatten': convert_flatten
 }

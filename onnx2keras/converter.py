@@ -99,6 +99,7 @@ def onnx_to_keras(onnx_model, input_names, verbose=True, change_ordering=False):
         node_name = str(node.output[0])
         node_params = onnx_node_attributes_to_dict(node.attribute)
 
+        logger.debug('######')
         logger.debug('...')
         logger.debug('Converting ONNX operation')
         logger.debug('type: %s', node_type)
@@ -143,7 +144,6 @@ def onnx_to_keras(onnx_model, input_names, verbose=True, change_ordering=False):
         conf = model.get_config()
 
         for layer in conf['layers']:
-            print(layer['config'])
             if layer['config'] and 'batch_input_shape' in layer['config']:
                 layer['config']['batch_input_shape'] = \
                     tuple(np.reshape(np.array(
@@ -167,9 +167,6 @@ def onnx_to_keras(onnx_model, input_names, verbose=True, change_ordering=False):
                 layer['config']['data_format'] = 'channels_last'
             if layer['config'] and 'axis' in layer['config']:
                 layer['config']['axis'] = 3
-            print('after', layer['config'])
-
-        print('ok. try to make a new one')
 
         keras.backend.set_image_data_format('channels_last')
         model_tf_ordering = keras.models.Model.from_config(conf)
