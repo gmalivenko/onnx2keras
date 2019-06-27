@@ -86,3 +86,21 @@ def convert_instancenorm(node, params, layers, node_name):
 
     lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
     layers[node_name] = lambda_layer(input_0)
+
+
+def convert_dropout(node, params, layers, node_name):
+    """
+    Convert Dropout layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: resulting layer name
+    :return: None
+    """
+    logger = logging.getLogger('onnx2keras:dropout')
+
+    input_0 = ensure_tf_type(layers[node.input[0]])
+
+    ratio = params['ratio'] if 'ratio' in params else 0.0
+    lambda_layer = keras.layers.Dropout(ratio, name=node_name)
+    layers[node_name] = lambda_layer(input_0)

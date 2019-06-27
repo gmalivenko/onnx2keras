@@ -6,7 +6,7 @@ from .elementwise_layers import convert_elementwise_div, convert_elementwise_add
 from .linear_layers import convert_gemm
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, convert_concat, convert_reshape, convert_flatten
 from .constant_layers import convert_constant
-from .normalization_layers import convert_batchnorm, convert_instancenorm
+from .normalization_layers import convert_batchnorm, convert_instancenorm, convert_dropout
 from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
 from .padding_layers import convert_padding
 
@@ -36,6 +36,7 @@ AVAILABLE_CONVERTERS = {
     'Constant': convert_constant,
     'BatchNormalization': convert_batchnorm,
     'InstanceNormalization': convert_instancenorm,
+    'Dropout': convert_dropout,
     'MaxPool': convert_maxpool,
     'AveragePool': convert_avgpool,
     'GlobalAveragePool': convert_global_avg_pool,
