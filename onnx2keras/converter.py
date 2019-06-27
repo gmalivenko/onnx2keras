@@ -62,6 +62,9 @@ def onnx_to_keras(onnx_model, input_names,
     onnx_outputs = [i.name for i in onnx_model.graph.output]
     onnx_nodes = onnx_model.graph.node
 
+    logger.debug('List input shapes:')
+    logger.debug(input_shapes)
+
     logger.debug('List inputs:')
     for i, input in enumerate(onnx_inputs):
         logger.debug('Input {0} -> {1}.'.format(i, input.name))
