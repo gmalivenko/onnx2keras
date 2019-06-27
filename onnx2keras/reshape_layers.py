@@ -38,8 +38,11 @@ def convert_shape(node, params, layers, node_name):
     :return: None
     """
     logger = logging.getLogger('onnx2keras:shape')
-
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+    
+    logger.debug('Actual result:')
+    logger.debug(np.array(input_0._keras_shape))
+
     layers[node_name] = np.array(input_0._keras_shape)
 
 
