@@ -32,7 +32,7 @@ def convert_batchnorm(node, params, layers, node_name):
         raise AttributeError('Unknown arguments for batch norm')
 
     eps = params['epsilon']
-    momentum = params['momentum']
+    momentum = params['momentum'] if 'momentum' in params else 0.9  # default momentum
 
     if len(weights) == 2:
         logger.debug('Batch normalization without running averages')
