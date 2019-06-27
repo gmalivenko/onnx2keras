@@ -26,6 +26,7 @@ AVAILABLE_CONVERTERS = {
     'ReduceMean': convert_reduce_mean,
     'Div': convert_elementwise_div,
     'Add': convert_elementwise_add,
+    'Sum': convert_elementwise_add,
     'Mul': convert_elementwise_mul,
     'Sub': convert_elementwise_sub,
     'Gemm': convert_gemm,
