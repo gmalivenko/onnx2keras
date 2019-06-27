@@ -19,7 +19,8 @@ def convert_maxpool(node, params, layers, node_name):
     height, width = params['kernel_shape']
     stride_height, stride_width = params['strides']
 
-    padding_h, padding_w, _, _ = params['pads']
+    pads = params['pads'] if 'pads' in params else [0, 0, 0, 0]
+    padding_h, padding_w, _, _ = pads
 
     pad = 'valid' 
 
@@ -64,7 +65,8 @@ def convert_avgpool(node, params, layers, node_name):
     height, width = params['kernel_shape']
     stride_height, stride_width = params['strides']
 
-    padding_h, padding_w, _, _ = params['pads']
+    pads = params['pads'] if 'pads' in params else [0, 0, 0, 0]
+    padding_h, padding_w, _, _ = pads
 
     pad = 'valid'
 
