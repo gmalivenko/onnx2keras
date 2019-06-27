@@ -38,12 +38,16 @@ def onnx_node_attributes_to_dict(args):
     return {arg.name: onnx_attribute_to_dict(arg) for arg in args}
 
 
-def onnx_to_keras(onnx_model, input_names, verbose=True, change_ordering=False):
+def onnx_to_keras(onnx_model, input_names,
+                  input_shapes=None, name_policy=None, verbose=True, change_ordering=False):
     """
     Convert ONNX graph to Keras model format
     :param onnx_model: loaded ONNX model
     :param input_names: list with input names
+    :param input_shapes: override input shapes (experimental)
+    :param name_policy: override input names shapes (experimental)
     :param verbose: verbose output
+    :param change_ordering: change ordering to HWC (experimental)
     :return: Keras model
     """
     if verbose:
@@ -80,13 +84,16 @@ def onnx_to_keras(onnx_model, input_names, verbose=True, change_ordering=False):
     keras_outputs = []
     keras_inputs = []
 
-    for input_name in input_names:
+    for i, input_name in enumerate(input_names):
         for onnx_i in onnx_inputs:
             if onnx_i.name == input_name:
-                input_shape = [i.dim_value for i in onnx_i.type.tensor_type.shape.dim]
-                
+                if input_shapes:
+                    input_shape = input_shapes[i]
+                else:
+                    input_shape = [i.dim_value for i in onnx_i.type.tensor_type.shape.dim][1:]
+
                 layers[input_name] = keras.layers.InputLayer(
-                    input_shape=input_shape[1:], name=input_name
+                    input_shape=input_shape, name=input_name
                 ).output
 
                 keras_inputs.append(layers[input_name])
