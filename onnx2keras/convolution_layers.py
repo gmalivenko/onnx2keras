@@ -31,6 +31,10 @@ def convert_conv(node, params, layers, node_name):
         raise NotImplementedError('Not implemented')
 
     input_0 = ensure_tf_type(layers[node.input[0]])
+    n_groups = params['group'] if 'group' in params else 1
+    dilation = params['dilations'][0] if 'dilations' in params else 1
+    pads = params['pads'] if 'pads' in params else [0, 0]
+    strides = params['strides'] if 'strides' in params else [1, 1]
 
     if len(W.shape) == 5:  # 3D conv
         raise NotImplementedError('Not implemented')
@@ -38,18 +42,17 @@ def convert_conv(node, params, layers, node_name):
     elif len(W.shape) == 4:  # 2D conv
         logger.debug('2D convolution')
 
-        if params['pads'][0] > 0 or params['pads'][1] > 0:
+        if pads[0] > 0 or pads[1] > 0:
             logger.debug('Paddings exist, add ZeroPadding layer')
             padding_name = node_name + '_pad'
             padding_layer = keras.layers.ZeroPadding2D(
-                padding=(params['pads'][0], params['pads'][1]),
+                padding=(pads[0], pads[1]),
                 name=padding_name
             )
             layers[padding_name] = input_0 = padding_layer(input_0)
 
         W = W.transpose(2, 3, 1, 0)
         height, width, channels_per_group, out_channels = W.shape
-        n_groups = params['group']
         in_channels = channels_per_group * n_groups
 
         if n_groups == in_channels and n_groups != 1:
@@ -62,13 +65,13 @@ def convert_conv(node, params, layers, node_name):
 
             conv = keras.layers.DepthwiseConv2D(
                 kernel_size=(height, width),
-                strides=(params['strides'][0], params['strides'][1]),
+                strides=(strides[0],strides[1]),
                 padding='valid',
                 use_bias=has_bias,
                 activation=None,
                 depth_multiplier=1,
                 weights=weights,
-                dilation_rate=params['dilations'][0],
+                dilation_rate=dilation,
                 bias_initializer='zeros', kernel_initializer='zeros',
                 name=node_name
             )
@@ -78,7 +81,7 @@ def convert_conv(node, params, layers, node_name):
             logger.debug('Number of groups more than 1, but less than number of in_channel, use group convolution')
 
             # Example from https://kratzert.github.io/2017/02/24/finetuning-alexnet-with-tensorflow.html
-            def target_layer(x, groups=params['group'], stride_y=params['strides'][0], stride_x=params['strides'][1]):
+            def target_layer(x, groups=n_groups, stride_y=strides[0], stride_x=strides[1]):
                 import tensorflow as tf
                 x = tf.transpose(x, [0, 2, 3, 1])
 
@@ -107,12 +110,12 @@ def convert_conv(node, params, layers, node_name):
             conv = keras.layers.Conv2D(
                 filters=out_channels,
                 kernel_size=(height, width),
-                strides=(params['strides'][0], params['strides'][1]),
+                strides=(strides[0], strides[1]),
                 padding='valid',
                 weights=weights,
                 use_bias=has_bias,
                 activation=None,
-                dilation_rate=params['dilations'][0],
+                dilation_rate=dilation,
                 bias_initializer='zeros', kernel_initializer='zeros',
                 name=node_name
             )
