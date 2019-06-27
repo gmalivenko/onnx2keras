@@ -31,7 +31,7 @@ def convert_batchnorm(node, params, layers, node_name):
     else:
         raise AttributeError('Unknown arguments for batch norm')
 
-    eps = params['epsilon']
+    eps = params['epsilon'] if 'epsilon' in params else 1e-05  # default epsilon
     momentum = params['momentum'] if 'momentum' in params else 0.9  # default momentum
 
     if len(weights) == 2:
