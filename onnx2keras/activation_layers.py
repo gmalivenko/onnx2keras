@@ -91,3 +91,21 @@ def convert_selu(node, params, layers, node_name):
 
     selu = keras.layers.Activation('selu', name=node_name)
     layers[node_name] = selu(input_0)
+
+
+def convert_softmax(node, params, layers, node_name):
+    """
+    Convert softmax activation layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for an activation layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]])
+
+    softmax = keras.layers.Activation('softmax', name=node_name)
+    layers[node_name] = softmax(input_0)
