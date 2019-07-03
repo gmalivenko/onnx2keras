@@ -45,7 +45,7 @@ def onnx_to_keras(onnx_model, input_names,
     :param onnx_model: loaded ONNX model
     :param input_names: list with input names
     :param input_shapes: override input shapes (experimental)
-    :param name_policy: override input names shapes (experimental)
+    :param name_policy: override layer names (experimental)
     :param verbose: verbose output
     :param change_ordering: change ordering to HWC (experimental)
     :return: Keras model

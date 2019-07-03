@@ -7,10 +7,15 @@ ONNX to Keras deep neural network converter.
 `onnx_to_keras(onnx_model, input_names, input_shapes=None, name_policy=None, verbose=True, change_ordering=False)`
 
 `onnx_model`: ONNX model to convert
+
 `input_names`: list with graph input names
+
 `input_shapes`: override input shapes (experimental)
+
 `name_policy`: override layer names (experimental)
+
 `verbose`: detailed output
+
 `change_ordering` change ordering to HWC (experimental)
 
 Return: Keras model
@@ -28,7 +33,6 @@ onnx_model = onnx.load('resnet18.onnx')
 
 # Call the converter (input - is the main model input name, can be different for your model)
 k_model = onnx_to_keras(onnx_model, ['input'])
-
 ```
 
 Keras model will be stored to the `k_model` variable. So simple, isn't it?
