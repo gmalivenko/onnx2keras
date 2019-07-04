@@ -112,13 +112,19 @@ def convert_reshape(node, params, layers, node_name):
     """
     logger = logging.getLogger('onnx2keras:reshape')
 
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+    input_0 = layers[node.input[0]]
     input_1 = layers[node.input[1]]
 
     if is_numpy(input_1):
-        logger.debug('The second argument is numpy array. Apply keras.Reshape.')
-        reshape = keras.layers.Reshape(input_1[1:], name=node_name)
-        layers[node_name] = reshape(input_0)
+        logger.debug('The second argument is numpy array.')
+        if is_numpy(input_0):
+            logger.debug('The first argument is numpy array. Apply np.reshape.')
+            layers[node_name] = np.reshape(input_0, input_1)
+        else:
+            input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+            logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
+            reshape = keras.layers.Reshape(input_1[1:], name=node_name)
+            layers[node_name] = reshape(input_0)
     else:
         raise AttributeError('Can\'t reshape dynamic size.')
 
