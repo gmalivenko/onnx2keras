@@ -106,8 +106,13 @@ def onnx_to_keras(onnx_model, input_names,
     # Convert every operation separable
     for node in onnx_nodes:
         node_type = node.op_type
-        node_name = str(node.output[0])
         node_params = onnx_node_attributes_to_dict(node.attribute)
+
+        node_name = str(node.output[0])
+
+        if len(node.output) != 1:
+            logger.warning('Trying to convert multi-output node')
+            node_params['_outputs'] = node.output
 
         logger.debug('######')
         logger.debug('...')
@@ -142,8 +147,8 @@ def onnx_to_keras(onnx_model, input_names,
         )
 
     # Check for terminal nodes
-    for layer in layers:
-        if layer in onnx_outputs:
+    for layer in onnx_outputs:
+        if layer in layers:
             keras_outputs.append(layers[layer])
 
     # Create model
