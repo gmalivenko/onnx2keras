@@ -1,6 +1,8 @@
 import keras.layers
+import keras.backend as K
 import logging
 from .utils import ensure_tf_type, ensure_numpy_type
+from collections.abc import Iterable
 
 
 def convert_clip(node, params, layers, node_name):
@@ -176,25 +178,29 @@ def convert_split(node, params, layers, node_name):
     :param node_name: resulting layer name
     :return: None
     """
-    import numpy as np
-
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for split layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]])
-    print(input_0)
-    # exit(0)
+    splits = params["split"]
+    axis = params.get("axis", 0)
+    if not isinstance(splits, Iterable):
+        # This might not work if `split` is a tensor.
+        chunk_size = K.int_size(input_0)[axis] // splits
+        splits = (chunk_size,) * splits
 
-    for i, split in enumerate(params['split']):
+    cur = 0
+    for i, split in enumerate(splits):
         node_name = params['_outputs'][i]
-        splits = np.sum(np.array(params['split']))
 
-        def target_layer(x, axis=params['axis'], splits=splits, isplit=i):
-            import tensorflow as tf
-            return tf.split(x, splits, axis=axis)[isplit]
+        def target_layer(x, axis=axis, start_i=cur, end_i=cur+split):
+            slices = [slice(None, None)] * len(K.int_shape(x))
+            slices[axis] = slice(start_i, end_i)
+            return x[tuple(slices)]
 
         lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
         layers[node_name] = lambda_layer(input_0)
+        cur += split
 
 
 def convert_max(node, params, layers, node_name):
