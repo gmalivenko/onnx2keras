@@ -112,7 +112,7 @@ def onnx_to_keras(onnx_model, input_names,
 
         if len(node.output) != 1:
             logger.warning('Trying to convert multi-output node')
-            node_params['_outputs'] = node.output
+            node_params['_outputs'] = list(node.output)
 
         logger.debug('######')
         logger.debug('...')
