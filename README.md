@@ -2,6 +2,11 @@
 
 ONNX to Keras deep neural network converter.
 
+[![GitHub License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
+[![Python Version](https://img.shields.io/badge/python-2.7%2C3.6-lightgrey.svg)](https://github.com/nerox8664/onnx2keras)
+[![Downloads](https://pepy.tech/badge/onnx2keras)](https://pepy.tech/project/onnx2keras)
+![PyPI](https://img.shields.io/pypi/v/onnx2keras.svg)
+
 ## API
 
 `onnx_to_keras(onnx_model, input_names, input_shapes=None, name_policy=None, verbose=True, change_ordering=False)`
