@@ -3,13 +3,14 @@ import logging
 from .utils import ensure_tf_type
 
 
-def convert_maxpool(node, params, layers, node_name):
+def convert_maxpool(node, params, layers, node_name, keras_name):
     """
     Convert MaxPooling layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:maxpool')
@@ -42,20 +43,21 @@ def convert_maxpool(node, params, layers, node_name):
         pool_size=(height, width),
         strides=(stride_height, stride_width),
         padding=pad,
-        name=node_name,
+        name=keras_name,
         data_format='channels_first'
     )
 
     layers[node_name] = pooling(input_0)
 
 
-def convert_avgpool(node, params, layers, node_name):
+def convert_avgpool(node, params, layers, node_name, keras_name):
     """
     Convert AvgPooling layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:avgpool')
@@ -88,27 +90,28 @@ def convert_avgpool(node, params, layers, node_name):
         pool_size=(height, width),
         strides=(stride_height, stride_width),
         padding=pad,
-        name=node_name,
+        name=keras_name,
         data_format='channels_first'
     )
 
     layers[node_name] = pooling(input_0)
 
 
-def convert_global_avg_pool(node, params, layers, node_name):
+def convert_global_avg_pool(node, params, layers, node_name, keras_name):
     """
     Convert GlobalAvgPool layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:global_avg_pool')
 
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
 
-    global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', name=node_name)
+    global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', name=keras_name)
     input_0 = global_pool(input_0)
 
     def target_layer(x):
@@ -116,7 +119,7 @@ def convert_global_avg_pool(node, params, layers, node_name):
         return keras.backend.expand_dims(x)
 
     logger.debug('Now expand dimensions twice.')
-    lambda_layer1 = keras.layers.Lambda(target_layer, name=node_name + '_EXPAND1')
-    lambda_layer2 = keras.layers.Lambda(target_layer, name=node_name + '_EXPAND2')
+    lambda_layer1 = keras.layers.Lambda(target_layer, name=keras_name + '_EXPAND1')
+    lambda_layer2 = keras.layers.Lambda(target_layer, name=keras_name + '_EXPAND2')
     input_0 = lambda_layer1(input_0)  # double expand dims
     layers[node_name] = lambda_layer2(input_0)

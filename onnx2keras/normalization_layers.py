@@ -3,13 +3,14 @@ import logging
 from .utils import ensure_tf_type, ensure_numpy_type
 
 
-def convert_batchnorm(node, params, layers, node_name):
+def convert_batchnorm(node, params, layers, node_name, keras_name):
     """
     Convert BatchNorm2d layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:batchnorm2d')
@@ -40,25 +41,26 @@ def convert_batchnorm(node, params, layers, node_name):
             axis=1, momentum=momentum, epsilon=eps,
             center=False, scale=False,
             weights=weights,
-            name=node_name
+            name=keras_name
         )
     else:
         bn = keras.layers.BatchNormalization(
             axis=1, momentum=momentum, epsilon=eps,
             weights=weights,
-            name=node_name
+            name=keras_name
         )
 
     layers[node_name] = bn(input_0)
 
 
-def convert_instancenorm(node, params, layers, node_name):
+def convert_instancenorm(node, params, layers, node_name, keras_name):
     """
     Convert InstanceNorm2d layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:instancenorm2d')
@@ -84,17 +86,18 @@ def convert_instancenorm(node, params, layers, node_name):
         )
         return layer
 
-    lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
 
 
-def convert_dropout(node, params, layers, node_name):
+def convert_dropout(node, params, layers, node_name, keras_name):
     """
     Convert Dropout layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:dropout')
@@ -102,5 +105,5 @@ def convert_dropout(node, params, layers, node_name):
     input_0 = ensure_tf_type(layers[node.input[0]])
 
     ratio = params['ratio'] if 'ratio' in params else 0.0
-    lambda_layer = keras.layers.Dropout(ratio, name=node_name)
+    lambda_layer = keras.layers.Dropout(ratio, name=keras_name)
     layers[node_name] = lambda_layer(input_0)

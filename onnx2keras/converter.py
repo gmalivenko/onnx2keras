@@ -104,11 +104,22 @@ def onnx_to_keras(onnx_model, input_names,
                 logger.debug('Found input {0} with shape {1}'.format(input_name, input_shape))
 
     # Convert every operation separable
-    for node in onnx_nodes:
+    node_names = []
+    for node_index, node in enumerate(onnx_nodes):
         node_type = node.op_type
         node_params = onnx_node_attributes_to_dict(node.attribute)
 
-        node_name = str(node.output[0])
+        node_name = keras_name = str(node.output[0])
+
+        if name_policy == 'short':
+            keras_name = keras_name_i = str(node.output[0])[:8]
+            suffix = 1
+            while keras_name_i in node_names:
+                keras_name_i = keras_name + '_' + str(suffix)
+                suffix += 1
+            keras_name = keras_name_i
+        elif name_policy == 'renumerate':
+            keras_name = 'LAYER_' + str(node_index)
 
         if len(node.output) != 1:
             logger.warning('Trying to convert multi-output node')
@@ -143,8 +154,10 @@ def onnx_to_keras(onnx_model, input_names,
             node,
             node_params,
             layers,
-            node_name
+            node_name,
+            keras_name
         )
+        node_names.append(keras_name)
 
     # Check for terminal nodes
     for layer in onnx_outputs:
