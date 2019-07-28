@@ -89,22 +89,19 @@ def convert_concat(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:concat')
 
-    if is_numpy(layers[node.input[0]]) and is_numpy(layers[node.input[1]]):
-        logger.debug('Concat 2 numpy arrays.')
-        layers[node_name] = np.concatenate([layers[node.input[0]], layers[node.input[1]]], axis=params['axis'])
+    if all([is_numpy(layers[node.input[i]]) for i in range(len(node.input))]):
+        logger.debug('Concat numpy arrays.')
+        layers[node_name] = np.concatenate([layers[node.input[i]] for i in range(len(node.input))], axis=params['axis'])
     else:
-        logger.debug('Concat 2 tf tensors.')
-        input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
-        input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]])
-
+        logger.debug('Concat tf tensors.')
         def target_layer(x, axis=params['axis']):
             import tensorflow as tf
             return tf.concat(x, axis=axis)
 
-        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-        layers[node_name] = lambda_layer([input_0, input_1])
+        lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
+        layers[node_name] = lambda_layer([ensure_tf_type(layers[node.input[i]], layers[list(layers)[0]]) for i in range(len(node.input))])
 
-
+        
 def convert_reshape(node, params, layers, node_name, keras_name):
     """
     Convert reshape.
@@ -187,3 +184,59 @@ def convert_flatten(node, params, layers, node_name, keras_name):
 
     reshape = keras.layers.Reshape([-1], name=keras_name)
     layers[node_name] = reshape(input_0)
+
+   
+def convert_slice(node, params, layers, node_name, keras_name):
+    """
+    Convert slice.
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    logger = logging.getLogger('onnx2keras:slice')
+    
+    if len(node.input) != 1:
+        raise AttributeError('Number of inputs is not equal 1 for slice layer')
+        
+    logger.debug('Convert inputs to Keras/TF layers if needed.')
+    
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+    layers[node_name] = input_0
+    
+    axes = params["axes"][0]
+    ends = params["ends"][0]
+    starts = params["starts"][0]
+    
+    if axes == 0:
+        def target_layer(x):
+            layer = x[starts:ends]
+            return layer
+        
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(input_0)
+    elif axes == 1:
+        def target_layer(x):
+            layer = x[:, starts:ends]
+            return layer
+        
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(input_0)
+    elif axes == 2:
+        def target_layer(x):
+            layer = x[:, :, starts:ends]
+            return layer
+        
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(input_0)
+    elifaxes == 3:
+        def target_layer(x):
+            layer = x[:, :, :, starts:ends]
+            return layer
+        
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(input_0)
+    else:
+        raise AttributeError('Not implemented')
