@@ -231,7 +231,7 @@ def convert_slice(node, params, layers, node_name, keras_name):
         
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
         layers[node_name] = lambda_layer(input_0)
-    elifaxes == 3:
+    elif axes == 3:
         def target_layer(x):
             layer = x[:, :, :, starts:ends]
             return layer
