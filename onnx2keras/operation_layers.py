@@ -5,13 +5,14 @@ from .utils import ensure_tf_type, ensure_numpy_type
 from collections.abc import Iterable
 
 
-def convert_clip(node, params, layers, node_name):
+def convert_clip(node, params, layers, node_name, keras_name):
     """
     Convert clip layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:clip')
@@ -22,23 +23,24 @@ def convert_clip(node, params, layers, node_name):
 
     if params['min'] == 0:
         logger.debug("Using ReLU({0}) instead of clip".format(params['max']))
-        layer = keras.layers.ReLU(max_value=params['max'], name=node_name)
+        layer = keras.layers.ReLU(max_value=params['max'], name=keras_name)
     else:
         def target_layer(x, vmin=params['min'], vmax=params['max']):
             import tensorflow as tf
             return tf.clip_by_value(x, vmin, vmax)
-        layer = keras.layers.Lambda(target_layer, name=node_name)
+        layer = keras.layers.Lambda(target_layer, name=keras_name)
 
     layers[node_name] = layer(input_0)
 
 
-def convert_log(node, params, layers, node_name):
+def convert_log(node, params, layers, node_name, keras_name):
     """
     Convert Log layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     if len(node.input) != 1:
@@ -50,11 +52,11 @@ def convert_log(node, params, layers, node_name):
         import keras.backend as K
         return K.log(x)
 
-    lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
 
 
-def convert_exp(node, params, layers, node_name):
+def convert_exp(node, params, layers, node_name, keras_name):
     """
     Convert Exp layer
     :param node: current operation node
@@ -72,17 +74,18 @@ def convert_exp(node, params, layers, node_name):
         import keras.backend as K
         return K.exp(x)
 
-    lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
 
 
-def convert_reduce_sum(node, params, layers, node_name):
+def convert_reduce_sum(node, params, layers, node_name, keras_name):
     """
     Convert reduce sum.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     if len(node.input) != 1:
@@ -96,18 +99,19 @@ def convert_reduce_sum(node, params, layers, node_name):
         import keras.backend as K
         return K.sum(x, keepdims=True, axis=axis)
 
-    lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
     layers[node_name].set_shape(layers[node_name]._keras_shape)
 
 
-def convert_reduce_mean(node, params, layers, node_name):
+def convert_reduce_mean(node, params, layers, node_name, keras_name):
     """
     Convert reduce mean.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     if len(node.input) != 1:
@@ -119,18 +123,19 @@ def convert_reduce_mean(node, params, layers, node_name):
         import keras.backend as K
         return K.mean(x, keepdims=(keepdims == 1), axis=axis)
 
-    lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
     layers[node_name].set_shape(layers[node_name]._keras_shape)
 
 
-def convert_pow(node, params, layers, node_name):
+def convert_pow(node, params, layers, node_name, keras_name):
     """
     Convert Pow layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     if len(node.input) != 2:
@@ -143,17 +148,18 @@ def convert_pow(node, params, layers, node_name):
         import keras.backend as K
         return K.pow(x, a)
 
-    lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
 
 
-def convert_sqrt(node, params, layers, node_name):
+def convert_sqrt(node, params, layers, node_name, keras_name):
     """
     Convert Sqrt layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     if len(node.input) != 1:
@@ -165,17 +171,18 @@ def convert_sqrt(node, params, layers, node_name):
         import keras.backend as K
         return K.sqrt(x)
 
-    lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
 
 
-def convert_split(node, params, layers, node_name):
+def convert_split(node, params, layers, node_name, keras_name):
     """
     Convert Split layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     if len(node.input) != 1:
@@ -198,18 +205,19 @@ def convert_split(node, params, layers, node_name):
             slices[axis] = slice(start_i, end_i)
             return x[tuple(slices)]
 
-        lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
         layers[node_name] = lambda_layer(input_0)
         cur += split
 
 
-def convert_max(node, params, layers, node_name):
+def convert_max(node, params, layers, node_name, keras_name):
     """
     Convert Max layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     if len(node.input) != 2:
@@ -218,4 +226,4 @@ def convert_max(node, params, layers, node_name):
     input_0 = ensure_tf_type(layers[node.input[0]])
     input_1 = ensure_tf_type(layers[node.input[1]])
 
-    layers[node_name] = keras.layers.Maximum(name=node_name)([input_0, input_1])
+    layers[node_name] = keras.layers.Maximum(name=keras_name)([input_0, input_1])

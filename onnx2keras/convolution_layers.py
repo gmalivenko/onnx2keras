@@ -3,13 +3,14 @@ import logging
 from .utils import ensure_tf_type, ensure_numpy_type
 
 
-def convert_conv(node, params, layers, node_name):
+def convert_conv(node, params, layers, node_name, keras_name):
     """
     Convert convolution layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:conv')
@@ -44,7 +45,7 @@ def convert_conv(node, params, layers, node_name):
 
         if pads[0] > 0 or pads[1] > 0:
             logger.debug('Paddings exist, add ZeroPadding layer')
-            padding_name = node_name + '_pad'
+            padding_name = keras_name + '_pad'
             padding_layer = keras.layers.ZeroPadding2D(
                 padding=(pads[0], pads[1]),
                 name=padding_name
@@ -73,7 +74,7 @@ def convert_conv(node, params, layers, node_name):
                 weights=weights,
                 dilation_rate=dilation,
                 bias_initializer='zeros', kernel_initializer='zeros',
-                name=node_name
+                name=keras_name
             )
             layers[node_name] = conv(input_0)
 
@@ -117,7 +118,7 @@ def convert_conv(node, params, layers, node_name):
                 activation=None,
                 dilation_rate=dilation,
                 bias_initializer='zeros', kernel_initializer='zeros',
-                name=node_name
+                name=keras_name
             )
             layers[node_name] = conv(input_0)
 
@@ -125,13 +126,14 @@ def convert_conv(node, params, layers, node_name):
         raise NotImplementedError('Not implemented')
 
 
-def convert_convtranspose(node, params, layers, node_name):
+def convert_convtranspose(node, params, layers, node_name, keras_name):
     """
     Convert transposed convolution layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:convtranpose')
@@ -183,7 +185,7 @@ def convert_convtranspose(node, params, layers, node_name):
             activation=None,
             dilation_rate=params['dilations'][0],
             bias_initializer='zeros', kernel_initializer='zeros',
-            name=node_name
+            name=keras_name
         )
 
         layers[node_name] = input_0 = conv(input_0)
@@ -202,7 +204,7 @@ def convert_convtranspose(node, params, layers, node_name):
 
             crop = keras.layers.Cropping2D(
                 pads[:2],
-                name=node_name + '_crop'
+                name=keras_name + '_crop'
             )
             layers[node_name] = crop(input_0)
     else:

@@ -2,13 +2,14 @@ import keras.layers
 import logging
 
 
-def convert_gemm(node, params, layers, node_name):
+def convert_gemm(node, params, layers, node_name, keras_name):
     """
     Convert Linear / GEMM layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
-    :param node_name: resulting layer name
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:gemm')
@@ -36,7 +37,7 @@ def convert_gemm(node, params, layers, node_name):
 
     dense = keras.layers.Dense(
         output_channels,
-        weights=keras_weights, name=node_name, bias_initializer='zeros', kernel_initializer='zeros', use_bias=has_bias
+        weights=keras_weights, name=keras_name, bias_initializer='zeros', kernel_initializer='zeros', use_bias=has_bias
     )
 
     # The first input - always X
