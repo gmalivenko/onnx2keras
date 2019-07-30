@@ -40,7 +40,7 @@ def convert_shape(node, params, layers, node_name, keras_name):
     :return: None
     """
     logger = logging.getLogger('onnx2keras:shape')
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
     
     logger.debug('Actual result:')
     logger.debug(np.array(input_0._keras_shape))
@@ -98,10 +98,10 @@ def convert_concat(node, params, layers, node_name, keras_name):
             import tensorflow as tf
             return tf.concat(x, axis=axis)
 
-        lambda_layer = keras.layers.Lambda(target_layer, name=node_name)
-        layers[node_name] = lambda_layer([ensure_tf_type(layers[node.input[i]], layers[list(layers)[0]]) for i in range(len(node.input))])
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer([ensure_tf_type(layers[node.input[i]], layers[list(layers)[0]], name="%s_const" % keras_name) for i in range(len(node.input))])
 
-        
+
 def convert_reshape(node, params, layers, node_name, keras_name):
     """
     Convert reshape.
@@ -123,7 +123,7 @@ def convert_reshape(node, params, layers, node_name, keras_name):
             logger.debug('The first argument is numpy array. Apply np.reshape.')
             layers[node_name] = np.reshape(input_0, input_1)
         else:
-            input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+            input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
             logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
             reshape = keras.layers.Reshape(input_1[1:], name=keras_name)
             layers[node_name] = reshape(input_0)
@@ -180,7 +180,7 @@ def convert_flatten(node, params, layers, node_name, keras_name):
         raise AttributeError('Number of inputs is not equal 1 for flatten layer')
 
     logger.debug('Convert inputs to Keras/TF layers if needed.')
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
     reshape = keras.layers.Reshape([-1], name=keras_name)
     layers[node_name] = reshape(input_0)
@@ -203,7 +203,7 @@ def convert_slice(node, params, layers, node_name, keras_name):
         
     logger.debug('Convert inputs to Keras/TF layers if needed.')
     
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
     layers[node_name] = input_0
     
     axes = params["axes"][0]

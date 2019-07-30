@@ -31,7 +31,7 @@ def convert_conv(node, params, layers, node_name, keras_name):
     else:
         raise NotImplementedError('Not implemented')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     n_groups = params['group'] if 'group' in params else 1
     dilation = params['dilations'][0] if 'dilations' in params else 1
     pads = params['pads'] if 'pads' in params else [0, 0]
@@ -154,7 +154,7 @@ def convert_convtranspose(node, params, layers, node_name, keras_name):
     else:
         raise NotImplementedError('Not implemented')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     if len(W.shape) == 5:  # 3D conv
         raise NotImplementedError('Not implemented')

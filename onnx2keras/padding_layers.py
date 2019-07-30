@@ -14,7 +14,7 @@ def convert_padding(node, params, layers, node_name, keras_name):
     """
     # It's binary by-default
     params['mode'] = params['mode'].decode('ascii')
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     if params['mode'] == 'constant':
         # raise AssertionError('Cannot convert non-constant padding')

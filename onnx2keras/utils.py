@@ -23,7 +23,7 @@ def ensure_numpy_type(obj):
         raise AttributeError('Not a numpy type.')
 
 
-def ensure_tf_type(obj, fake_input_layer=None):
+def ensure_tf_type(obj, fake_input_layer=None, name=None):
     """
     Convert to Keras Constant if needed
     :param obj: numpy / tf type
@@ -41,7 +41,7 @@ def ensure_tf_type(obj, fake_input_layer=None):
                 inp = np.array(inp, dtype=dtype)
             return tf.constant(inp, dtype=inp.dtype, verify_shape=True)
 
-        lambda_layer = keras.layers.Lambda(target_layer)
+        lambda_layer = keras.layers.Lambda(target_layer, name=name)
         return lambda_layer(fake_input_layer)
     else:
         return obj
