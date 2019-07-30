@@ -15,7 +15,7 @@ def convert_maxpool(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:maxpool')
 
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
     height, width = params['kernel_shape']
     stride_height, stride_width = params['strides']
@@ -23,7 +23,7 @@ def convert_maxpool(node, params, layers, node_name, keras_name):
     pads = params['pads'] if 'pads' in params else [0, 0, 0, 0]
     padding_h, padding_w, _, _ = pads
 
-    pad = 'valid' 
+    pad = 'valid'
 
     if height % 2 == 1 and width % 2 == 1 and \
             height // 2 == padding_h and width // 2 == padding_w and \
@@ -32,7 +32,7 @@ def convert_maxpool(node, params, layers, node_name, keras_name):
         logger.debug('Use `same` padding parameters.')
     else:
         logger.warning('Unable to use `same` padding. Add ZeroPadding2D layer to fix shapes.')
-        padding_name = node_name + '_pad'
+        padding_name = keras_name + '_pad'
         padding_layer = keras.layers.ZeroPadding2D(
             padding=(padding_h, padding_w),
             name=padding_name
@@ -62,7 +62,7 @@ def convert_avgpool(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:avgpool')
 
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
     height, width = params['kernel_shape']
     stride_height, stride_width = params['strides']
@@ -79,7 +79,7 @@ def convert_avgpool(node, params, layers, node_name, keras_name):
         logger.debug('Use `same` padding parameters.')
     else:
         logger.warning('Unable to use `same` padding. Add ZeroPadding2D layer to fix shapes.')
-        padding_name = node_name + '_pad'
+        padding_name = keras_name + '_pad'
         padding_layer = keras.layers.ZeroPadding2D(
             padding=(padding_h, padding_w),
             name=padding_name
@@ -109,7 +109,7 @@ def convert_global_avg_pool(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:global_avg_pool')
 
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
     global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', name=keras_name)
     input_0 = global_pool(input_0)

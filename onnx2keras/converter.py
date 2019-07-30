@@ -45,7 +45,7 @@ def onnx_to_keras(onnx_model, input_names,
     :param onnx_model: loaded ONNX model
     :param input_names: list with input names
     :param input_shapes: override input shapes (experimental)
-    :param name_policy: override layer names (experimental)
+    :param name_policy: override layer names. None, "short" or "renumerate" (experimental)
     :param verbose: verbose output
     :param change_ordering: change ordering to HWC (experimental)
     :return: Keras model
@@ -109,21 +109,29 @@ def onnx_to_keras(onnx_model, input_names,
         node_type = node.op_type
         node_params = onnx_node_attributes_to_dict(node.attribute)
 
-        node_name = keras_name = str(node.output[0])
-
-        if name_policy == 'short':
-            keras_name = keras_name_i = str(node.output[0])[:8]
-            suffix = 1
-            while keras_name_i in node_names:
-                keras_name_i = keras_name + '_' + str(suffix)
-                suffix += 1
-            keras_name = keras_name_i
-        elif name_policy == 'renumerate':
-            keras_name = 'LAYER_' + str(node_index)
+        node_name = str(node.output[0])
+        keras_names = []
+        for output_index, output in enumerate(node.output):
+            if name_policy == 'short':
+                keras_name = keras_name_i = str(output)[:8]
+                suffix = 1
+                while keras_name_i in node_names:
+                    keras_name_i = keras_name + '_' + str(suffix)
+                    suffix += 1
+                keras_names.append(keras_name_i)
+            elif name_policy == 'renumerate':
+                postfix = node_index if len(node.output) == 1 else "%s_%s" % (node_index, output_index)
+                keras_names.append('LAYER_%s' % postfix)
+            else:
+                keras_names.append(output)
 
         if len(node.output) != 1:
             logger.warning('Trying to convert multi-output node')
             node_params['_outputs'] = list(node.output)
+            node_names.extend(keras_names)
+        else:
+            keras_names = keras_names[0]
+            node_names.append(keras_names)
 
         logger.debug('######')
         logger.debug('...')
@@ -155,9 +163,8 @@ def onnx_to_keras(onnx_model, input_names,
             node_params,
             layers,
             node_name,
-            keras_name
+            keras_names
         )
-        node_names.append(keras_name)
 
     # Check for terminal nodes
     for layer in onnx_outputs:

@@ -15,7 +15,7 @@ def convert_batchnorm(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:batchnorm2d')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     if len(node.input) == 5:
         weights = [
@@ -65,7 +65,7 @@ def convert_instancenorm(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:instancenorm2d')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     if len(node.input) == 3:
         gamma = ensure_numpy_type(layers[node.input[1]])
@@ -102,7 +102,7 @@ def convert_dropout(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:dropout')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     ratio = params['ratio'] if 'ratio' in params else 0.0
     lambda_layer = keras.layers.Dropout(ratio, name=keras_name)

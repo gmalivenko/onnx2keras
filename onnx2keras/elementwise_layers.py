@@ -19,8 +19,8 @@ def convert_elementwise_div(node, params, layers, node_name, keras_name):
         raise AttributeError('Number of inputs is not equal 2 for element-wise layer')
 
     logger.debug('Convert inputs to Keras/TF layers if needed.')
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
-    input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const1" % keras_name)
+    input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]], name="%s_const2" % keras_name)
 
     def target_layer(x):
         import tensorflow as tf
@@ -50,8 +50,8 @@ def convert_elementwise_add(node, params, layers, node_name, keras_name):
         raise AttributeError('Number of inputs is not equal 2 for element-wise layer')
 
     logger.debug('Convert inputs to Keras/TF layers if needed.')
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
-    input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const1" % keras_name)
+    input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]], name="%s_const2" % keras_name)
 
     try:
         add = keras.layers.Add(name=keras_name)
@@ -89,8 +89,8 @@ def convert_elementwise_mul(node, params, layers, node_name, keras_name):
         raise AttributeError('Number of inputs is not equal 2 for element-wise layer')
 
     logger.debug('Convert inputs to Keras/TF layers if needed.')
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
-    input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const1" % keras_name)
+    input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]], name="%s_const2" % keras_name)
 
     try:
         mul = keras.layers.Multiply(name=keras_name)
@@ -129,8 +129,8 @@ def convert_elementwise_sub(node, params, layers, node_name, keras_name):
         raise AttributeError('Number of inputs is not equal 2 for element-wise layer')
 
     logger.debug('Convert inputs to Keras/TF layers if needed.')
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]])
-    input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const1" % keras_name)
+    input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]], name="%s_const2" % keras_name)
 
     try:
         sub = keras.layers.Subtract(name=keras_name)

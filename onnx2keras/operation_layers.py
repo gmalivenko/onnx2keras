@@ -19,7 +19,7 @@ def convert_clip(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for clip layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     if params['min'] == 0:
         logger.debug("Using ReLU({0}) instead of clip".format(params['max']))
@@ -46,7 +46,7 @@ def convert_log(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for log layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x):
         import keras.backend as K
@@ -68,7 +68,7 @@ def convert_exp(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for log layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x):
         import keras.backend as K
@@ -91,7 +91,7 @@ def convert_reduce_sum(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for reduce sum layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     axis = params['axes']
 
@@ -117,7 +117,7 @@ def convert_reduce_mean(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for reduce mean layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x, axis=params['axes'], keepdims=params['keepdims']):
         import keras.backend as K
@@ -141,7 +141,7 @@ def convert_pow(node, params, layers, node_name, keras_name):
     if len(node.input) != 2:
         assert AttributeError('More than 2 inputs for pow layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     power = ensure_numpy_type(layers[node.input[1]])
 
     def target_layer(x, a=power):
@@ -165,7 +165,7 @@ def convert_sqrt(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for sqrt layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x):
         import keras.backend as K
@@ -175,7 +175,7 @@ def convert_sqrt(node, params, layers, node_name, keras_name):
     layers[node_name] = lambda_layer(input_0)
 
 
-def convert_split(node, params, layers, node_name, keras_name):
+def convert_split(node, params, layers, node_name, keras_names):
     """
     Convert Split layer
     :param node: current operation node
@@ -188,7 +188,7 @@ def convert_split(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for split layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_names[0])
     splits = params["split"]
     axis = params.get("axis", 0)
     if not isinstance(splits, Iterable):
@@ -205,7 +205,7 @@ def convert_split(node, params, layers, node_name, keras_name):
             slices[axis] = slice(start_i, end_i)
             return x[tuple(slices)]
 
-        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_names[i])
         layers[node_name] = lambda_layer(input_0)
         cur += split
 
@@ -223,7 +223,7 @@ def convert_max(node, params, layers, node_name, keras_name):
     if len(node.input) != 2:
         assert AttributeError('More than 2 inputs for pow layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
-    input_1 = ensure_tf_type(layers[node.input[1]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const1" % keras_name)
+    input_1 = ensure_tf_type(layers[node.input[1]], name="%s_const2" % keras_name)
 
     layers[node_name] = keras.layers.Maximum(name=keras_name)([input_0, input_1])

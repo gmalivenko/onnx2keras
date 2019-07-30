@@ -15,7 +15,7 @@ def convert_relu(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for an activation layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     relu = keras.layers.Activation('relu', name=keras_name)
     layers[node_name] = relu(input_0)
@@ -34,7 +34,7 @@ def convert_lrelu(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for an activation layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     leakyrelu = \
         keras.layers.LeakyReLU(alpha=params['alpha'], name=keras_name)
@@ -54,7 +54,7 @@ def convert_sigmoid(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for an activation layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     sigmoid = keras.layers.Activation('sigmoid', name=keras_name)
     layers[node_name] = sigmoid(input_0)
@@ -73,7 +73,7 @@ def convert_tanh(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for an activation layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     tanh = keras.layers.Activation('tanh', name=keras_name)
     layers[node_name] = tanh(input_0)
@@ -92,7 +92,7 @@ def convert_selu(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for an activation layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     selu = keras.layers.Activation('selu', name=keras_name)
     layers[node_name] = selu(input_0)
@@ -111,7 +111,7 @@ def convert_softmax(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for an activation layer.')
 
-    input_0 = ensure_tf_type(layers[node.input[0]])
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     softmax = keras.layers.Activation('softmax', name=keras_name)
     layers[node_name] = softmax(input_0)
