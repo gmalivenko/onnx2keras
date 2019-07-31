@@ -208,22 +208,3 @@ def convert_split(node, params, layers, node_name, keras_names):
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_names[i])
         layers[node_name] = lambda_layer(input_0)
         cur += split
-
-
-def convert_max(node, params, layers, node_name, keras_name):
-    """
-    Convert Max layer
-    :param node: current operation node
-    :param params: operation attributes
-    :param layers: available keras layers
-    :param node_name: internal converter name
-    :param keras_name: resulting layer name
-    :return: None
-    """
-    if len(node.input) != 2:
-        assert AttributeError('More than 2 inputs for pow layer.')
-
-    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const1" % keras_name)
-    input_1 = ensure_tf_type(layers[node.input[1]], name="%s_const2" % keras_name)
-
-    layers[node_name] = keras.layers.Maximum(name=keras_name)([input_0, input_1])
