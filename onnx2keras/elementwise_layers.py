@@ -151,3 +151,64 @@ def convert_elementwise_sub(node, params, layers, node_name, keras_name):
 
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
         layers[node_name] = lambda_layer([input_0, input_1])
+
+
+def convert_min(node, params, layers, node_name, keras_name):
+    """
+    Convert Min layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) < 2:
+        assert AttributeError('Less than 2 inputs for min layer.')
+
+    inputs = list()
+    for i, inp in enumerate(node.input):
+        input_ = ensure_tf_type(layers[inp], layers[list(layers)[0]], name="%s_const%i" % (keras_name, i+1))
+        inputs.append(input_)
+    layers[node_name] = keras.layers.Minimum(name=keras_name)(inputs)
+
+
+def convert_max(node, params, layers, node_name, keras_name):
+    """
+    Convert Max layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) < 2:
+        assert AttributeError('Less than 2 inputs for max layer.')
+
+    inputs = list()
+    for i, inp in enumerate(node.input):
+        input_ = ensure_tf_type(layers[inp], layers[list(layers)[0]], name="%s_const%i" % (keras_name, i+1))
+        inputs.append(input_)
+    layers[node_name] = keras.layers.Maximum(name=keras_name)(inputs)
+
+
+def convert_mean(node, params, layers, node_name, keras_name):
+    """
+    Convert Mean layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    :TODO: Test if this supports multidirectional (i.e., Numpy-style) broadcasting as required
+    """
+    if len(node.input) < 2:
+        assert AttributeError('Less than 2 inputs for mean layer.')
+
+    inputs = list()
+    for i, inp in enumerate(node.input):
+        input_ = ensure_tf_type(layers[inp], layers[list(layers)[0]], name="%s_const%i" % (keras_name, i+1))
+        inputs.append(input_)
+    layers[node_name] = keras.layers.Average(name=keras_name)(inputs)
