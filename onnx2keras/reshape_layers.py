@@ -89,18 +89,16 @@ def convert_concat(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:concat')
 
+    layer_input = [layers[node.input[i]] for i in range(len(node.input))]
+
     if all([is_numpy(layers[node.input[i]]) for i in range(len(node.input))]):
         logger.debug('Concat numpy arrays.')
-        layers[node_name] = np.concatenate([layers[node.input[i]] for i in range(len(node.input))], axis=params['axis'])
+        layers[node_name] = np.concatenate(layer_input, axis=params['axis'])
     else:
-        logger.debug('Concat tf tensors.')
-        def target_layer(x, axis=params['axis']):
-            import tensorflow as tf
-            return tf.concat(x, axis=axis)
-
-        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-        layers[node_name] = lambda_layer([ensure_tf_type(layers[node.input[i]], layers[list(layers)[0]], name="%s_const" % keras_name) for i in range(len(node.input))])
-
+        logger.debug('Concat Keras layers.')
+        layers[node_name] = keras.layers.concatenate(inputs=layer_input,
+                                                     axis=params['axis'],
+                                                     name=keras_name)
 
 def convert_reshape(node, params, layers, node_name, keras_name):
     """
