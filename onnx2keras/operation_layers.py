@@ -2,7 +2,12 @@ import keras.layers
 import keras.backend as K
 import logging
 from .utils import ensure_tf_type, ensure_numpy_type
-from collections.abc import Iterable
+
+# Handle python 2.7 import error
+try:
+    from collections.abc import Iterable
+except ImportError:
+    from collections import Iterable
 
 
 def convert_clip(node, params, layers, node_name, keras_name):
