@@ -75,16 +75,18 @@ def convert_avgpool(node, params, layers, node_name, keras_name):
     if height % 2 == 1 and width % 2 == 1 and \
             height // 2 == padding_h and width // 2 == padding_w and \
             stride_height == 1 and stride_width == 1:
-        pad = 'same'
-        logger.debug('Use `same` padding parameters.')
+        if padding_h > 0 or padding_w > 0:
+            pad = 'same'
+            logger.debug('Use `same` padding parameters.')
     else:
-        logger.warning('Unable to use `same` padding. Add ZeroPadding2D layer to fix shapes.')
-        padding_name = keras_name + '_pad'
-        padding_layer = keras.layers.ZeroPadding2D(
-            padding=(padding_h, padding_w),
-            name=padding_name
-        )
-        layers[padding_name] = input_0 = padding_layer(input_0)
+        if padding_h > 0 or padding_w > 0:
+            logger.warning('Unable to use `same` padding. Add ZeroPadding2D layer to fix shapes.')
+            padding_name = keras_name + '_pad'
+            padding_layer = keras.layers.ZeroPadding2D(
+                padding=(padding_h, padding_w),
+                name=padding_name
+            )
+            layers[padding_name] = input_0 = padding_layer(input_0)
 
     pooling = keras.layers.AveragePooling2D(
         pool_size=(height, width),
