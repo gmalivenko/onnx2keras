@@ -119,11 +119,11 @@ def convert_reshape(node, params, layers, node_name, keras_name):
         logger.debug('The second argument is numpy array.')
         if is_numpy(input_0):
             logger.debug('The first argument is numpy array. Apply np.reshape.')
-            layers[node_name] = np.reshape(input_0, input_1)
+            layers[node_name] = np.reshape(input_0, np.int32(input_1))
         else:
             input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
             logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
-            reshape = keras.layers.Reshape(input_1[1:], name=keras_name)
+            reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
             layers[node_name] = reshape(input_0)
     else:
         raise AttributeError('Can\'t reshape dynamic size.')
@@ -144,14 +144,19 @@ def convert_unsqueeze(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         raise AttributeError('Number of inputs is not equal 1 for unsqueeze layer')
 
-    if len(params['axes']) != 1:
-        raise AttributeError('Number of axes is not equal 1. Cannot unsqueeze')
-
     if is_numpy(layers[node.input[0]]):
         logger.debug('Work with numpy types.')
-        layers[node_name] = np.expand_dims(layers[node.input[0]], params['axes'][0])
+        layers[node_name] = layers[node.input[0]]
+        shift = 0
+        for axis in params['axes']:
+            layers[node_name] = np.expand_dims(layers[node_name], axis + shift)
+            shift += axis
     else:
-        if len(params['axes'][0]) != 0:
+
+        if len(params['axes']) != 1:
+            raise AttributeError('Number of axes is not equal 1. Cannot unsqueeze')
+
+        if params['axes'][0] != 0:
             raise AttributeError('Axes is not 0. Cannot unsqueeze')
 
         def target_layer(x):

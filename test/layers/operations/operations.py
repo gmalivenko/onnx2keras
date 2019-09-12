@@ -6,10 +6,12 @@ import os
 from onnx2keras import onnx_to_keras, check_torch_keras_error
 
 from clip import FClipTest
+from cast import FCastTest
 
 if __name__ == '__main__':
     max_error = 0
     for act_type in [
+                      FCastTest,
                       FClipTest
                     ]:
         for i in range(10):

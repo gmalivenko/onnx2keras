@@ -1,7 +1,7 @@
 import keras.layers
 import keras.backend as K
 import logging
-from .utils import ensure_tf_type, ensure_numpy_type
+from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
 
 # Handle python 2.7 import error
 try:
@@ -213,3 +213,57 @@ def convert_split(node, params, layers, node_name, keras_names):
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_names[i])
         layers[node_name] = lambda_layer(input_0)
         cur += split
+
+
+def convert_cast(node, params, layers, node_name, keras_name):
+    """
+    Convert Cast layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    logger = logging.getLogger('onnx2keras:cast')
+
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for cast layer.')
+
+
+    if is_numpy(layers[node.input[0]]) and is_numpy(layers[node.input[1]]):
+        logger.debug('Cast numpy array')
+
+        cast_map = {
+            1: np.float32,
+            2: np.uint8,
+            3: np.int8,
+            5: np.int16,
+            6: np.int32,
+            7: np.int64,
+            9: np.bool,
+            10: np.float16,
+            11: np.double,
+        }
+
+        layers[node_name] = cast_map[params['to']](node.input[0])
+    else:
+        input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+
+        def target_layer(x, dtype=params['to']):
+            import tensorflow as tf
+            cast_map = {
+                1: tf.float32,
+                2: tf.uint8,
+                3: tf.int8,
+                5: tf.int16,
+                6: tf.int32,
+                7: tf.int64,
+                9: tf.bool,
+                10: tf.float16,
+                11: tf.double,
+            }
+            return tf.cast(x, cast_map[dtype])
+
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(input_0)
