@@ -100,6 +100,7 @@ def convert_concat(node, params, layers, node_name, keras_name):
                                                      axis=params['axis'],
                                                      name=keras_name)
 
+
 def convert_reshape(node, params, layers, node_name, keras_name):
     """
     Convert reshape.
@@ -121,10 +122,37 @@ def convert_reshape(node, params, layers, node_name, keras_name):
             logger.debug('The first argument is numpy array. Apply np.reshape.')
             layers[node_name] = np.reshape(input_0, np.int32(input_1))
         else:
-            input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
-            logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
-            reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
-            layers[node_name] = reshape(input_0)
+            if params['change_ordering']:
+                input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+
+                # Fix critical issue with NHWC
+                if input_1[0] is None and input_1[1] == -1:
+                    logger.warning('!!! IMPORTANT INFORMATION !!!')
+                    logger.warning('The target shape if [None, -1] that means flatten.')
+                    logger.warning('But the target ordering is NHWC, so we cant simply perform flatten')
+                    logger.warning('The layer will be converted as lambda with tf.transpose')
+                    logger.warning('---')
+
+                    def target_layer(x):
+                        import tensorflow as tf
+                        x = tf.transpose(x, [0, 3, 1, 2])
+                        return tf.contrib.layers.flatten(x)
+                else:
+                    logger.warning('!!! IMPORTANT INFORMATION !!!')
+                    logger.warning('The target ordering is NHWC, so the result may be different!')
+                    logger.warning('---')
+
+                    def target_layer(x, shape=np.int32(input_1[1:])):
+                        import tensorflow as tf
+                        return tf.reshape(x, [-1, *shape])
+
+                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+                layers[node_name] = lambda_layer(input_0)
+            else:
+                input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+                logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
+                reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
+                layers[node_name] = reshape(input_0)
     else:
         raise AttributeError('Can\'t reshape dynamic size.')
 
@@ -195,7 +223,7 @@ def convert_flatten(node, params, layers, node_name, keras_name):
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
         layers[node_name] = lambda_layer(input_0)
     else:
-        reshape = keras.layers.Flatten(name=keras_name)
+        reshape = keras.layers.Reshape([-1], name=keras_name)
         layers[node_name] = reshape(input_0)
 
    
