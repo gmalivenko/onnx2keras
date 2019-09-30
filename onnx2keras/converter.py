@@ -109,6 +109,10 @@ def onnx_to_keras(onnx_model, input_names,
         node_type = node.op_type
         node_params = onnx_node_attributes_to_dict(node.attribute)
 
+        # Add global converter info:
+        node_params['change_ordering'] = change_ordering
+        node_params['name_policy'] = name_policy
+
         node_name = str(node.output[0])
         keras_names = []
         for output_index, output in enumerate(node.output):

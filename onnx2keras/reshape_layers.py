@@ -185,8 +185,18 @@ def convert_flatten(node, params, layers, node_name, keras_name):
     logger.debug('Convert inputs to Keras/TF layers if needed.')
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
-    reshape = keras.layers.Reshape([-1], name=keras_name)
-    layers[node_name] = reshape(input_0)
+    if params['change_ordering']:
+        # Fix critical issue with flatten
+        def target_layer(x):
+            import tensorflow as tf
+            x = tf.transpose(x, [0, 3, 1, 2])
+            return tf.contrib.layers.flatten(x)
+
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(input_0)
+    else:
+        reshape = keras.layers.Flatten(name=keras_name)
+        layers[node_name] = reshape(input_0)
 
    
 def convert_slice(node, params, layers, node_name, keras_name):
