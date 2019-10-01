@@ -136,18 +136,14 @@ def convert_reshape(node, params, layers, node_name, keras_name):
                     def target_layer(x):
                         import tensorflow as tf
                         x = tf.transpose(x, [0, 3, 1, 2])
-                        return tf.contrib.layers.flatten(x)
-                else:
-                    logger.warning('!!! IMPORTANT INFORMATION !!!')
-                    logger.warning('The target ordering is NHWC, so the result may be different!')
-                    logger.warning('---')
+                        return x
 
-                    def target_layer(x, shape=np.int32(input_1[1:])):
-                        import tensorflow as tf
-                        return tf.reshape(x, [-1, *shape])
+                    lambda_layer = keras.layers.Lambda(target_layer, name="%s_CHW" % keras_name)
+                    layers[node_name] = lambda_layer(input_0)
 
-                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-                layers[node_name] = lambda_layer(input_0)
+                reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
+                layers[node_name] = reshape(layers[node_name])
+
             else:
                 input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
                 logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
