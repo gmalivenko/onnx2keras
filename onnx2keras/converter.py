@@ -207,6 +207,15 @@ def onnx_to_keras(onnx_model, input_names,
             if layer['config'] and 'axis' in layer['config']:
                 layer['config']['axis'] = 3
 
+        for layer in conf['layers']:
+            if 'function' in layer['config'] and layer['config']['function'][1] is not None:
+                f = list(layer['config']['function'])
+                if len(layer['config']['function'][1][0].shape) == 4:
+                    f[1] = (np.transpose(layer['config']['function'][1][0], [0, 2, 3, 1]), f[1][1])
+                elif len(layer['config']['function'][1][0].shape) == 3:
+                    f[1] = (np.transpose(layer['config']['function'][1][0], [0, 2, 1]), f[1][1])
+                layer['config']['function'] = tuple(f)
+
         keras.backend.set_image_data_format('channels_last')
         model_tf_ordering = keras.models.Model.from_config(conf)
 
