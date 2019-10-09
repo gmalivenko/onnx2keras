@@ -281,3 +281,26 @@ def convert_slice(node, params, layers, node_name, keras_name):
         layers[node_name] = lambda_layer(input_0)
     else:
         raise AttributeError('Not implemented')
+
+
+def convert_squeeze(node, params, layers, node_name, keras_name):
+    """
+    Convert Squeeze layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for squeeze layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+
+    def target_layer(x, axis=params['axes'][0]):
+        import keras
+        return keras.backend.squeeze(x, axis)
+
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+    layers[node_name] = lambda_layer(input_0)

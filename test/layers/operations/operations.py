@@ -7,10 +7,12 @@ from onnx2keras import onnx_to_keras, check_torch_keras_error
 
 from clip import FClipTest
 from cast import FCastTest
+from floor import FFloorTest
 
 if __name__ == '__main__':
     max_error = 0
     for act_type in [
+                      FFloorTest,
                       FCastTest,
                       FClipTest
                     ]:
