@@ -2,11 +2,11 @@ from .convolution_layers import convert_conv, convert_convtranspose
 from .activation_layers import convert_relu, convert_lrelu, convert_selu, \
     convert_sigmoid, convert_tanh, convert_softmax
 from .operation_layers import convert_clip, convert_exp, convert_reduce_sum, convert_reduce_mean, \
-    convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor
+    convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity
 from .elementwise_layers import convert_elementwise_div, convert_elementwise_add, convert_elementwise_mul, convert_elementwise_sub, convert_max, convert_min, convert_mean
 from .linear_layers import convert_gemm
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, \
-    convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze
+    convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze, convert_expand
 from .constant_layers import convert_constant
 from .normalization_layers import convert_batchnorm, convert_instancenorm, convert_dropout
 from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
@@ -29,10 +29,12 @@ AVAILABLE_CONVERTERS = {
     'Pow': convert_pow,
     'Slice': convert_slice,
     'Squeeze': convert_squeeze,
+    'Expand': convert_expand,
     'Sqrt': convert_sqrt,
     'Split': convert_split,
     'Cast': convert_cast,
     'Floor': convert_floor,
+    'Identity': convert_identity,
     'Max': convert_max,
     'Min': convert_min,
     'Mean': convert_mean,

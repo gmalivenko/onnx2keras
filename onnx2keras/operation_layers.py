@@ -291,3 +291,20 @@ def convert_floor(node, params, layers, node_name, keras_name):
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
+
+
+def convert_identity(node, params, layers, node_name, keras_name):
+    """
+    Convert Identity layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for itentity layer.')
+
+    layers[node_name] = layers[node.input[0]]
+

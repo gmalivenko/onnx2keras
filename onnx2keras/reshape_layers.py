@@ -1,7 +1,7 @@
 import keras.layers
 import numpy as np
 import logging
-from .utils import is_numpy, ensure_tf_type
+from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
 
 
 def convert_transpose(node, params, layers, node_name, keras_name):
@@ -182,12 +182,12 @@ def convert_unsqueeze(node, params, layers, node_name, keras_name):
         if len(params['axes']) != 1:
             raise AttributeError('Number of axes is not equal 1. Cannot unsqueeze')
 
-        if params['axes'][0] != 0:
-            raise AttributeError('Axes is not 0. Cannot unsqueeze')
+        # if params['axes'][0] != 0:
+        #     raise AttributeError('Axes is not 0. Cannot unsqueeze')
 
-        def target_layer(x):
+        def target_layer(x, axis=params['axes'][0]):
             import keras
-            return keras.backend.expand_dims(x)
+            return keras.backend.expand_dims(x, axis)
 
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
         layers[node_name] = lambda_layer(layers[node.input[0]])
@@ -301,6 +301,43 @@ def convert_squeeze(node, params, layers, node_name, keras_name):
     def target_layer(x, axis=params['axes'][0]):
         import keras
         return keras.backend.squeeze(x, axis)
+
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+    layers[node_name] = lambda_layer(input_0)
+
+
+def convert_expand(node, params, layers, node_name, keras_name):
+    """
+    Convert Expand layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 2:
+        assert AttributeError('More than 2 input for expand layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    input_1 = ensure_numpy_type(layers[node.input[1]])
+
+    def target_layer(x, shape=input_1):
+        import keras
+
+        # if (len(x.shape) == len(shape)):
+        #     for axis, new_shape in enumerate(shape):
+        #         if axis == 0:
+        #             continue
+        #         x = keras.backend.repeat_elements(x, int(new_shape // x.shape[axis]), axis)
+        #     pass
+
+        x = keras.backend.repeat_elements(x, int(shape[1] // x.shape[1]), 1)
+        x = keras.backend.repeat_elements(x, int(shape[2] // x.shape[2]), 2)
+        return x
+
+        # Proper version
+        # return tf.broadcast_to(x, (1, *shape[1:]))
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)

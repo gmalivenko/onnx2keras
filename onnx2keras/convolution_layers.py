@@ -122,8 +122,49 @@ def convert_conv(node, params, layers, node_name, keras_name):
             )
             layers[node_name] = conv(input_0)
 
-    else:  # 1D conv
-        raise NotImplementedError('Not implemented')
+    else: 
+        # 1D conv
+        W = W.transpose(2, 1, 0)
+        width, channels, n_filters = W.shape
+        print(width, channels, n_filters, has_bias)
+
+        if has_bias:
+            weights = [W, bias]
+        else:
+            weights = [W]
+
+        def target_layer(x, w=weights):
+            import tensorflow as tf
+            w = tf.convert_to_tensor(w[0])
+            x = tf.transpose(x, [0, 2, 1])
+            x = tf.nn.conv1d(x, w, padding='SAME', data_format='NWC')
+            return tf.transpose(x, [0, 2, 1])
+
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(input_0)
+
+        # padding_name = keras_name + '_pad'
+        # padding_layer = keras.layers.ZeroPadding1D(
+        #     padding=(pads[0]),
+        #     name=padding_name
+        # )
+        # print(input_0)
+        # layers[node_name] = padding_layer(input_0)
+        # input_0.set_shape(input_0._keras_shape)
+        # print(input_0._keras_shape)
+        # print(input_0, n_filters, width)
+        # conv = keras.layers.Conv1D(
+        #     filters=n_filters,
+        #     kernel_size=width,
+        #     strides=strides[0],
+        #     padding='valid',
+        #     weights=weights,
+        #     use_bias=has_bias,
+        #     activation=None,
+        #     dilation_rate=dilation,
+        #     name=keras_name
+        # )
+        # layers[node_name] = conv(input_0)
 
 
 def convert_convtranspose(node, params, layers, node_name, keras_name):

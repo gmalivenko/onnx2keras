@@ -58,15 +58,18 @@ def convert_elementwise_add(node, params, layers, node_name, keras_name):
     input_1 = ensure_tf_type(layers[node.input[1]], layers[list(layers)[0]], name="%s_const2" % keras_name)
 
     try:
-        add = keras.layers.Add(name=keras_name)
-        layers[node_name] = add([input_0, input_1])
-    except IndexError:
+        if not is_numpy(layers[node.input[0]]) and not is_numpy(layers[node.input[1]]):
+            add = keras.layers.Add(name=keras_name)
+            layers[node_name] = add([input_0, input_1])
+        else:
+            raise ValueError('Operands are different.')
+
+    except (IndexError, ValueError):
         logger.warning('Failed to use keras.layers.Add. Fallback to TF lambda.')
-        # Doesn't work with constants
-        # IndexError: tuple index out of range
 
         def target_layer(x):
             import tensorflow as tf
+            print(x[0], x[1])
             layer = tf.add(
                 x[0],
                 x[1]

@@ -76,8 +76,12 @@ def onnx_to_keras(onnx_model, input_names,
     logger.debug('Gathering weights to dictionary.')
     weights = {}
     for onnx_w in onnx_weights:
-        onnx_extracted_weights_name = onnx_w.ListFields()[2][1]
-        weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
+        try:
+            onnx_extracted_weights_name = onnx_w.ListFields()[2][1]
+            weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
+        except:
+            onnx_extracted_weights_name = onnx_w.ListFields()[3][1]
+            weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
 
         logger.debug('Found weight {0} with shape {1}.'.format(
                      onnx_extracted_weights_name,
