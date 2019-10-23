@@ -11,7 +11,9 @@ from .constant_layers import convert_constant
 from .normalization_layers import convert_batchnorm, convert_instancenorm, convert_dropout
 from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
 from .padding_layers import convert_padding
-    
+from .upsampling_layers import convert_upsample
+
+
 AVAILABLE_CONVERTERS = {
     'Conv': convert_conv,
     'ConvTranspose': convert_convtranspose,
@@ -59,5 +61,6 @@ AVAILABLE_CONVERTERS = {
     'Concat': convert_concat,
     'Reshape': convert_reshape,
     'Pad': convert_padding,
-    'Flatten': convert_flatten
+    'Flatten': convert_flatten,
+    'Upsample': convert_upsample,
 }

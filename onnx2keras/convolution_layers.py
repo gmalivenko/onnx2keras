@@ -1,4 +1,4 @@
-import keras.layers
+from tensorflow import keras
 import logging
 from .utils import ensure_tf_type, ensure_numpy_type
 
@@ -133,11 +133,11 @@ def convert_conv(node, params, layers, node_name, keras_name):
         else:
             weights = [W]
 
-        def target_layer(x, w=weights):
+        def target_layer(x, w=weights, stride=strides[0]):
             import tensorflow as tf
             w = tf.convert_to_tensor(w[0])
             x = tf.transpose(x, [0, 2, 1])
-            x = tf.nn.conv1d(x, w, padding='SAME', data_format='NWC')
+            x = tf.nn.conv1d(x, w, stride=stride, padding='SAME', data_format='NWC')
             return tf.transpose(x, [0, 2, 1])
 
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)

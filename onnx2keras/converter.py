@@ -2,7 +2,7 @@
 The ONNX to keras converter module
 """
 
-import keras
+from tensorflow import keras
 import logging
 from onnx import numpy_helper
 

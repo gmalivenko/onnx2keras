@@ -1,4 +1,4 @@
-import keras.layers
+from tensorflow import keras
 import numpy as np
 import logging
 from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
@@ -42,10 +42,13 @@ def convert_shape(node, params, layers, node_name, keras_name):
     logger = logging.getLogger('onnx2keras:shape')
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
     
-    logger.debug('Actual result:')
-    logger.debug(np.array(input_0._keras_shape))
-
-    layers[node_name] = np.array(input_0._keras_shape)
+    logger.debug('Actual shape:')
+    logger.debug(np.array(input_0.shape))
+    # logger.debug(np.array(input_0._keras_shape))
+    # print(input_0.shape)
+    # exit(0)
+    # layers[node_name] = np.array(input_0._keras_shape)
+    layers[node_name] = np.array([i.value for i in input_0.shape])
 
 
 def convert_gather(node, params, layers, node_name, keras_name):
@@ -149,8 +152,16 @@ def convert_reshape(node, params, layers, node_name, keras_name):
             else:
                 input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
                 logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
-                reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
-                layers[node_name] = reshape(input_0)
+                logger.debug('Target shape :')
+                logger.debug(np.int32(input_1[1:]))
+
+                if len(np.int32(input_1[1:])) == 1 and np.int32(input_1[1:])[0] == -1:
+                    logger.debug('The first argument is Keras/tf layer. Apply keras.Flatten.')
+                    flatten = keras.layers.Flatten(name=keras_name)
+                    layers[node_name] = flatten(input_0)
+                else:
+                    reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
+                    layers[node_name] = reshape(input_0)
     else:
         raise AttributeError('Can\'t reshape dynamic size.')
 
