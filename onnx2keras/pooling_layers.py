@@ -117,7 +117,7 @@ def convert_global_avg_pool(node, params, layers, node_name, keras_name):
     input_0 = global_pool(input_0)
 
     def target_layer(x):
-        import keras
+        from tensorflow import keras
         return keras.backend.expand_dims(x)
 
     logger.debug('Now expand dimensions twice.')

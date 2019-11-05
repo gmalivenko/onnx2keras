@@ -54,7 +54,7 @@ def convert_log(node, params, layers, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x):
-        import keras.backend as K
+        import tensorflow.keras.backend as K
         return K.log(x)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -76,7 +76,7 @@ def convert_exp(node, params, layers, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x):
-        import keras.backend as K
+        import tensorflow.keras.backend as K
         return K.exp(x)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -101,7 +101,7 @@ def convert_reduce_sum(node, params, layers, node_name, keras_name):
     axis = params['axes']
 
     def target_layer(x, axis=axis):
-        import keras.backend as K
+        import tensorflow.keras.backend as K
         return K.sum(x, keepdims=True, axis=axis)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -125,7 +125,7 @@ def convert_reduce_mean(node, params, layers, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x, axis=params['axes'], keepdims=params['keepdims']):
-        import keras.backend as K
+        import tensorflow.keras.backend as K
         return K.mean(x, keepdims=(keepdims == 1), axis=axis)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -150,7 +150,7 @@ def convert_pow(node, params, layers, node_name, keras_name):
     power = ensure_numpy_type(layers[node.input[1]])
 
     def target_layer(x, a=power):
-        import keras.backend as K
+        import tensorflow.keras.backend as K
         return K.pow(x, a)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -173,7 +173,7 @@ def convert_sqrt(node, params, layers, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x):
-        import keras.backend as K
+        import tensorflow.keras.backend as K
         return K.sqrt(x)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
