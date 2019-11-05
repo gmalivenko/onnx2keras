@@ -197,7 +197,7 @@ def convert_unsqueeze(node, params, layers, node_name, keras_name):
         #     raise AttributeError('Axes is not 0. Cannot unsqueeze')
 
         def target_layer(x, axis=params['axes'][0]):
-            import keras
+            from tensorflow import keras
             return keras.backend.expand_dims(x, axis)
 
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -310,7 +310,7 @@ def convert_squeeze(node, params, layers, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x, axis=params['axes'][0]):
-        import keras
+        from tensorflow import keras
         return keras.backend.squeeze(x, axis)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -334,7 +334,7 @@ def convert_expand(node, params, layers, node_name, keras_name):
     input_1 = ensure_numpy_type(layers[node.input[1]])
 
     def target_layer(x, shape=input_1):
-        import keras
+        from tensorflow import keras
 
         # if (len(x.shape) == len(shape)):
         #     for axis, new_shape in enumerate(shape):
