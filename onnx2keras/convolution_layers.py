@@ -233,7 +233,7 @@ def convert_convtranspose(node, params, layers, node_name, keras_name):
 
         # Magic ad-hoc.
         # See the Keras issue: https://github.com/keras-team/keras/issues/6777
-        input_0.set_shape(input_0._keras_shape)
+        input_0.set_shape(input_0.size)
 
         if 'output_padding' in params and (params['output_padding'][0] > 0 or params['output_padding'][1] > 0):
             raise AttributeError('Cannot convert ConvTranspose2d with output_padding != 0')
