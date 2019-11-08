@@ -7,6 +7,10 @@ ONNX to Keras deep neural network converter.
 [![Downloads](https://pepy.tech/badge/onnx2keras)](https://pepy.tech/project/onnx2keras)
 ![PyPI](https://img.shields.io/pypi/v/onnx2keras.svg)
 
+## Requirements
+
+Tensorflow 2.0 (also tested with 1.13).
+
 ## API
 
 `onnx_to_keras(onnx_model, input_names, input_shapes=None, name_policy=None, verbose=True, change_ordering=False)`
@@ -17,7 +21,7 @@ ONNX to Keras deep neural network converter.
 
 `input_shapes`: override input shapes (experimental)
 
-`name_policy`: override layer names (experimental)
+`name_policy`: ['renumerate', 'short', 'default'] override layer names (experimental)
 
 `verbose`: detailed output
 

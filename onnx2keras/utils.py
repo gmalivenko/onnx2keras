@@ -39,7 +39,7 @@ def ensure_tf_type(obj, fake_input_layer=None, name=None):
             import tensorflow as tf
             if not isinstance(inp, (np.ndarray, np.generic)):
                 inp = np.array(inp, dtype=dtype)
-            return tf.constant(inp, dtype=inp.dtype, verify_shape=True)
+            return tf.constant(inp, dtype=inp.dtype)
 
         lambda_layer = keras.layers.Lambda(target_layer, name=name)
         return lambda_layer(fake_input_layer)
@@ -47,13 +47,14 @@ def ensure_tf_type(obj, fake_input_layer=None, name=None):
         return obj
 
 
-def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5):
+def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_ordering=False):
     """
     Check difference between Torch and Keras models
     :param model: torch model
     :param k_model: keras model
     :param input_np: input data
     :param epsilon: allowed difference
+    :param change_ordering: change ordering for keras input
     :return: actual difference
     """
     from torch.autograd import Variable
@@ -61,7 +62,10 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5):
 
     input_var = Variable(torch.FloatTensor(input_np))
     pytorch_output = model(input_var).data.numpy()
-    keras_output = k_model.predict(input_np)
+    if change_ordering:
+        keras_output = k_model.predict(np.transpose(input_np, [0, 2, 3, 1]))
+    else:
+        keras_output = k_model.predict(input_np)
 
     error = np.max(pytorch_output - keras_output)
 

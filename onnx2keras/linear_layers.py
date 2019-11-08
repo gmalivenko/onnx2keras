@@ -41,4 +41,9 @@ def convert_gemm(node, params, layers, node_name, keras_name):
     )
 
     # The first input - always X
-    layers[node_name] = dense(layers[node.input[0]])
+    try:
+        layers[node_name] = dense(layers[node.input[0]])
+    except ValueError:
+        reshape = keras.layers.Reshape([input_channels], name=keras_name + '_reshape')
+        reshaped_x = reshape(layers[node.input[0]])
+        layers[node_name] = dense(reshaped_x)

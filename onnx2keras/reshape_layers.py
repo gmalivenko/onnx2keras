@@ -99,9 +99,12 @@ def convert_concat(node, params, layers, node_name, keras_name):
         layers[node_name] = np.concatenate(layer_input, axis=params['axis'])
     else:
         logger.debug('Concat Keras layers.')
-        layers[node_name] = keras.layers.concatenate(inputs=layer_input,
-                                                     axis=params['axis'],
-                                                     name=keras_name)
+        if len(layer_input) > 1:
+            layers[node_name] = keras.layers.concatenate(inputs=layer_input,
+                                                         axis=params['axis'],
+                                                         name=keras_name)
+        else:
+            layers[node_name] = layer_input[0]
 
 
 def convert_reshape(node, params, layers, node_name, keras_name):

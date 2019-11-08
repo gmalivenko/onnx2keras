@@ -106,7 +106,7 @@ def convert_reduce_sum(node, params, layers, node_name, keras_name):
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
-    layers[node_name].set_shape(layers[node_name]._keras_shape)
+    layers[node_name].set_shape(layers[node_name].shape)
 
 
 def convert_reduce_mean(node, params, layers, node_name, keras_name):
@@ -130,7 +130,7 @@ def convert_reduce_mean(node, params, layers, node_name, keras_name):
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
-    layers[node_name].set_shape(layers[node_name]._keras_shape)
+    layers[node_name].set_shape(layers[node_name].shape)
 
 
 def convert_pow(node, params, layers, node_name, keras_name):
@@ -229,7 +229,6 @@ def convert_cast(node, params, layers, node_name, keras_name):
 
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for cast layer.')
-
 
     if is_numpy(layers[node.input[0]]) and is_numpy(layers[node.input[1]]):
         logger.debug('Cast numpy array')

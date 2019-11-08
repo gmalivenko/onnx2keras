@@ -28,7 +28,7 @@ def convert_elementwise_div(node, params, layers, node_name, keras_name):
 
         def target_layer(x):
             import tensorflow as tf
-            layer = tf.div(
+            layer = tf.divide(
                 x[0],
                 x[1]
             )
