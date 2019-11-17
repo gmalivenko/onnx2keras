@@ -1,0 +1,10 @@
+name: ONNX2Keras
+
+conda_env: conda.yaml
+
+entry_points:
+  keras:
+    command: "python generateKeras.py"
+
+  main:
+    command: "/bin/echo -e '\n\n\tUsage: mlflow run . -e entry_point\n\n'"

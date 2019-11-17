@@ -1,0 +1,15 @@
+name: onnx2keras
+channels:
+  - defaults
+  - anaconda
+  - conda-forge
+dependencies:
+  - python>=3.6.8
+  - pip
+  - tensorflow==2.0
+  - pip:
+    - mlflow>=1.0
+    - keras==2.2.5
+    - numpy
+    - onnx
+ 
