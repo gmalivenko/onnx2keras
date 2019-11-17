@@ -20,6 +20,24 @@ def convert_relu(node, params, layers, node_name, keras_name):
     relu = keras.layers.Activation('relu', name=keras_name)
     layers[node_name] = relu(input_0)
 
+def convert_prelu(node, params, layers, node_name, keras_name):
+    """
+    Convert PReLU activation layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for an activation layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+
+    # relu = keras.layers.Activation('relu', name=keras_name)
+    prelu = keras.layers.PReLU(alpha_initializer='zeros', alpha_regularizer=None, alpha_constraint=None, shared_axes=None)
+    layers[node_name] = prelu(input_0)
 
 def convert_lrelu(node, params, layers, node_name, keras_name):
     """

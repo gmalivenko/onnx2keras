@@ -17,12 +17,20 @@ def convert_upsample(node, params, layers, node_name, keras_name):
     logger = logging.getLogger('onnx2keras:upsample')
     logger.warning('!!! EXPERIMENTAL SUPPORT (upsample) !!!')
 
-    if len(node.input) != 1:
-        raise AttributeError('Unsupported number of inputs')
+    if len(node.input) == 2:
+        # Node input may be in format of (Tensor, Scales)
+        input_1 = layers[node.input[1]]
+        if is_numpy(input_1):
+            params['scales'] = input_1
+        else:
+            raise AttributeError('Unsupported number of inputs')
 
-    if params['mode'].decode('utf-8') != 'nearest':
-        logger.error('Cannot convert non-nearest upsamplin.')
-        raise AssertionError('Cannot convert non-nearest upsampling')
+    # if len(node.input) != 1:
+    #     raise AttributeError('Unsupported number of inputs')
+
+    # if params['mode'].decode('utf-8') != 'nearest':
+    #     logger.error('Cannot convert non-nearest upsamplin.')
+    #     raise AssertionError('Cannot convert non-nearest upsampling')
 
     scale = np.uint8(params['scales'][-2:])
 

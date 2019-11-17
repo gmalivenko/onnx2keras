@@ -94,6 +94,14 @@ def convert_concat(node, params, layers, node_name, keras_name):
 
     layer_input = [layers[node.input[i]] for i in range(len(node.input))]
 
+    if node.output[0] == '727':
+        print("*** DEBUG onnx2keras:concat")
+        input_2 = layer_input[2]
+        zeros = keras.layers.Lambda(lambda input_2: keras.backend.zeros_like(layer_input[1]))(input_2)
+        # layer_input[2] = zeros    ## Causes errors when saving due to symbolic tensor ???
+        layer_input[2] = layer_input[0]
+
+
     if all([is_numpy(layers[node.input[i]]) for i in range(len(node.input))]):
         logger.debug('Concat numpy arrays.')
         layers[node_name] = np.concatenate(layer_input, axis=params['axis'])

@@ -67,17 +67,20 @@ def convert_elementwise_add(node, params, layers, node_name, keras_name):
     except (IndexError, ValueError):
         logger.warning('Failed to use keras.layers.Add. Fallback to TF lambda.')
 
-        def target_layer(x):
-            import tensorflow as tf
-            print(x[0], x[1])
-            layer = tf.add(
-                x[0],
-                x[1]
-            )
-            return layer
+        zeros = keras.layers.Lambda(lambda input_0: keras.backend.zeros_like(input_0))(input_1)
+        layers[node_name] = add([zeros, input_1])
 
-        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-        layers[node_name] = lambda_layer([input_0, input_1])
+        # def target_layer(x):
+        #     import tensorflow as tf
+        #     print(x[0], x[1])
+        #     layer = tf.add(
+        #         x[0],
+        #         x[1]
+        #     )
+        #     return layer
+
+        # lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        # layers[node_name] = lambda_layer([input_0, input_1])
 
 
 def convert_elementwise_mul(node, params, layers, node_name, keras_name):
