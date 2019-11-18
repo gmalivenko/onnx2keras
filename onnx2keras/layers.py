@@ -1,6 +1,6 @@
 from .convolution_layers import convert_conv, convert_convtranspose
 from .activation_layers import convert_relu, convert_lrelu, convert_selu, \
-    convert_sigmoid, convert_tanh, convert_softmax
+    convert_sigmoid, convert_tanh, convert_softmax, convert_prelu
 from .operation_layers import convert_clip, convert_exp, convert_reduce_sum, convert_reduce_mean, \
     convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity
 from .elementwise_layers import convert_elementwise_div, convert_elementwise_add, convert_elementwise_mul, convert_elementwise_sub, convert_max, convert_min, convert_mean
@@ -26,6 +26,7 @@ AVAILABLE_CONVERTERS = {
     'Exp': convert_exp,
     'Log': convert_log,
     'Softmax': convert_softmax,
+    'PRelu': convert_prelu,
     'ReduceSum': convert_reduce_sum,
     'ReduceMean': convert_reduce_mean,
     'Pow': convert_pow,

@@ -48,7 +48,14 @@ def convert_shape(node, params, layers, node_name, keras_name):
     # print(input_0.shape)
     # exit(0)
     # layers[node_name] = np.array(input_0._keras_shape)
-    layers[node_name] = np.array([i.value for i in input_0.shape])
+    shapes = []
+    for i in input_0.shape:
+        if i is not None:
+            shapes.append(i)
+        else:
+            shapes.append(None)
+
+    layers[node_name] = np.array(shapes)
 
 
 def convert_gather(node, params, layers, node_name, keras_name):

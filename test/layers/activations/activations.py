@@ -15,18 +15,20 @@ from log_sigmoid import LayerLogSigmoidTest, FLogSigmoidTest
 # from threshold import LayerThresholdTest, FThresholdTest  # Not Supported by ONNX
 from relu6 import LayerReLU6Test, FReLU6Test
 from softmax import LayerSoftmaxTest, FSoftmaxTest
+from prelu import LayerPReLUTest, FPReLUTest
 # from log_softmax import LayerLogSoftmaxTest, FLogSoftmaxTest  # Not Supported by ONNX
 
 
 # TODO:
 # Threshold, Softmax2d, LogSoftmax, ELU, CELU, Hardshrink,  \
-# Softplus, Softshrink, MultiheadAttention, PReLU, Softsign, Softmin, Tanhshrink, RReLU, GLU
+# Softplus, Softshrink, MultiheadAttention, Softsign, Softmin, Tanhshrink, RReLU, GLU
 
 
 if __name__ == '__main__':
     max_error = 0
     for act_type in [
                      # LayerLogSoftmaxTest, FLogSoftmaxTest,  # Not Supported by ONNX
+                     LayerPReLUTest, FPReLUTest,
                      LayerSoftmaxTest, FSoftmaxTest,
                      LayerReLU6Test, FReLU6Test,
                      # LayerThresholdTest, FThresholdTest, # Not Supported by ONNX
@@ -36,7 +38,8 @@ if __name__ == '__main__':
                      LayerSELUTest, FSELUTest,
                      LayerLeakyReLUTest, FLeakyReLUTest,
                      LayerHardtanhTest, FHardtanhTest,
-                     LayerReLUTest, FReLUTest,]:
+                     LayerReLUTest, FReLUTest,
+    ]:
         for i in range(10):
             model = act_type()
             model.eval()
