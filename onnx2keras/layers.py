@@ -2,7 +2,7 @@ from .convolution_layers import convert_conv, convert_convtranspose
 from .activation_layers import convert_relu, convert_lrelu, convert_selu, \
     convert_sigmoid, convert_tanh, convert_softmax, convert_prelu
 from .operation_layers import convert_clip, convert_exp, convert_reduce_sum, convert_reduce_mean, \
-    convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity
+    convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity, convert_argmax
 from .elementwise_layers import convert_elementwise_div, convert_elementwise_add, convert_elementwise_mul, convert_elementwise_sub, convert_max, convert_min, convert_mean
 from .linear_layers import convert_gemm
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, \
@@ -38,6 +38,7 @@ AVAILABLE_CONVERTERS = {
     'Cast': convert_cast,
     'Floor': convert_floor,
     'Identity': convert_identity,
+    'ArgMax': convert_argmax,
     'Max': convert_max,
     'Min': convert_min,
     'Mean': convert_mean,

@@ -307,3 +307,26 @@ def convert_identity(node, params, layers, node_name, keras_name):
 
     layers[node_name] = layers[node.input[0]]
 
+
+def convert_argmax(node, params, layers, node_name, keras_name):
+    """
+    Convert ArgMax layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for argmax layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    axis = params.get("axis", -1)
+
+    def target_layer(x, axis=axis):
+        import tensorflow as tf
+        return tf.argmax(x, axis=axis)
+
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+    layers[node_name] = lambda_layer(input_0)
