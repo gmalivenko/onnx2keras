@@ -196,6 +196,10 @@ def convert_convtranspose(node, params, layers, node_name, keras_name):
         raise NotImplementedError('Not implemented')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    n_groups = params['group'] if 'group' in params else 1
+    dilation = params['dilations'][0] if 'dilations' in params else 1
+    pads = params['pads'] if 'pads' in params else [0, 0]
+    strides = params['strides'] if 'strides' in params else [1, 1]
 
     if len(W.shape) == 5:  # 3D conv
         raise NotImplementedError('Not implemented')
@@ -209,22 +213,22 @@ def convert_convtranspose(node, params, layers, node_name, keras_name):
         else:
             weights = [W]
 
-        if params['group'] > 1:
+        if n_groups > 1:
             raise AttributeError('Cannot convert ConvTranspose2d with groups != 1')
 
-        if params['dilations'][0] > 1:
+        if dilation > 1:
             raise AttributeError('Cannot convert ConvTranspose2d with dilation_rate != 1')
 
         conv = keras.layers.Conv2DTranspose(
             filters=n_filters,
             kernel_size=(height, width),
-            strides=(params['strides'][0], params['strides'][1]),
+            strides=strides,
             padding='valid',
             output_padding=0,
             weights=weights,
             use_bias=has_bias,
             activation=None,
-            dilation_rate=params['dilations'][0],
+            dilation_rate=dilation,
             bias_initializer='zeros', kernel_initializer='zeros',
             name=keras_name
         )
@@ -233,12 +237,11 @@ def convert_convtranspose(node, params, layers, node_name, keras_name):
 
         # Magic ad-hoc.
         # See the Keras issue: https://github.com/keras-team/keras/issues/6777
-        input_0.set_shape(input_0.size)
+        input_0.set_shape(input_0.shape)
 
         if 'output_padding' in params and (params['output_padding'][0] > 0 or params['output_padding'][1] > 0):
             raise AttributeError('Cannot convert ConvTranspose2d with output_padding != 0')
 
-        pads = params['pads']
         if pads[0] > 0:
             logger.debug('Add cropping layer for output padding')
             assert(len(pads) == 2 or (pads[2] == pads[0] and pads[3] == pads[1]))
