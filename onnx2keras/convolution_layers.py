@@ -233,11 +233,16 @@ def convert_convtranspose(node, params, layers, node_name, keras_name):
             name=keras_name
         )
 
+        if 'output_shape' in params and 'pads' not in params:
+            logger.debug('!!!!! Paddings will be calculated automatically !!!!!')
+            pads = [strides[0] * (int(input_0.shape[2]) - 1) + 0 + (height - 1) * dilation - params['output_shape'][0],
+                    strides[1] * (int(input_0.shape[3]) - 1) + 0 + (height - 1) * dilation - params['output_shape'][1]]
+
         layers[node_name] = input_0 = conv(input_0)
 
         # Magic ad-hoc.
         # See the Keras issue: https://github.com/keras-team/keras/issues/6777
-        input_0.set_shape(input_0.shape)
+        # input_0.set_shape(input_0.shape)
 
         if 'output_padding' in params and (params['output_padding'][0] > 0 or params['output_padding'][1] > 0):
             raise AttributeError('Cannot convert ConvTranspose2d with output_padding != 0')
