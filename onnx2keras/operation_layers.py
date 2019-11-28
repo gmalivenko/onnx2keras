@@ -2,6 +2,7 @@ from tensorflow import keras
 from tensorflow.keras import backend as K
 import logging
 from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
+import numpy as np
 
 # Handle python 2.7 import error
 try:
@@ -230,7 +231,7 @@ def convert_cast(node, params, layers, node_name, keras_name):
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for cast layer.')
 
-    if is_numpy(layers[node.input[0]]) and is_numpy(layers[node.input[1]]):
+    if is_numpy(layers[node.input[0]]):
         logger.debug('Cast numpy array')
 
         cast_map = {
@@ -327,6 +328,30 @@ def convert_argmax(node, params, layers, node_name, keras_name):
     def target_layer(x, axis=axis):
         import tensorflow as tf
         return tf.argmax(x, axis=axis)
+
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+    layers[node_name] = lambda_layer(input_0)
+
+
+def convert_reduce_l2(node, params, layers, node_name, keras_name):
+    """
+    Convert ReduceL2 layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for reduce_l2 layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    axis = params.get("axes", [-1])
+
+    def target_layer(x, axis=axis):
+        import tensorflow as tf
+        return tf.norm(x, axis=axis)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
