@@ -217,10 +217,19 @@ def onnx_to_keras(onnx_model, input_names,
         for layer in conf['layers']:
             if 'function' in layer['config'] and layer['config']['function'][1] is not None:
                 f = list(layer['config']['function'])
-                if len(layer['config']['function'][1][0].shape) == 4:
-                    f[1] = (np.transpose(layer['config']['function'][1][0], [0, 2, 3, 1]), f[1][1])
-                elif len(layer['config']['function'][1][0].shape) == 3:
-                    f[1] = (np.transpose(layer['config']['function'][1][0], [0, 2, 1]), f[1][1])
+                try:
+                    if len(layer['config']['function'][1][0].shape) == 4:
+                        f[1] = (np.transpose(layer['config']['function'][1][0], [0, 2, 3, 1]), f[1][1])
+                    elif len(layer['config']['function'][1][0].shape) == 3:
+                        f[1] = (np.transpose(layer['config']['function'][1][0], [0, 2, 1]), f[1][1])
+                except Exception as e:
+                    logger.warning('Error occured in basic change ordering mode. Use fallback.')
+
+                    axes = np.array(layer['config']['function'][1][0])
+                    axes_map = np.array([0, 3, 1, 2])
+                    axes = axes_map[axes]
+                    f[1] = (axes, f[1][1])
+
                 layer['config']['function'] = tuple(f)
 
         keras.backend.set_image_data_format('channels_last')

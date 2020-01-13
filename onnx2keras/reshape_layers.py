@@ -270,62 +270,81 @@ def convert_slice(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:slice')
 
-    logger.debug('Convert inputs to Keras/TF layers if needed.')
-    
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
-    layers[node_name] = input_0
+    if is_numpy(layers[node.input[0]]):
+        logger.debug('Slice numpy constants')
+        if 'axes' in params:
+            axes = params["axes"][0]
+            ends = params["ends"][0]
+            starts = params["starts"][0]
+        else:
+            raise AttributeError('Not implemented')
 
-    if 'axes' in params:
-        axes = params["axes"][0]
-        ends = params["ends"][0]
-        starts = params["starts"][0]
-    else:
-        starts = ensure_numpy_type(layers[node.input[1]])
-        ends = ensure_numpy_type(layers[node.input[2]])
-        axes = ensure_numpy_type(layers[node.input[3]])
-        
-        for i in range(len(starts)):
-            if axes[i] != i:
-                assert AttributeError('Cant slice permuted axes')
-
-    if isinstance(axes, list) or isinstance(axes, np.ndarray):
-        def target_layer(x, axes=axes, starts=starts, ends=ends):
-            import tensorflow as tf
-            return tf.strided_slice(x, starts, ends)
-
-        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-        layers[node_name] = lambda_layer(input_0)
-    else:
         if axes == 0:
-            def target_layer(x):
-                layer = x[starts:ends]
-                return layer
-
-            lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-            layers[node_name] = lambda_layer(input_0)
+            layers[node_name] = layers[node.input[0]][starts:ends]
         elif axes == 1:
-            def target_layer(x):
-                layer = x[:, starts:ends]
-                return layer
-
-            lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-            layers[node_name] = lambda_layer(input_0)
+            layers[node_name] = layers[node.input[0]][:, starts:ends]
         elif axes == 2:
-            def target_layer(x):
-                layer = x[:, :, starts:ends]
-                return layer
-
-            lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-            layers[node_name] = lambda_layer(input_0)
+            layers[node_name] = layers[node.input[0]][:, :, starts:ends]
         elif axes == 3:
-            def target_layer(x):
-                layer = x[:, :, :, starts:ends]
-                return layer
+            layers[node_name] = layers[node.input[0]][:, :, :, starts:ends]
+        else:
+            raise AttributeError('Not implemented')
+    else:
+        logger.debug('Convert inputs to Keras/TF layers if needed.')
+        input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+        layers[node_name] = input_0
+
+        if 'axes' in params:
+            axes = params["axes"][0]
+            ends = params["ends"][0]
+            starts = params["starts"][0]
+        else:
+            starts = ensure_numpy_type(layers[node.input[1]])
+            ends = ensure_numpy_type(layers[node.input[2]])
+            axes = ensure_numpy_type(layers[node.input[3]])
+
+            for i in range(len(starts)):
+                if axes[i] != i:
+                    assert AttributeError('Cant slice permuted axes')
+
+        if isinstance(axes, list) or isinstance(axes, np.ndarray):
+            def target_layer(x, axes=axes, starts=starts, ends=ends):
+                import tensorflow as tf
+                return tf.strided_slice(x, starts, ends)
 
             lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
             layers[node_name] = lambda_layer(input_0)
         else:
-            raise AttributeError('Not implemented')
+            if axes == 0:
+                def target_layer(x):
+                    layer = x[starts:ends]
+                    return layer
+
+                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+                layers[node_name] = lambda_layer(input_0)
+            elif axes == 1:
+                def target_layer(x):
+                    layer = x[:, starts:ends]
+                    return layer
+
+                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+                layers[node_name] = lambda_layer(input_0)
+            elif axes == 2:
+                def target_layer(x):
+                    layer = x[:, :, starts:ends]
+                    return layer
+
+                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+                layers[node_name] = lambda_layer(input_0)
+            elif axes == 3:
+                def target_layer(x):
+                    layer = x[:, :, :, starts:ends]
+                    return layer
+
+                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+                layers[node_name] = lambda_layer(input_0)
+            else:
+                raise AttributeError('Not implemented')
 
 
 def convert_squeeze(node, params, layers, node_name, keras_name):
