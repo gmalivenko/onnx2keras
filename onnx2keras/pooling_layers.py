@@ -17,35 +17,49 @@ def convert_maxpool(node, params, layers, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
-    height, width = params['kernel_shape']
-    stride_height, stride_width = params['strides']
+    kernel_shape = params['kernel_shape']
+    stride_shape = params['strides']
 
-    pads = params['pads'] if 'pads' in params else [0, 0, 0, 0]
-    padding_h, padding_w, _, _ = pads
+    pads = params['pads'] if 'pads' in params else [0, 0, 0, 0, 0, 0]
+    # padding_h, padding_w, _, _ = pads
 
     pad = 'valid'
 
-    if height % 2 == 1 and width % 2 == 1 and \
-            height // 2 == padding_h and width // 2 == padding_w and \
-            stride_height == 1 and stride_width == 1:
+    if all([shape % 2 == 1 for shape in kernel_shape]) and \
+       all([kernel_shape[i] // 2 == pads[i] for i in range(len(kernel_shape))]) and \
+       all([shape == 1 for shape in stride_shape]):
         pad = 'same'
         logger.debug('Use `same` padding parameters.')
     else:
         logger.warning('Unable to use `same` padding. Add ZeroPadding2D layer to fix shapes.')
         padding_name = keras_name + '_pad'
-        padding_layer = keras.layers.ZeroPadding2D(
-            padding=(padding_h, padding_w),
-            name=padding_name
-        )
+        if len(kernel_shape) == 2:
+            padding_layer = keras.layers.ZeroPadding2D(
+                padding=pads[:len(stride_shape)],
+                name=padding_name
+            )
+        else: # 3D padding
+            padding_layer = keras.layers.ZeroPadding3D(
+                padding=pads[:len(stride_shape)],
+                name=padding_name
+            )
         layers[padding_name] = input_0 = padding_layer(input_0)
-
-    pooling = keras.layers.MaxPooling2D(
-        pool_size=(height, width),
-        strides=(stride_height, stride_width),
-        padding=pad,
-        name=keras_name,
-        data_format='channels_first'
-    )
+    if len(kernel_shape) == 2:
+        pooling = keras.layers.MaxPooling2D(
+            pool_size=kernel_shape,
+            strides=stride_shape,
+            padding=pad,
+            name=keras_name,
+            data_format='channels_first'
+        )
+    else:
+        pooling = keras.layers.MaxPooling3D(
+            pool_size=kernel_shape,
+            strides=stride_shape,
+            padding=pad,
+            name=keras_name,
+            data_format='channels_first'
+        )
 
     layers[node_name] = pooling(input_0)
 
@@ -64,38 +78,49 @@ def convert_avgpool(node, params, layers, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
-    height, width = params['kernel_shape']
-    stride_height, stride_width = params['strides']
+    kernel_shape = params['kernel_shape']
+    stride_shape = params['strides']
 
-    pads = params['pads'] if 'pads' in params else [0, 0, 0, 0]
-    padding_h, padding_w, _, _ = pads
+    pads = params['pads'] if 'pads' in params else [0, 0, 0, 0, 0, 0]
+    # padding_h, padding_w, _, _ = pads
 
     pad = 'valid'
 
-    if height % 2 == 1 and width % 2 == 1 and \
-            height // 2 == padding_h and width // 2 == padding_w and \
-            stride_height == 1 and stride_width == 1:
-        if padding_h > 0 or padding_w > 0:
-            pad = 'same'
-            logger.debug('Use `same` padding parameters.')
+    if all([shape % 2 == 1 for shape in kernel_shape]) and \
+       all([kernel_shape[i] // 2 == pads[i] for i in range(len(kernel_shape))]) and \
+       all([shape == 1 for shape in stride_shape]):
+        pad = 'same'
+        logger.debug('Use `same` padding parameters.')
     else:
-        if padding_h > 0 or padding_w > 0:
-            logger.warning('Unable to use `same` padding. Add ZeroPadding2D layer to fix shapes.')
-            padding_name = keras_name + '_pad'
+        logger.warning('Unable to use `same` padding. Add ZeroPadding2D layer to fix shapes.')
+        padding_name = keras_name + '_pad'
+        if len(kernel_shape) == 2:
             padding_layer = keras.layers.ZeroPadding2D(
-                padding=(padding_h, padding_w),
+                padding=pads[:len(stride_shape)],
                 name=padding_name
             )
-            layers[padding_name] = input_0 = padding_layer(input_0)
-
-    pooling = keras.layers.AveragePooling2D(
-        pool_size=(height, width),
-        strides=(stride_height, stride_width),
-        padding=pad,
-        name=keras_name,
-        data_format='channels_first'
-    )
-
+        else: # 3D padding
+            padding_layer = keras.layers.ZeroPadding3D(
+                padding=pads[:len(stride_shape)],
+                name=padding_name
+            )
+        layers[padding_name] = input_0 = padding_layer(input_0)
+    if len(kernel_shape) == 2:
+        pooling = keras.layers.AveragePooling2D(
+            pool_size=kernel_shape,
+            strides=stride_shape,
+            padding=pad,
+            name=keras_name,
+            data_format='channels_first'
+        )
+    else:
+        pooling = keras.layers.AveragePooling3D(
+            pool_size=kernel_shape,
+            strides=stride_shape,
+            padding=pad,
+            name=keras_name,
+            data_format='channels_first'
+        )
     layers[node_name] = pooling(input_0)
 
 
