@@ -53,53 +53,6 @@ def convert_conv(node, params, layers, node_name, keras_name):
 
         if n_groups != 1:
             raise NotImplementedError("Not Implemented")
-            """
-        if n_groups == in_channels and n_groups != 1:
-            logger.debug('Number of groups is equal to input channels, use DepthWise convolution')
-            
-            W = W.transpose(0, 1, 3, 2, 4)
-            if has_bias:
-                weights = [W, bias]
-            else:
-                weights = [W]
-
-            conv = keras.layers.DepthwiseConv3D(
-                kernel_size=(dimension, height, width),
-                strides=(strides[0], strides[1], strides[2]),
-                padding='valid',
-                use_bias=has_bias,
-                activation=None,
-                depth_multiplier=1,
-                weights=weights,
-                dilation_rate=dilation,
-                bias_initializer='zeros', kernel_initializer='zeros',
-                name=keras_name
-            )
-            layers[node_name] = conv(input_0)
-        elif n_groups != 1:
-            logger.debug('Number of groups more than 1, but less than number of in_channel, use group convolution')
-
-            # Example from https://kratzert.github.io/2017/02/24/finetuning-alexnet-with-tensorflow.html
-            def target_layer(x, groups=n_groups, stride_y=strides[0], stride_x=strides[1]):
-                import tensorflow as tf
-                x = tf.transpose(x, [0, 2, 3, 1])
-
-                def convolve_lambda(i, k):
-                    import tensorflow as tf
-                    return tf.nn.conv2d(i, k, strides=[1, stride_y, stride_x, 1], padding='VALID')
-
-                input_groups = tf.split(axis=3, num_or_size_splits=groups, value=x)
-                weight_groups = tf.split(axis=3, num_or_size_splits=groups, value=W.transpose(0, 1, 2, 3))
-                output_groups = [convolve_lambda(i, k) for i, k in zip(input_groups, weight_groups)]
-
-                layer = tf.concat(axis=3, values=output_groups)
-
-                layer = tf.transpose(layer, [0, 3, 1, 2])
-                return layer
-
-            lambda_layer = keras.layers.Lambda(target_layer)
-            layers[node_name] = lambda_layer(input_0)
-            """
         else:
             if has_bias:
                 weights = [W, bias]
@@ -146,7 +99,7 @@ def convert_conv(node, params, layers, node_name, keras_name):
 
             conv = keras.layers.DepthwiseConv2D(
                 kernel_size=(height, width),
-                strides=(strides[0],strides[1]),
+                strides=(strides[0], strides[1]),
                 padding='valid',
                 use_bias=has_bias,
                 activation=None,

@@ -41,9 +41,9 @@ def convert_padding(node, params, layers, node_name, keras_name):
         layers[node_name] = padding_layer(input_0)
     elif params['mode'] == 'reflect':
 
-        def target_layer(x):
+        def target_layer(x, pads=pads):
             import tensorflow as tf
-            if len(pads)==8:
+            if len(pads) == 8:
                 layer = tf.pad(x, [[0, 0], [0, 0], [pads[2], pads[6]], [pads[3], pads[7]]], 'REFLECT')
             else:
                 logger.warning("Caution - no test yet")
@@ -54,9 +54,9 @@ def convert_padding(node, params, layers, node_name, keras_name):
         layers[node_name] = lambda_layer(input_0)
     elif params['mode'] == 'edge':
 
-        def target_layer(x):
+        def target_layer(x, pads=pads):
             import tensorflow as tf
-            if len(pads)==8: # TODO not tested yet
+            if len(pads) == 8: # TODO not tested yet
                 layer = tf.pad(x, [[0, 0], [0, 0], [pads[2], pads[6]], [pads[3], pads[7]]], 'SYMMETRIC')
             else:
                 logger.warning("Caution - no test yet")
