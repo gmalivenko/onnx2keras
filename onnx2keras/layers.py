@@ -1,5 +1,5 @@
 from .convolution_layers import convert_conv, convert_convtranspose
-from .activation_layers import convert_relu, convert_lrelu, convert_selu, \
+from .activation_layers import convert_relu, convert_elu, convert_lrelu, convert_selu, \
     convert_sigmoid, convert_tanh, convert_softmax, convert_prelu
 from .operation_layers import convert_clip, convert_exp, convert_reduce_sum, convert_reduce_mean, \
     convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity, \
@@ -19,6 +19,7 @@ AVAILABLE_CONVERTERS = {
     'Conv': convert_conv,
     'ConvTranspose': convert_convtranspose,
     'Relu': convert_relu,
+    'Elu': convert_elu,
     'LeakyRelu': convert_lrelu,
     'Sigmoid': convert_sigmoid,
     'Tanh': convert_tanh,
