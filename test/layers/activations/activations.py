@@ -16,11 +16,12 @@ from log_sigmoid import LayerLogSigmoidTest, FLogSigmoidTest
 from relu6 import LayerReLU6Test, FReLU6Test
 from softmax import LayerSoftmaxTest, FSoftmaxTest
 from prelu import LayerPReLUTest, FPReLUTest
+from elu import LayerELUTest, FPELUTest
 # from log_softmax import LayerLogSoftmaxTest, FLogSoftmaxTest  # Not Supported by ONNX
 
 
 # TODO:
-# Threshold, Softmax2d, LogSoftmax, ELU, CELU, Hardshrink,  \
+# Threshold, Softmax2d, LogSoftmax, CELU, Hardshrink,  \
 # Softplus, Softshrink, MultiheadAttention, Softsign, Softmin, Tanhshrink, RReLU, GLU
 
 
@@ -39,6 +40,7 @@ if __name__ == '__main__':
                      LayerLeakyReLUTest, FLeakyReLUTest,
                      LayerHardtanhTest, FHardtanhTest,
                      LayerReLUTest, FReLUTest,
+                     LayerELUTest, FPELUTest,
     ]:
         for i in range(10):
             model = act_type()
