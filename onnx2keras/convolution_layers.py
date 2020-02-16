@@ -34,11 +34,44 @@ def convert_conv(node, params, layers, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     n_groups = params['group'] if 'group' in params else 1
     dilation = params['dilations'][0] if 'dilations' in params else 1
-    pads = params['pads'] if 'pads' in params else [0, 0]
-    strides = params['strides'] if 'strides' in params else [1, 1]
+    pads = params['pads'] if 'pads' in params else [0, 0, 0]
+    strides = params['strides'] if 'strides' in params else [1, 1, 1]
 
     if len(W.shape) == 5:  # 3D conv
-        raise NotImplementedError('Not implemented')
+        logger.debug('3D convolution')
+        if pads[0] > 0 or pads[1] > 0 or pads[2] > 0:
+            logger.debug('Paddings exist, add ZeroPadding layer')
+            padding_name = keras_name + '_pad'
+            padding_layer = keras.layers.ZeroPadding3D(
+                padding=(pads[0], pads[1], pads[2]),
+                name=padding_name
+            )
+            layers[padding_name] = input_0 = padding_layer(input_0)
+        out_channels, channels_per_group, dimension, height, width = W.shape
+        W = W.transpose(2, 3, 4, 1, 0) 
+        in_channels = channels_per_group * n_groups
+
+        if n_groups != 1:
+            raise NotImplementedError("Not Implemented")
+        else:
+            if has_bias:
+                weights = [W, bias]
+            else:
+                weights = [W]
+
+            conv = keras.layers.Conv3D(
+                filters=out_channels,
+                kernel_size=(dimension, height, width),
+                strides=(strides[0], strides[1], strides[2]),
+                padding='valid',
+                weights=weights,
+                use_bias=has_bias,
+                activation=None,
+                dilation_rate=dilation,
+                bias_initializer='zeros', kernel_initializer='zeros',
+                name=keras_name
+            )
+            layers[node_name] = conv(input_0)
 
     elif len(W.shape) == 4:  # 2D conv
         logger.debug('2D convolution')
@@ -66,7 +99,7 @@ def convert_conv(node, params, layers, node_name, keras_name):
 
             conv = keras.layers.DepthwiseConv2D(
                 kernel_size=(height, width),
-                strides=(strides[0],strides[1]),
+                strides=(strides[0], strides[1]),
                 padding='valid',
                 use_bias=has_bias,
                 activation=None,
