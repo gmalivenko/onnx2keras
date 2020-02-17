@@ -75,12 +75,18 @@ def convert_conv(node, params, layers, node_name, keras_name):
 
     elif len(W.shape) == 4:  # 2D conv
         logger.debug('2D convolution')
+        
+        padding = None
+        if len(pads) == 2 and (pads[0] > 0 or pads[1] > 0):
+            padding = (pads[0], pads[1])
+        elif len(pads) == 4 and (pads[0] > 0 or pads[1] > 0 or pads[2] > 0 or pads[3] > 0):
+            padding = ((pads[0], pads[2]), (pads[1], pads[3]))
 
-        if pads[0] > 0 or pads[1] > 0:
+        if padding:
             logger.debug('Paddings exist, add ZeroPadding layer')
             padding_name = keras_name + '_pad'
             padding_layer = keras.layers.ZeroPadding2D(
-                padding=(pads[0], pads[1]),
+                padding=padding,
                 name=padding_name
             )
             layers[padding_name] = input_0 = padding_layer(input_0)
