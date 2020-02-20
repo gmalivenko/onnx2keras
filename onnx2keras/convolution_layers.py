@@ -76,18 +76,24 @@ def convert_conv(node, params, layers, node_name, keras_name):
     elif len(W.shape) == 4:  # 2D conv
         logger.debug('2D convolution')
 
-        if pads[0] > 0 or pads[1] > 0:
-            logger.debug('Paddings exist, add ZeroPadding layer')
-            padding_name = keras_name + '_pad'
-            padding_layer = keras.layers.ZeroPadding2D(
-                padding=(pads[0], pads[1]),
-                name=padding_name
-            )
-            layers[padding_name] = input_0 = padding_layer(input_0)
-
         W = W.transpose(2, 3, 1, 0)
         height, width, channels_per_group, out_channels = W.shape
         in_channels = channels_per_group * n_groups
+
+        if pads[0] > 0 or pads[1] > 0:
+            if (strides[0] == 1 and strides[1] == 1) and (height % 2 == 1 and width % 2 == 1) and (height // 2 == pads[0] and width // 2 == pads[1]):
+                # Using 'SAME' padding instead of a padding layer when we're sure that that's the case: the kernel has stride=1 and odd dimensions and the padding is the floored half of the kernel dimension
+                padding_mode = 'SAME'
+            else:
+                padding_mode = 'VALID' # Keras is case insensitive
+                logger.debug('Paddings exist, add ZeroPadding layer')
+                padding_name = keras_name + '_pad'
+                padding_layer = keras.layers.ZeroPadding2D(
+                    padding=(pads[0], pads[1]),
+                    name=padding_name
+                )
+                layers[padding_name] = input_0 = padding_layer(input_0)
+
 
         if n_groups == in_channels and n_groups != 1:
             logger.debug('Number of groups is equal to input channels, use DepthWise convolution')
@@ -100,7 +106,7 @@ def convert_conv(node, params, layers, node_name, keras_name):
             conv = keras.layers.DepthwiseConv2D(
                 kernel_size=(height, width),
                 strides=(strides[0], strides[1]),
-                padding='valid',
+                padding=padding_mode,
                 use_bias=has_bias,
                 activation=None,
                 depth_multiplier=1,
@@ -121,7 +127,7 @@ def convert_conv(node, params, layers, node_name, keras_name):
 
                 def convolve_lambda(i, k):
                     import tensorflow as tf
-                    return tf.nn.conv2d(i, k, strides=[1, stride_y, stride_x, 1], padding='VALID')
+                    return tf.nn.conv2d(i, k, strides=[1, stride_y, stride_x, 1], padding=padding_mode)
 
                 input_groups = tf.split(axis=3, num_or_size_splits=groups, value=x)
                 weight_groups = tf.split(axis=3, num_or_size_splits=groups, value=W.transpose(0, 1, 2, 3))
@@ -145,7 +151,7 @@ def convert_conv(node, params, layers, node_name, keras_name):
                 filters=out_channels,
                 kernel_size=(height, width),
                 strides=(strides[0], strides[1]),
-                padding='valid',
+                padding=padding_mode,
                 weights=weights,
                 use_bias=has_bias,
                 activation=None,
