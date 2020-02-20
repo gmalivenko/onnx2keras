@@ -80,12 +80,12 @@ def convert_conv(node, params, layers, node_name, keras_name):
         height, width, channels_per_group, out_channels = W.shape
         in_channels = channels_per_group * n_groups
 
+        padding_mode = 'VALID' # Keras is case insensitive
         if pads[0] > 0 or pads[1] > 0:
             if (strides[0] == 1 and strides[1] == 1) and (height % 2 == 1 and width % 2 == 1) and (height // 2 == pads[0] and width // 2 == pads[1]):
                 # Using 'SAME' padding instead of a padding layer when we're sure that that's the case: the kernel has stride=1 and odd dimensions and the padding is the floored half of the kernel dimension
                 padding_mode = 'SAME'
             else:
-                padding_mode = 'VALID' # Keras is case insensitive
                 logger.debug('Paddings exist, add ZeroPadding layer')
                 padding_name = keras_name + '_pad'
                 padding_layer = keras.layers.ZeroPadding2D(
