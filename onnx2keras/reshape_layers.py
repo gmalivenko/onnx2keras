@@ -349,7 +349,6 @@ def convert_slice(node, params, layers, node_name, keras_name):
                 layers[node_name] = lambda_layer(input_0)
             else:
                 raise AttributeError('Not implemented')
-    from IPython import embed; embed()
 
 
 def convert_squeeze(node, params, layers, node_name, keras_name):
