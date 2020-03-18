@@ -41,7 +41,7 @@ def convert_shape(node, params, layers, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:shape')
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
-    
+
     logger.debug('Actual shape:')
     logger.debug(np.array(input_0.shape))
 
@@ -257,7 +257,7 @@ def convert_flatten(node, params, layers, node_name, keras_name):
         reshape = keras.layers.Reshape([-1], name=keras_name)
         layers[node_name] = reshape(input_0)
 
-   
+
 def convert_slice(node, params, layers, node_name, keras_name):
     """
     Convert slice.
@@ -312,8 +312,11 @@ def convert_slice(node, params, layers, node_name, keras_name):
                 import tensorflow as tf
                 return tf.strided_slice(x, starts, ends)
 
-            lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-            layers[node_name] = lambda_layer(input_0)
+            #lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+            #layers[node_name] = lambda_layer(input_0)
+            print('#'*70)
+            if axes == 1:
+                layers[node_name] = input_0[:, starts[0]:ends[0]]
         else:
             if axes == 0:
                 def target_layer(x):
@@ -345,6 +348,7 @@ def convert_slice(node, params, layers, node_name, keras_name):
                 layers[node_name] = lambda_layer(input_0)
             else:
                 raise AttributeError('Not implemented')
+    from IPython import embed; embed()
 
 
 def convert_squeeze(node, params, layers, node_name, keras_name):
