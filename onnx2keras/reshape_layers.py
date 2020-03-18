@@ -308,15 +308,16 @@ def convert_slice(node, params, layers, node_name, keras_name):
                     assert AttributeError('Cant slice permuted axes')
 
         if isinstance(axes, list) or isinstance(axes, np.ndarray):
-            def target_layer(x, axes=axes, starts=starts, ends=ends):
-                import tensorflow as tf
-                return tf.strided_slice(x, starts, ends)
-
-            #lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-            #layers[node_name] = lambda_layer(input_0)
-            print('#'*70)
-            if axes == 1:
+            if axes == 0:
+                layers[node_name] = input_0[starts[0]:ends[0]]
+            elif axes == 1:
                 layers[node_name] = input_0[:, starts[0]:ends[0]]
+            elif axes == 2:
+                layers[node_name] = input_0[:, :, starts[0]:ends[0]]
+            elif axes == 3:
+                layers[node_name] = input_0[:, :, :, starts[0]:ends[0]]
+            else:
+                raise AttributeError('Not implemented')
         else:
             if axes == 0:
                 def target_layer(x):
