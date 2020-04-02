@@ -206,11 +206,9 @@ def onnx_to_keras(onnx_model, input_names,
                 if len(list(layer['config']['target_shape'][1:][:])) > 0:
                     layer['config']['target_shape'] = \
                         tuple(np.reshape(np.array(
-                            [
-                                list(layer['config']['target_shape'][1:][:]),
-                                layer['config']['target_shape'][0]
-                            ]), -1
-                        ), )
+                                list(layer['config']['target_shape'][1:]) +
+                                [layer['config']['target_shape'][0]]
+                            ), -1),)
 
             if layer['config'] and 'data_format' in layer['config']:
                 layer['config']['data_format'] = 'channels_last'
