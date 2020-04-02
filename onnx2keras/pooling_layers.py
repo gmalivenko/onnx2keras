@@ -3,12 +3,13 @@ import logging
 from .utils import ensure_tf_type
 
 
-def convert_maxpool(node, params, layers, node_name, keras_name):
+def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert MaxPooling layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -64,12 +65,13 @@ def convert_maxpool(node, params, layers, node_name, keras_name):
     layers[node_name] = pooling(input_0)
 
 
-def convert_avgpool(node, params, layers, node_name, keras_name):
+def convert_avgpool(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert AvgPooling layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -124,12 +126,13 @@ def convert_avgpool(node, params, layers, node_name, keras_name):
     layers[node_name] = pooling(input_0)
 
 
-def convert_global_avg_pool(node, params, layers, node_name, keras_name):
+def convert_global_avg_pool(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert GlobalAvgPool layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -150,3 +153,5 @@ def convert_global_avg_pool(node, params, layers, node_name, keras_name):
     lambda_layer2 = keras.layers.Lambda(target_layer, name=keras_name + '_EXPAND2')
     input_0 = lambda_layer1(input_0)  # double expand dims
     layers[node_name] = lambda_layer2(input_0)
+    lambda_func[keras_name + '_EXPAND1'] = target_layer
+    lambda_func[keras_name + '_EXPAND2'] = target_layer

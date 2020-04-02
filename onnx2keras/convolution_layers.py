@@ -3,12 +3,13 @@ import logging
 from .utils import ensure_tf_type, ensure_numpy_type
 
 
-def convert_conv(node, params, layers, node_name, keras_name):
+def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert convolution layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -180,6 +181,7 @@ def convert_conv(node, params, layers, node_name, keras_name):
             return tf.transpose(x, [0, 2, 1])
 
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        lambda_layer[keras_name] = target_layer
         layers[node_name] = lambda_layer(input_0)
 
         # padding_name = keras_name + '_pad'
@@ -206,12 +208,14 @@ def convert_conv(node, params, layers, node_name, keras_name):
         # layers[node_name] = conv(input_0)
 
 
-def convert_convtranspose(node, params, layers, node_name, keras_name):
+def convert_convtranspose(node, params, layers,
+                          lambda_func, node_name, keras_name):
     """
     Convert transposed convolution layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None

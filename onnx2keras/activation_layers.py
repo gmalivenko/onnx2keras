@@ -2,12 +2,13 @@ from tensorflow import keras
 from .utils import ensure_tf_type, ensure_numpy_type
 
 
-def convert_relu(node, params, layers, node_name, keras_name):
+def convert_relu(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert ReLU activation layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -21,12 +22,13 @@ def convert_relu(node, params, layers, node_name, keras_name):
     layers[node_name] = relu(input_0)
 
 
-def convert_elu(node, params, layers, node_name, keras_name):
+def convert_elu(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert ELU activation layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -41,12 +43,13 @@ def convert_elu(node, params, layers, node_name, keras_name):
     layers[node_name] = elu(input_0)
 
 
-def convert_lrelu(node, params, layers, node_name, keras_name):
+def convert_lrelu(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert LeakyReLU activation layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -61,12 +64,13 @@ def convert_lrelu(node, params, layers, node_name, keras_name):
     layers[node_name] = leakyrelu(input_0)
 
 
-def convert_sigmoid(node, params, layers, node_name, keras_name):
+def convert_sigmoid(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Sigmoid activation layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -80,12 +84,13 @@ def convert_sigmoid(node, params, layers, node_name, keras_name):
     layers[node_name] = sigmoid(input_0)
 
 
-def convert_tanh(node, params, layers, node_name, keras_name):
+def convert_tanh(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Tanh activation layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -99,12 +104,13 @@ def convert_tanh(node, params, layers, node_name, keras_name):
     layers[node_name] = tanh(input_0)
 
 
-def convert_selu(node, params, layers, node_name, keras_name):
+def convert_selu(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert SELU activation layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -118,12 +124,13 @@ def convert_selu(node, params, layers, node_name, keras_name):
     layers[node_name] = selu(input_0)
 
 
-def convert_softmax(node, params, layers, node_name, keras_name):
+def convert_softmax(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert softmax activation layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -137,12 +144,13 @@ def convert_softmax(node, params, layers, node_name, keras_name):
     layers[node_name] = softmax(input_0)
 
 
-def convert_prelu(node, params, layers, node_name, keras_name):
+def convert_prelu(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert PReLU activation layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None

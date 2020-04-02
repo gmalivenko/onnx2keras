@@ -4,12 +4,13 @@ import logging
 from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
 
 
-def convert_transpose(node, params, layers, node_name, keras_name):
+def convert_transpose(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert transpose.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -29,12 +30,13 @@ def convert_transpose(node, params, layers, node_name, keras_name):
         layers[node_name] = permute(layers[input_name])
 
 
-def convert_shape(node, params, layers, node_name, keras_name):
+def convert_shape(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert shape.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -55,12 +57,13 @@ def convert_shape(node, params, layers, node_name, keras_name):
     layers[node_name] = np.array(shapes)
 
 
-def convert_gather(node, params, layers, node_name, keras_name):
+def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert gather.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -84,12 +87,13 @@ def convert_gather(node, params, layers, node_name, keras_name):
         raise AttributeError('Can\'t gather from tf tensor.')
 
 
-def convert_concat(node, params, layers, node_name, keras_name):
+def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert concat.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -120,16 +124,18 @@ def convert_concat(node, params, layers, node_name, keras_name):
 
                 lambda_layer = keras.layers.Lambda(target_layer, name="%s_CHW" % keras_name)
                 layers[node_name] = lambda_layer(layer_input)
+                lambda_func["%s_CHW" % keras_name] = target_layer
         else:
             layers[node_name] = layer_input[0]
 
 
-def convert_reshape(node, params, layers, node_name, keras_name):
+def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert reshape.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -163,6 +169,7 @@ def convert_reshape(node, params, layers, node_name, keras_name):
 
                     lambda_layer = keras.layers.Lambda(target_layer, name="%s_CHW" % keras_name)
                     layers[node_name] = lambda_layer(input_0)
+                    lambda_func[keras_name] = target_layer
                 else:
                     layers[node_name] = input_0
 
@@ -186,12 +193,13 @@ def convert_reshape(node, params, layers, node_name, keras_name):
         raise AttributeError('Can\'t reshape dynamic size.')
 
 
-def convert_unsqueeze(node, params, layers, node_name, keras_name):
+def convert_unsqueeze(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert unsqueeze.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -222,14 +230,15 @@ def convert_unsqueeze(node, params, layers, node_name, keras_name):
 
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
         layers[node_name] = lambda_layer(layers[node.input[0]])
+        lambda_func[keras_name] = target_layer
 
-
-def convert_flatten(node, params, layers, node_name, keras_name):
+def convert_flatten(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert flatten.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -253,17 +262,19 @@ def convert_flatten(node, params, layers, node_name, keras_name):
         tensor_chw = lambda_layer(input_0)
         flatten = keras.layers.Flatten(name=keras_name)
         layers[node_name] = flatten(tensor_chw)
+        lambda_func["%s_CHW" % keras_name] = target_layer
     else:
         reshape = keras.layers.Reshape([-1], name=keras_name)
         layers[node_name] = reshape(input_0)
 
    
-def convert_slice(node, params, layers, node_name, keras_name):
+def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert slice.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -322,6 +333,7 @@ def convert_slice(node, params, layers, node_name, keras_name):
 
                 lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
                 layers[node_name] = lambda_layer(input_0)
+                lambda_func[keras_name] = target_layer
             elif axes == 1:
                 def target_layer(x):
                     layer = x[:, starts:ends]
@@ -329,6 +341,7 @@ def convert_slice(node, params, layers, node_name, keras_name):
 
                 lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
                 layers[node_name] = lambda_layer(input_0)
+                lambda_func[keras_name] = target_layer
             elif axes == 2:
                 def target_layer(x):
                     layer = x[:, :, starts:ends]
@@ -336,6 +349,7 @@ def convert_slice(node, params, layers, node_name, keras_name):
 
                 lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
                 layers[node_name] = lambda_layer(input_0)
+                lambda_func[keras_name] = target_layer
             elif axes == 3:
                 def target_layer(x):
                     layer = x[:, :, :, starts:ends]
@@ -343,16 +357,18 @@ def convert_slice(node, params, layers, node_name, keras_name):
 
                 lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
                 layers[node_name] = lambda_layer(input_0)
+                lambda_func[keras_name] = target_layer
             else:
                 raise AttributeError('Not implemented')
 
 
-def convert_squeeze(node, params, layers, node_name, keras_name):
+def convert_squeeze(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Squeeze layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -368,14 +384,16 @@ def convert_squeeze(node, params, layers, node_name, keras_name):
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
+    lambda_func[keras_name] = target_layer
 
 
-def convert_expand(node, params, layers, node_name, keras_name):
+def convert_expand(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Expand layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -405,3 +423,4 @@ def convert_expand(node, params, layers, node_name, keras_name):
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
+    lambda_func[keras_name] = target_layer

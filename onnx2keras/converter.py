@@ -4,6 +4,7 @@ The ONNX to keras converter module
 
 from tensorflow import keras
 import logging
+import inspect
 from onnx import numpy_helper
 
 from .layers import AVAILABLE_CONVERTERS
@@ -91,6 +92,7 @@ def onnx_to_keras(onnx_model, input_names,
                      weights[onnx_extracted_weights_name].shape))
 
     layers = dict()
+    lambda_funcs = dict()
     keras_outputs = []
     keras_inputs = []
 
@@ -173,6 +175,7 @@ def onnx_to_keras(onnx_model, input_names,
             node,
             node_params,
             layers,
+            lambda_funcs,
             node_name,
             keras_names
         )
@@ -216,21 +219,27 @@ def onnx_to_keras(onnx_model, input_names,
 
         for layer in conf['layers']:
             if 'function' in layer['config'] and layer['config']['function'][1] is not None:
-                f = list(layer['config']['function'])
-                try:
-                    if len(layer['config']['function'][1][0].shape) == 4:
-                        f[1] = (np.transpose(layer['config']['function'][1][0], [0, 2, 3, 1]), f[1][1])
-                    elif len(layer['config']['function'][1][0].shape) == 3:
-                        f[1] = (np.transpose(layer['config']['function'][1][0], [0, 2, 1]), f[1][1])
-                except Exception as e:
-                    logger.warning('Error occured in basic change ordering mode. Use fallback.')
+                kerasf = list(layer['config']['function'])
+                dargs = list(kerasf[1])
+                func = lambda_funcs.get(layer['name'])
+                if func:
+                    params = inspect.signature(func).parameters
+                    i = list(params.keys()).index('axes') if ('axes' in params) else -1
+                    if i > 0:
+                        i -= 1
+                        axes = list(range(len(dargs[i].shape)))
+                        axes = axes[0:1] + axes[2:] + axes[1:2]
+                        dargs[i] = np.transpose(dargs[i], axes)
 
-                    axes = np.array(layer['config']['function'][1][0])
-                    axes_map = np.array([0, 3, 1, 2])
-                    axes = axes_map[axes]
-                    f[1] = (axes, f[1][1])
+                    i = list(params.keys()).index('axis') if ('axis' in params) else -1
+                    if i > 0:
+                        i -= 1
+                        axis = np.array(dargs[i])
+                        axes_map = np.array([0, 3, 1, 2])
+                        dargs[i] = axes_map[axis]
 
-                layer['config']['function'] = tuple(f)
+                kerasf[1] = tuple(dargs)
+                layer['config']['function'] = tuple(kerasf)
 
         keras.backend.set_image_data_format('channels_last')
         model_tf_ordering = keras.models.Model.from_config(conf)
