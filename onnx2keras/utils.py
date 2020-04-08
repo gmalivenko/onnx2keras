@@ -61,18 +61,40 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
     import torch
 
     input_var = Variable(torch.FloatTensor(input_np))
-    pytorch_output = model(input_var).data.numpy()
+    pytorch_output = model(input_var)
+    if not isinstance(pytorch_output, tuple):
+        pytorch_output = [pytorch_output.data.numpy()]
+    else:
+        pytorch_output = [p.data.numpy() for p in pytorch_output]
+
     if change_ordering:
+        # change image data format
         axes = list(range(len(input_np.shape)))
         axes = axes[0:1] + axes[2:] + axes[1:2]
+
+        # run keras model
         keras_output = k_model.predict(np.transpose(input_np, axes))
-        axes = list(range(len(keras_output.shape)))
-        axes = axes[0:1] + axes[-1:] + axes[1:-1]
-        keras_output = np.transpose(keras_output, axes)
+        if not isinstance(keras_output, list):
+            keras_output = [keras_output]
+
+        # change image data format
+        _koutput = []
+        for k in keras_output:
+            axes = list(range(len(k.shape)))
+            axes = axes[0:1] + axes[-1:] + axes[1:-1]
+            _koutput.append(np.transpose(k, axes))
+        keras_output = _koutput
     else:
         keras_output = k_model.predict(input_np)
-    error = np.max(np.abs(pytorch_output - keras_output))
+        if not isinstance(keras_output, list):
+            keras_output = [keras_output]
 
-    assert error < epsilon
-    return error
+    max_error = 0
+    for p, k in zip(pytorch_output, keras_output):
+        error = np.max(np.abs(p - k))
+        if error > max_error:
+            max_error = error
+
+    assert max_error < epsilon
+    return max_error
 
