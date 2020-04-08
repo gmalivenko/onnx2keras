@@ -212,10 +212,8 @@ def convert_unsqueeze(node, params, layers, lambda_func, node_name, keras_name):
     if is_numpy(layers[node.input[0]]):
         logger.debug('Work with numpy types.')
         layers[node_name] = layers[node.input[0]]
-        shift = 0
         for axis in params['axes']:
-            layers[node_name] = np.expand_dims(layers[node_name], axis + shift)
-            shift += axis
+            layers[node_name] = np.expand_dims(layers[node_name], axis)
     else:
 
         if len(params['axes']) != 1:
