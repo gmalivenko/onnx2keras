@@ -52,7 +52,7 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
     Check difference between Torch and Keras models
     :param model: torch model
     :param k_model: keras model
-    :param input_np: input data
+    :param input_np: input data as numpy array or list of numpy array
     :param epsilon: allowed difference
     :param change_ordering: change ordering for keras input
     :return: actual difference
@@ -60,8 +60,11 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
     from torch.autograd import Variable
     import torch
 
-    input_var = Variable(torch.FloatTensor(input_np))
-    pytorch_output = model(input_var)
+    if isinstance(input_np, np.ndarray):
+        input_np = [input_np]
+
+    input_var = [Variable(torch.FloatTensor(i)) for i in input_np]
+    pytorch_output = model(*input_var)
     if not isinstance(pytorch_output, tuple):
         pytorch_output = [pytorch_output.data.numpy()]
     else:
@@ -69,11 +72,15 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
 
     if change_ordering:
         # change image data format
-        axes = list(range(len(input_np.shape)))
-        axes = axes[0:1] + axes[2:] + axes[1:2]
+        _input_np = []
+        for i in input_np:
+            axes = list(range(len(i.shape)))
+            axes = axes[0:1] + axes[2:] + axes[1:2]
+            _input_np.append(np.transpose(i, axes))
+        input_np = _input_np
 
         # run keras model
-        keras_output = k_model.predict(np.transpose(input_np, axes))
+        keras_output = k_model.predict(input_np)
         if not isinstance(keras_output, list):
             keras_output = [keras_output]
 
