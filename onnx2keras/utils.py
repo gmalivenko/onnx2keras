@@ -63,11 +63,16 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
     input_var = Variable(torch.FloatTensor(input_np))
     pytorch_output = model(input_var).data.numpy()
     if change_ordering:
-        keras_output = k_model.predict(np.transpose(input_np, [0, 2, 3, 1]))
+        axes = list(range(len(input_np.shape)))
+        axes = axes[0:1] + axes[2:] + axes[1:2]
+        keras_output = k_model.predict(np.transpose(input_np, axes))
+        axes = list(range(len(keras_output.shape)))
+        axes = axes[0:1] + axes[-1:] + axes[1:-1]
+        keras_output = np.transpose(keras_output, axes)
     else:
         keras_output = k_model.predict(input_np)
-
-    error = np.max(pytorch_output - keras_output)
+    error = np.max(np.abs(pytorch_output - keras_output))
 
     assert error < epsilon
     return error
+
