@@ -1,5 +1,4 @@
 import torch.nn as nn
-import numpy as np
 
 
 class FFloorTest(nn.Module):

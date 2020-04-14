@@ -9,7 +9,7 @@ import onnx
 class LayerTest(nn.Module):
     def __init__(self):
         super(LayerTest, self).__init__()
-        self.pool = nn.AdaptiveAvgPool2d((1,1))
+        self.pool = nn.AdaptiveAvgPool2d((1, 1))
 
     def forward(self, x):
         x = self.pool(x)

@@ -28,7 +28,7 @@ if __name__ == '__main__':
                     for bias in [True, False]:
                         for dilation in [1, 2, 3]:
                             for groups in [1]:
-                                for dimension in [20,40]:
+                                for dimension in [20, 40]:
                                     # ValueError: strides > 1 not supported in conjunction with dilation_rate > 1
                                     if stride > 1 and dilation > 1:
                                         continue
@@ -44,12 +44,14 @@ if __name__ == '__main__':
                                     input_np = np.random.uniform(0, 1, (1, 3, dimension, 224, 224))   # NCDHW
                                     input_var = Variable(torch.FloatTensor(input_np))
 
-                                    torch.onnx.export(model, input_var, "_tmpnet.onnx", verbose=True, input_names=['test_in'], output_names=['test_out'])
+                                    torch.onnx.export(model, input_var, "_tmpnet.onnx",
+                                                      verbose=True, input_names=['test_in'], output_names=['test_out'])
 
                                     onnx_model = onnx.load('_tmpnet.onnx')
                                     k_model = onnx_to_keras(onnx_model, ['test_in'], change_ordering=change_ordering)
 
-                                    error = check_torch_keras_error(model, k_model, input_np, change_ordering=change_ordering)
+                                    error = check_torch_keras_error(model, k_model, input_np,
+                                                                    change_ordering=change_ordering)
 
                                     print('Error:', error)
 

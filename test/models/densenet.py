@@ -18,7 +18,7 @@ if __name__ == '__main__':
                       verbose=True,
                       input_names=['test_in1'],
                       output_names=['test_out']
-    )
+                      )
 
     onnx_model = onnx.load('_tmpnet.onnx')
     k_model = onnx_to_keras(onnx_model, ['test_in1', 'test_in2'], change_ordering=True)

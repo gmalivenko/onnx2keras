@@ -27,4 +27,3 @@ class FSoftmaxTest(nn.Module):
     def forward(self, x):
         from torch.nn import functional as F
         return F.softmax(x, self.dim)
-

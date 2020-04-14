@@ -10,7 +10,6 @@ from onnx import numpy_helper
 from .layers import AVAILABLE_CONVERTERS
 
 
-
 def onnx_node_attributes_to_dict(args):
     """
     Parse ONNX attributes to Python dictionary
@@ -247,5 +246,7 @@ def onnx_to_keras(onnx_model, input_names,
             dst_layer.set_weights(src_layer.get_weights())
 
         model = model_tf_ordering
+
     keras.backend.set_image_data_format(keras_fmt)
+
     return model

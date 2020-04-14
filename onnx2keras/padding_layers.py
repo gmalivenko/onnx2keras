@@ -22,7 +22,6 @@ def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
     pads = params['pads']
 
     if params['mode'] == 'constant':
-        # raise AssertionError('Cannot convert non-constant padding')
 
         if params['value'] != 0.0:
             raise AssertionError('Cannot convert non-zero padding')
@@ -58,7 +57,7 @@ def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
 
         def target_layer(x, pads=pads):
             import tensorflow as tf
-            if len(pads) == 8: # TODO not tested yet
+            if len(pads) == 8:  # TODO not tested yet
                 layer = tf.pad(x, [[0, 0], [0, 0], [pads[2], pads[6]], [pads[3], pads[7]]], 'SYMMETRIC')
             else:
                 logger.warning("Caution - no test yet")

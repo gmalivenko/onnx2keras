@@ -49,8 +49,7 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
             )
             layers[padding_name] = input_0 = padding_layer(input_0)
         out_channels, channels_per_group, dimension, height, width = W.shape
-        W = W.transpose(2, 3, 4, 1, 0) 
-        in_channels = channels_per_group * n_groups
+        W = W.transpose(2, 3, 4, 1, 0)
 
         if n_groups != 1:
             raise NotImplementedError("Not Implemented")
@@ -76,7 +75,7 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
 
     elif len(W.shape) == 4:  # 2D conv
         logger.debug('2D convolution')
-        
+
         padding = None
         if len(pads) == 2 and (pads[0] > 0 or pads[1] > 0):
             padding = (pads[0], pads[1])
@@ -161,8 +160,7 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
                 name=keras_name
             )
             layers[node_name] = conv(input_0)
-
-    else: 
+    else:
         # 1D conv
         W = W.transpose(2, 1, 0)
         width, channels, n_filters = W.shape

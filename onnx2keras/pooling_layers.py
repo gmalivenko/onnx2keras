@@ -22,8 +22,6 @@ def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
     stride_shape = params['strides']
 
     pads = params['pads'] if 'pads' in params else [0, 0, 0, 0, 0, 0]
-    # padding_h, padding_w, _, _ = pads
-
     pad = 'valid'
 
     if all([shape % 2 == 1 for shape in kernel_shape]) and \
@@ -39,7 +37,7 @@ def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
                 padding=pads[:len(stride_shape)],
                 name=padding_name
             )
-        else: # 3D padding
+        else:  # 3D padding
             padding_layer = keras.layers.ZeroPadding3D(
                 padding=pads[:len(stride_shape)],
                 name=padding_name
@@ -84,8 +82,6 @@ def convert_avgpool(node, params, layers, lambda_func, node_name, keras_name):
     stride_shape = params['strides']
 
     pads = params['pads'] if 'pads' in params else [0, 0, 0, 0, 0, 0]
-    # padding_h, padding_w, _, _ = pads
-
     pad = 'valid'
 
     if all([shape % 2 == 1 for shape in kernel_shape]) and \
@@ -101,7 +97,7 @@ def convert_avgpool(node, params, layers, lambda_func, node_name, keras_name):
                 padding=pads[:len(stride_shape)],
                 name=padding_name
             )
-        else: # 3D padding
+        else:  # 3D padding
             padding_layer = keras.layers.ZeroPadding3D(
                 padding=pads[:len(stride_shape)],
                 name=padding_name

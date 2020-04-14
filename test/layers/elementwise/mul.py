@@ -9,6 +9,7 @@ import onnx
 class FTest(nn.Module):
     def __init__(self):
         super(FTest, self).__init__()
+
     def forward(self, x, y):
         x = x * y
         x = x * 10.0

@@ -27,8 +27,8 @@ if __name__ == '__main__':
             input_np = np.random.uniform(0, 1, (1, 3, 224, 224))
             input_var = Variable(torch.FloatTensor(input_np))
 
-            torch.onnx.export(model, input_var, "_tmpnet.onnx", verbose=True, input_names=['test_in'],
-                              output_names=['test_out'])
+            torch.onnx.export(model, input_var, "_tmpnet.onnx",
+                              verbose=True, input_names=['test_in'], output_names=['test_out'])
 
             onnx_model = onnx.load('_tmpnet.onnx')
             k_model = onnx_to_keras(onnx_model, ['test_in'], change_ordering=change_ordering)

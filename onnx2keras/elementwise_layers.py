@@ -167,6 +167,7 @@ def convert_elementwise_sub(node, params, layers, lambda_func, node_name, keras_
         layers[node_name] = lambda_layer([input_0, input_1])
         lambda_func[keras_name] = target_layer
 
+
 def convert_min(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Min layer
