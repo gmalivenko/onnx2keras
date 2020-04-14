@@ -10,9 +10,6 @@ from onnx import numpy_helper
 from .layers import AVAILABLE_CONVERTERS
 
 
-# Use channels first format by default.
-keras.backend.set_image_data_format('channels_first')
-
 
 def onnx_node_attributes_to_dict(args):
     """
@@ -51,6 +48,10 @@ def onnx_to_keras(onnx_model, input_names,
     :param change_ordering: change ordering to HWC (experimental)
     :return: Keras model
     """
+    # Use channels first format by default.
+    keras_fmt = keras.backend.image_data_format()
+    keras.backend.set_image_data_format('channels_first')
+
     if verbose:
         logging.basicConfig(level=logging.DEBUG)
 
@@ -239,7 +240,6 @@ def onnx_to_keras(onnx_model, input_names,
                 kerasf[1] = tuple(dargs)
                 layer['config']['function'] = tuple(kerasf)
 
-        keras_fmt = keras.backend.image_data_format()
         keras.backend.set_image_data_format('channels_last')
         model_tf_ordering = keras.models.Model.from_config(conf)
 
@@ -247,6 +247,5 @@ def onnx_to_keras(onnx_model, input_names,
             dst_layer.set_weights(src_layer.get_weights())
 
         model = model_tf_ordering
-        keras.backend.set_image_data_format(keras_fmt)
-
+    keras.backend.set_image_data_format(keras_fmt)
     return model
