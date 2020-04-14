@@ -11,8 +11,7 @@ class LayerTest(nn.Module):
         super(LayerTest, self).__init__()
 
     def forward(self, x):
-        x = x.squeeze(1)
-        return x
+        return torch.split(x, 224//4, 3)
 
 
 if __name__ == '__main__':
@@ -22,7 +21,7 @@ if __name__ == '__main__':
         model = LayerTest()
         model.eval()
 
-        input_np = np.random.uniform(0, 1, (1, 1, 224, 224))
+        input_np = np.random.uniform(0, 1, (1, 3, 224, 224))
         input_var = Variable(torch.FloatTensor(input_np))
 
         torch.onnx.export(model, input_var, "_tmpnet.onnx", verbose=True, input_names=['test_in'],

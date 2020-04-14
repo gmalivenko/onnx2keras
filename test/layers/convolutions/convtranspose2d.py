@@ -19,28 +19,29 @@ class LayerTest(nn.Module):
 
 if __name__ == '__main__':
     max_error = 0
-    for kernel_size in [1, 3, 5]:
-        for padding in [0, 1, 3]:
-            for stride in [1, 2]:
-                for bias in [True, False]:
-                    outs = np.random.choice([1, 3, 7])
+    for change_ordering in [False, True]:
+        for kernel_size in [1, 3, 5]:
+            for padding in [0, 1, 3]:
+                for stride in [1, 2]:
+                    for bias in [True, False]:
+                        outs = np.random.choice([1, 3, 7])
 
-                    model = LayerTest(3, outs, \
-                        kernel_size=kernel_size, padding=padding, stride=stride, bias=bias)
-                    model.eval()
+                        model = LayerTest(3, outs, \
+                            kernel_size=kernel_size, padding=padding, stride=stride, bias=bias)
+                        model.eval()
 
-                    input_np = np.random.uniform(0, 1, (1, 3, 224, 224))
-                    input_var = Variable(torch.FloatTensor(input_np))
-                    
-                    torch.onnx.export(model, input_var, "_tmpnet.onnx", verbose=True, input_names=['test_in'], output_names=['test_out'])
+                        input_np = np.random.uniform(0, 1, (1, 3, 224, 224))
+                        input_var = Variable(torch.FloatTensor(input_np))
 
-                    onnx_model = onnx.load('_tmpnet.onnx')
-                    k_model = onnx_to_keras(onnx_model, ['test_in'])
+                        torch.onnx.export(model, input_var, "_tmpnet.onnx", verbose=True, input_names=['test_in'], output_names=['test_out'])
 
-                    error = check_torch_keras_error(model, k_model, input_np)
-                    print('Error:', error)
+                        onnx_model = onnx.load('_tmpnet.onnx')
+                        k_model = onnx_to_keras(onnx_model, ['test_in'], change_ordering=change_ordering)
 
-                    if max_error < error:
-                        max_error = error
+                        error = check_torch_keras_error(model, k_model, input_np, change_ordering=change_ordering)
+                        print('Error:', error)
+
+                        if max_error < error:
+                            max_error = error
 
     print('Max error: {0}'.format(max_error))

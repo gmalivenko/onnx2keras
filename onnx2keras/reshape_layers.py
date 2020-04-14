@@ -4,12 +4,13 @@ import logging
 from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
 
 
-def convert_transpose(node, params, layers, node_name, keras_name):
+def convert_transpose(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert transpose.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -29,19 +30,20 @@ def convert_transpose(node, params, layers, node_name, keras_name):
         layers[node_name] = permute(layers[input_name])
 
 
-def convert_shape(node, params, layers, node_name, keras_name):
+def convert_shape(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert shape.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
     """
     logger = logging.getLogger('onnx2keras:shape')
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
-    
+
     logger.debug('Actual shape:')
     logger.debug(np.array(input_0.shape))
 
@@ -55,12 +57,13 @@ def convert_shape(node, params, layers, node_name, keras_name):
     layers[node_name] = np.array(shapes)
 
 
-def convert_gather(node, params, layers, node_name, keras_name):
+def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert gather.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -84,12 +87,13 @@ def convert_gather(node, params, layers, node_name, keras_name):
         raise AttributeError('Can\'t gather from tf tensor.')
 
 
-def convert_concat(node, params, layers, node_name, keras_name):
+def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert concat.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -120,16 +124,18 @@ def convert_concat(node, params, layers, node_name, keras_name):
 
                 lambda_layer = keras.layers.Lambda(target_layer, name="%s_CHW" % keras_name)
                 layers[node_name] = lambda_layer(layer_input)
+                lambda_func["%s_CHW" % keras_name] = target_layer
         else:
             layers[node_name] = layer_input[0]
 
 
-def convert_reshape(node, params, layers, node_name, keras_name):
+def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert reshape.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -163,6 +169,7 @@ def convert_reshape(node, params, layers, node_name, keras_name):
 
                     lambda_layer = keras.layers.Lambda(target_layer, name="%s_CHW" % keras_name)
                     layers[node_name] = lambda_layer(input_0)
+                    lambda_func[keras_name] = target_layer
                 else:
                     layers[node_name] = input_0
 
@@ -186,12 +193,13 @@ def convert_reshape(node, params, layers, node_name, keras_name):
         raise AttributeError('Can\'t reshape dynamic size.')
 
 
-def convert_unsqueeze(node, params, layers, node_name, keras_name):
+def convert_unsqueeze(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert unsqueeze.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -204,10 +212,8 @@ def convert_unsqueeze(node, params, layers, node_name, keras_name):
     if is_numpy(layers[node.input[0]]):
         logger.debug('Work with numpy types.')
         layers[node_name] = layers[node.input[0]]
-        shift = 0
         for axis in params['axes']:
-            layers[node_name] = np.expand_dims(layers[node_name], axis + shift)
-            shift += axis
+            layers[node_name] = np.expand_dims(layers[node_name], axis)
     else:
 
         if len(params['axes']) != 1:
@@ -222,14 +228,16 @@ def convert_unsqueeze(node, params, layers, node_name, keras_name):
 
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
         layers[node_name] = lambda_layer(layers[node.input[0]])
+        lambda_func[keras_name] = target_layer
 
 
-def convert_flatten(node, params, layers, node_name, keras_name):
+def convert_flatten(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert flatten.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -249,21 +257,23 @@ def convert_flatten(node, params, layers, node_name, keras_name):
             x = tf.transpose(x, [0, 3, 1, 2])
             return x
 
-        lambda_layer = keras.layers.Lambda(target_layer,  name="%s_CHW" % keras_name)
+        lambda_layer = keras.layers.Lambda(target_layer, name="%s_CHW" % keras_name)
         tensor_chw = lambda_layer(input_0)
         flatten = keras.layers.Flatten(name=keras_name)
         layers[node_name] = flatten(tensor_chw)
+        lambda_func["%s_CHW" % keras_name] = target_layer
     else:
         reshape = keras.layers.Reshape([-1], name=keras_name)
         layers[node_name] = reshape(input_0)
 
-   
-def convert_slice(node, params, layers, node_name, keras_name):
+
+def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert slice.
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -271,8 +281,12 @@ def convert_slice(node, params, layers, node_name, keras_name):
     logger = logging.getLogger('onnx2keras:slice')
 
     if is_numpy(layers[node.input[0]]):
+        if params['change_ordering']:
+            raise NotImplementedError("change_ordering for Slice is not implemented")
         logger.debug('Slice numpy constants')
         if 'axes' in params:
+            if len(params["axes"]) != 1:
+                raise NotImplementedError("Multiple axes in Slice is not implemented")
             axes = params["axes"][0]
             ends = params["ends"][0]
             starts = params["starts"][0]
@@ -295,6 +309,8 @@ def convert_slice(node, params, layers, node_name, keras_name):
         layers[node_name] = input_0
 
         if 'axes' in params:
+            if len(params["axes"]) != 1:
+                raise NotImplementedError("Multiple axes in Slice is not implemented")
             axes = params["axes"][0]
             ends = params["ends"][0]
             starts = params["starts"][0]
@@ -308,51 +324,48 @@ def convert_slice(node, params, layers, node_name, keras_name):
                     assert AttributeError('Cant slice permuted axes')
 
         if isinstance(axes, list) or isinstance(axes, np.ndarray):
-            def target_layer(x, axes=axes, starts=starts, ends=ends):
+            if params['change_ordering']:
+                raise NotImplementedError("change_ordering for Slice is not implemented")
+
+            def target_layer(x, axes=np.array(axes), starts=starts, ends=ends):
                 import tensorflow as tf
-                return tf.strided_slice(x, starts, ends)
+                rank = max(axes)
+                s = [0 for _ in range(rank+1)]
+                e = [0 for _ in range(rank+1)]
+                mask = 0xff
+                for _s, _e, axis in zip(starts, ends, axes):
+                    s[axis] = _s
+                    e[axis] = _e
+                    mask = mask ^ (0x1 << axis)
+                return tf.strided_slice(x, s, e, begin_mask=mask, end_mask=mask)
 
             lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
             layers[node_name] = lambda_layer(input_0)
+            lambda_func[keras_name] = target_layer
         else:
-            if axes == 0:
-                def target_layer(x):
-                    layer = x[starts:ends]
-                    return layer
+            def target_layer(x, axis=axes, starts=starts, ends=ends):
+                import tensorflow as tf
+                rank = axis
+                s = [0 for _ in range(rank+1)]
+                e = [0 for _ in range(rank+1)]
+                mask = 0xff
+                s[axis] = starts
+                e[axis] = ends
+                mask = mask ^ (0x1 << axis)
+                return tf.strided_slice(x, s, e, begin_mask=mask, end_mask=mask)
 
-                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-                layers[node_name] = lambda_layer(input_0)
-            elif axes == 1:
-                def target_layer(x):
-                    layer = x[:, starts:ends]
-                    return layer
-
-                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-                layers[node_name] = lambda_layer(input_0)
-            elif axes == 2:
-                def target_layer(x):
-                    layer = x[:, :, starts:ends]
-                    return layer
-
-                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-                layers[node_name] = lambda_layer(input_0)
-            elif axes == 3:
-                def target_layer(x):
-                    layer = x[:, :, :, starts:ends]
-                    return layer
-
-                lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-                layers[node_name] = lambda_layer(input_0)
-            else:
-                raise AttributeError('Not implemented')
+            lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+            layers[node_name] = lambda_layer(input_0)
+            lambda_func[keras_name] = target_layer
 
 
-def convert_squeeze(node, params, layers, node_name, keras_name):
+def convert_squeeze(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Squeeze layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -368,14 +381,16 @@ def convert_squeeze(node, params, layers, node_name, keras_name):
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
+    lambda_func[keras_name] = target_layer
 
 
-def convert_expand(node, params, layers, node_name, keras_name):
+def convert_expand(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Expand layer
     :param node: current operation node
     :param params: operation attributes
     :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
     :param node_name: internal converter name
     :param keras_name: resulting layer name
     :return: None
@@ -405,3 +420,4 @@ def convert_expand(node, params, layers, node_name, keras_name):
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
+    lambda_func[keras_name] = target_layer
