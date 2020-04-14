@@ -14,12 +14,19 @@ TensorFlow 2.0
 ## API
 
 `onnx_to_keras(onnx_model, input_names, input_shapes=None, name_policy=None, verbose=True, change_ordering=False) -> {Keras model}`
+
 `onnx_model`: ONNX model to convert
+
 `input_names`: list with graph input names
+
 `input_shapes`: override input shapes (experimental)
+
 `name_policy`: ['renumerate', 'short', 'default'] override layer names (experimental)
+
 `verbose`: detailed output
+
 `change_ordering:` change ordering to HWC (experimental)
+
 
 ## Getting started
 
@@ -91,7 +98,10 @@ input_var = Variable(torch.FloatTensor(input_np))
 output = model(input_var)
 
 # Convert the model!
-k_model = pytorch_to_keras(model, input_var, (3, 224, 224), verbose=True, name_policy='short', change_ordering=True)
+k_model = \
+    pytorch_to_keras(model, input_var, (3, 224, 224), 
+                     verbose=True, name_policy='short',
+                     change_ordering=True)
 
 # Save model to SavedModel format
 tf.saved_model.save(k_model, "./models")
