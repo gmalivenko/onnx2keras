@@ -21,7 +21,7 @@ class LayerTest(nn.Module):
 
 if __name__ == '__main__':
     max_error = 0
-    change_ordering in [True, False]:
+    for change_ordering in [True, False]:
         for kernel_size in [1, 3, 5, 7]:
             for padding in [0, 1, 3, 5]:
                 for stride in [1, 2, 3]:
