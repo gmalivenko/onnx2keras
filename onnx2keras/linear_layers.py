@@ -1,6 +1,6 @@
 from tensorflow import keras
 import logging
-
+from .utils import is_numpy
 
 def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
     """
@@ -36,15 +36,19 @@ def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
     input_channels, output_channels = keras_weights[0].shape
     logger.debug('Input units %s, output units %s.', input_channels, output_channels)
 
-    dense = keras.layers.Dense(
-        output_channels,
-        weights=keras_weights, name=keras_name, bias_initializer='zeros', kernel_initializer='zeros', use_bias=has_bias
-    )
+    if is_numpy(keras_weights[0]):
+        dense = keras.layers.Dense(
+            output_channels,
+            weights=keras_weights, name=keras_name, bias_initializer='zeros', kernel_initializer='zeros', use_bias=has_bias
+        )
 
-    # The first input - always X
-    try:
-        layers[node_name] = dense(layers[node.input[0]])
-    except ValueError:
-        reshape = keras.layers.Reshape([input_channels], name=keras_name + '_reshape')
-        reshaped_x = reshape(layers[node.input[0]])
-        layers[node_name] = dense(reshaped_x)
+        # The first input - always X
+        try:
+            layers[node_name] = dense(layers[node.input[0]])
+        except ValueError:
+            reshape = keras.layers.Reshape([input_channels], name=keras_name + '_reshape')
+            reshaped_x = reshape(layers[node.input[0]])
+            layers[node_name] = dense(reshaped_x)
+    
+    else:
+        layers[node_name] = keras.layers.Multiply()([layers[node.input[0]], layers[node.input[1]]])
