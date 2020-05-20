@@ -106,6 +106,10 @@ def convert_dropout(node, params, layers, lambda_func, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras:dropout')
 
+    # In ONNX Dropout returns dropout mask as well.
+    if isinstance(keras_name, list) and len(keras_name) > 1:
+        keras_name = keras_name[0]
+
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     ratio = params['ratio'] if 'ratio' in params else 0.0
