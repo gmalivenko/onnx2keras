@@ -33,16 +33,25 @@ def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
         logger.warning('Unable to use `same` padding. Add ZeroPadding2D layer to fix shapes.')
         padding_name = keras_name + '_pad'
         if len(kernel_shape) == 2:
-            padding_layer = keras.layers.ZeroPadding2D(
-                padding=pads[:len(stride_shape)],
-                name=padding_name
-            )
+            padding = None
+
+            if len(pads) == 2 and (pads[0] > 0 or pads[1] > 0):
+                padding = (pads[0], pads[1])
+            elif len(pads) == 4 and (pads[0] > 0 or pads[1] > 0 or pads[2] > 0 or pads[3] > 0):
+                padding = ((pads[0], pads[2]), (pads[1], pads[3]))
+
+            if padding is not None:
+                padding_layer = keras.layers.ZeroPadding2D(
+                    padding=padding,
+                    name=padding_name
+                )
+                layers[padding_name] = input_0 = padding_layer(input_0)
         else:  # 3D padding
             padding_layer = keras.layers.ZeroPadding3D(
                 padding=pads[:len(stride_shape)],
                 name=padding_name
             )
-        layers[padding_name] = input_0 = padding_layer(input_0)
+            layers[padding_name] = input_0 = padding_layer(input_0)
     if len(kernel_shape) == 2:
         pooling = keras.layers.MaxPooling2D(
             pool_size=kernel_shape,
