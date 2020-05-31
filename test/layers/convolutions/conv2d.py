@@ -27,18 +27,18 @@ if __name__ == '__main__':
                 for stride in [1, 2, 3]:
                     for bias in [True, False]:
                         for dilation in [1, 2, 3]:
-                            for groups in [1, 3]:
+                            for groups in [1, 2, 3]:
                                 # ValueError: strides > 1 not supported in conjunction with dilation_rate > 1
                                 if stride > 1 and dilation > 1:
                                     continue
 
                                 model = LayerTest(
-                                    3, groups,
+                                    groups * 3, groups,
                                     kernel_size=kernel_size, padding=padding,
                                     stride=stride, bias=bias, dilation=dilation, groups=groups)
                                 model.eval()
 
-                                input_np = np.random.uniform(0, 1, (1, 3, 224, 224))
+                                input_np = np.random.uniform(0, 1, (1, groups * 3, 224, 224))
                                 input_var = Variable(torch.FloatTensor(input_np))
 
                                 torch.onnx.export(model, input_var, "_tmpnet.onnx", verbose=True, input_names=['test_in'], output_names=['test_out'])
