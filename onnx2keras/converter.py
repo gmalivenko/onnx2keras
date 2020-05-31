@@ -171,6 +171,7 @@ def onnx_to_keras(onnx_model, input_names,
         else:
             logger.debug('... found all, continue')
 
+        keras.backend.set_image_data_format('channels_first')
         AVAILABLE_CONVERTERS[node_type](
             node,
             node_params,
@@ -179,6 +180,10 @@ def onnx_to_keras(onnx_model, input_names,
             node_name,
             keras_names
         )
+        if isinstance(keras_names, list):
+            keras_names = keras_names[0]
+
+        logger.debug('Output TF Layer -> ' + str(layers[keras_names]))
 
     # Check for terminal nodes
     for layer in onnx_outputs:
