@@ -183,7 +183,10 @@ def onnx_to_keras(onnx_model, input_names,
         if isinstance(keras_names, list):
             keras_names = keras_names[0]
 
-        logger.debug('Output TF Layer -> ' + str(layers[keras_names]))
+        try:
+            logger.debug('Output TF Layer -> ' + str(layers[keras_names]))
+        except KeyError:
+            pass
 
     # Check for terminal nodes
     for layer in onnx_outputs:
