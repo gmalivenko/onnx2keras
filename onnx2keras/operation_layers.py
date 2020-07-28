@@ -27,12 +27,20 @@ def convert_clip(node, params, layers, lambda_func, node_name, keras_name):
         assert AttributeError('More than 1 input for clip layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-
-    if params['min'] == 0:
-        logger.debug("Using ReLU({0}) instead of clip".format(params['max']))
-        layer = keras.layers.ReLU(max_value=params['max'], name=keras_name)
+    clip_min = None
+    clip_max = None
+    for key in layers.keys():
+        if   'clip_min' in key:
+            clip_min = layers[key]
+        elif 'clip_max' in key:
+            clip_max = layers[key]
+    if clip_min == 0:
+        logger.debug("Using ReLU({0}) instead of clip".format(clip_max))
+        layer = keras.layers.ReLU(max_value=clip_max)
+        # previous code, caused scope name errors for keras2onnx-made models
+        #layer = keras.layers.ReLU(max_value=clip_max, name=keras_name)
     else:
-        def target_layer(x, vmin=params['min'], vmax=params['max']):
+        def target_layer(x, vmin=clip_min, vmax=clip_max):
             import tensorflow as tf
             return tf.clip_by_value(x, vmin, vmax)
         layer = keras.layers.Lambda(target_layer, name=keras_name)
