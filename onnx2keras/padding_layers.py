@@ -19,11 +19,16 @@ def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
     params['mode'] = params['mode'].decode('ascii')
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    pads = params['pads']
+    if 'pads' in params:
+        pads = params['pads']
+    else:
+        pads = layers[node.input[1]]
+
+    print(pads)
 
     if params['mode'] == 'constant':
 
-        if params['value'] != 0.0:
+        if 'value' in params and params['value'] != 0.0:
             raise AssertionError('Cannot convert non-zero padding')
 
         # Magic ordering

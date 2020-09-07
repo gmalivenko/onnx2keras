@@ -228,21 +228,28 @@ def onnx_to_keras(onnx_model, input_names,
                 kerasf = list(layer['config']['function'])
                 dargs = list(kerasf[1])
                 func = lambda_funcs.get(layer['name'])
-                if func:
-                    params = inspect.signature(func).parameters
-                    i = list(params.keys()).index('axes') if ('axes' in params) else -1
-                    if i > 0:
-                        i -= 1
-                        axes = list(range(len(dargs[i].shape)))
-                        axes = axes[0:1] + axes[2:] + axes[1:2]
-                        dargs[i] = np.transpose(dargs[i], axes)
 
-                    i = list(params.keys()).index('axis') if ('axis' in params) else -1
-                    if i > 0:
-                        i -= 1
-                        axis = np.array(dargs[i])
-                        axes_map = np.array([0, 3, 1, 2])
-                        dargs[i] = axes_map[axis]
+                if func:
+                    if len(dargs) > 1:
+                        params = inspect.signature(func).parameters
+                        i = list(params.keys()).index('axes') if ('axes' in params) else -1
+
+                        if i > 0:
+                            i -= 1
+                            axes = list(range(len(dargs[i].shape)))
+                            axes = axes[0:1] + axes[2:] + axes[1:2]
+                            dargs[i] = np.transpose(dargs[i], axes)
+
+                        i = list(params.keys()).index('axis') if ('axis' in params) else -1
+
+                        if i > 0:
+                            i -= 1
+                            axis = np.array(dargs[i])
+                            axes_map = np.array([0, 3, 1, 2])
+                            dargs[i] = axes_map[axis]
+                    else:
+                        if dargs[0] == -1:
+                            dargs = [1]
 
                 kerasf[1] = tuple(dargs)
                 layer['config']['function'] = tuple(kerasf)
