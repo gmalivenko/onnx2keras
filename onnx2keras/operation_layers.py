@@ -263,7 +263,7 @@ def convert_cast(node, params, layers, lambda_func, node_name, keras_name):
             11: np.double,
         }
 
-        layers[node_name] = cast_map[params['to']](node.input[0])
+        layers[node_name] = cast_map[params['to']](layers[node.input[0]])
     else:
         input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
