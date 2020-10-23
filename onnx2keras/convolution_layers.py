@@ -51,27 +51,25 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
         out_channels, channels_per_group, dimension, height, width = W.shape
         W = W.transpose(2, 3, 4, 1, 0)
 
-        if n_groups != 1:
-            raise NotImplementedError("Not Implemented")
+        if has_bias:
+            weights = [W, bias]
         else:
-            if has_bias:
-                weights = [W, bias]
-            else:
-                weights = [W]
+            weights = [W]
 
-            conv = keras.layers.Conv3D(
-                filters=out_channels,
-                kernel_size=(dimension, height, width),
-                strides=(strides[0], strides[1], strides[2]),
-                padding='valid',
-                weights=weights,
-                use_bias=has_bias,
-                activation=None,
-                dilation_rate=dilation,
-                bias_initializer='zeros', kernel_initializer='zeros',
-                name=keras_name
-            )
-            layers[node_name] = conv(input_0)
+        conv = keras.layers.Conv3D(
+            filters=out_channels,
+            kernel_size=(dimension, height, width),
+            strides=(strides[0], strides[1], strides[2]),
+            padding='valid',
+            weights=weights,
+            use_bias=has_bias,
+            activation=None,
+            dilation_rate=dilation,
+            bias_initializer='zeros', kernel_initializer='zeros',
+            name=keras_name,
+            groups=n_groups
+        )
+        layers[node_name] = conv(input_0)
 
     elif len(W.shape) == 4:  # 2D conv
         logger.debug('2D convolution')
