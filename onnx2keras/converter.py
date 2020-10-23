@@ -225,7 +225,10 @@ def onnx_to_keras(onnx_model, input_names,
             if layer['config'] and 'data_format' in layer['config']:
                 layer['config']['data_format'] = 'channels_last'
             if layer['config'] and 'axis' in layer['config']:
-                layer['config']['axis'] = 3
+                if layer['config']['axis'] == 3:
+                    layer['config']['axis'] = 1
+                if layer['config']['axis'] == 1:
+                    layer['config']['axis'] = 3
 
         for layer in conf['layers']:
             if 'function' in layer['config'] and layer['config']['function'][1] is not None:
@@ -253,6 +256,8 @@ def onnx_to_keras(onnx_model, input_names,
                             dargs[i] = axes_map[axis]
                     else:
                         if dargs[0] == -1:
+                            dargs = [1]
+                        elif dargs[0] == 3:
                             dargs = [1]
 
                 kerasf[1] = tuple(dargs)

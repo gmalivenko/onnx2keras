@@ -141,9 +141,9 @@ def convert_softmax(node, params, layers, lambda_func, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    def target_layer(x):
+    def target_layer(x, axis=params['axis']):
         import tensorflow as tf
-        return tf.nn.softmax(x, axis=1)
+        return tf.nn.softmax(x, axis=axis)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)

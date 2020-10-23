@@ -9,7 +9,7 @@ class LayerSoftmaxTest(nn.Module):
     def __init__(self):
         super(LayerSoftmaxTest, self).__init__()
         self.dim = np.random.randint(0, 3)
-        self.softmax = nn.Softmax(dim=self.dim)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x):
         x = self.softmax(x)
@@ -26,4 +26,4 @@ class FSoftmaxTest(nn.Module):
 
     def forward(self, x):
         from torch.nn import functional as F
-        return F.softmax(x, self.dim)
+        return F.softmax(x, 1)
