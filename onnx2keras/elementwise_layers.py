@@ -107,7 +107,7 @@ def convert_elementwise_mul(node, params, layers, lambda_func, node_name, keras_
     try:
         mul = keras.layers.Multiply(name=keras_name)
         layers[node_name] = mul([input_0, input_1])
-    except IndexError:
+    except (IndexError, ValueError):
         logger.warning('Failed to use keras.layers.Multiply. Fallback to TF lambda.')
 
         # Doesn't work with constants
@@ -149,7 +149,7 @@ def convert_elementwise_sub(node, params, layers, lambda_func, node_name, keras_
     try:
         sub = keras.layers.Subtract(name=keras_name)
         layers[node_name] = sub([input_0, input_1])
-    except IndexError:
+    except (IndexError, ValueError):
         logger.warning('Failed to use keras.layers.Subtract. Fallback to TF lambda.')
 
         # Doesn't work with constants
