@@ -168,10 +168,12 @@ def convert_prelu(node, params, layers, lambda_func, node_name, keras_name):
     W = ensure_numpy_type(layers[node.input[1]])
 
     if params['change_ordering']:
-        prelu = \
-            keras.layers.PReLU(weights=[W], shared_axes=[1, 2], name=keras_name)
-        layers[node_name] = prelu(input_0)
+        shared_axes = [1, 2]
     else:
-        prelu = \
-            keras.layers.PReLU(weights=[W], shared_axes=[2, 3], name=keras_name)
-        layers[node_name] = prelu(input_0)
+        shared_axes = [2, 3]
+
+    # for case when W.shape (n,). When activation is used for single dimension vector.
+    shared_axes = shared_axes if len(W.shape) > 1 else None
+
+    prelu = keras.layers.PReLU(weights=[W], shared_axes=shared_axes, name=keras_name)
+    layers[node_name] = prelu(input_0)
