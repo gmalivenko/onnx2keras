@@ -17,8 +17,15 @@ def convert_upsample(node, params, layers, lambda_func, node_name, keras_name):
     logger = logging.getLogger('onnx2keras:upsample')
     logger.warning('!!! EXPERIMENTAL SUPPORT (upsample) !!!')
 
-    # Upsample since opset version 9 uses input[1] as 'scales' instead of attributes.
-    scale = np.uint8(layers[node.input[1]][-2:])
+    if "scales" in params:
+        # for opset version - 7
+        if len(node.input) != 1:
+            raise AttributeError('Unsupported number of inputs')
+        scale = np.uint8(params['scales'][-2:])
+    else:
+        # for opset version - 9+
+        # Upsample since opset version 9 uses input[1] as 'scales' instead of attributes.
+        scale = np.uint8(layers[node.input[1]][-2:])
 
     if params["mode"].decode("utf-8") == "nearest":
         interpolation = "nearest"
