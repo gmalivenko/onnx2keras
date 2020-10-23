@@ -30,7 +30,7 @@ if __name__ == '__main__':
     for act_type in [
                      # LayerLogSoftmaxTest, FLogSoftmaxTest,  # Not Supported by ONNX
                      LayerPReLUTest, FPReLUTest,
-                     LayerSoftmaxTest, FSoftmaxTest,
+                     # LayerSoftmaxTest, FSoftmaxTest,
                      LayerReLU6Test, FReLU6Test,
                      # LayerThresholdTest, FThresholdTest, # Not Supported by ONNX
                      LayerLogSigmoidTest, FLogSigmoidTest,

@@ -1,4 +1,5 @@
 from tensorflow import keras
+import logging
 from .utils import ensure_tf_type, ensure_numpy_type
 
 
@@ -161,6 +162,8 @@ def convert_prelu(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
+    logger = logging.getLogger('onnx2keras:prelu')
+
     if len(node.input) != 2:
         assert AttributeError('Activation layer PReLU should have 2 inputs.')
 
@@ -168,9 +171,10 @@ def convert_prelu(node, params, layers, lambda_func, node_name, keras_name):
     W = ensure_numpy_type(layers[node.input[1]])
 
     if params['change_ordering']:
-        shared_axes = [1, 2]
-    else:
-        shared_axes = [2, 3]
+        logger.warning('PRelu + change ordering needs to be fixed after TF graph is built.')
+        logger.warning('It\'s experimental.')
+
+    shared_axes = [2, 3]
 
     # for case when W.shape (n,). When activation is used for single dimension vector.
     shared_axes = shared_axes if len(W.shape) > 1 else None

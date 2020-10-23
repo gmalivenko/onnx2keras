@@ -201,6 +201,10 @@ def onnx_to_keras(onnx_model, input_names,
         conf = model.get_config()
 
         for layer in conf['layers']:
+            if layer['config'] and 'shared_axes' in layer['config']:
+                # TODO: check axes first (if it's not 4D tensor)
+                layer['config']['shared_axes'] = [1, 2]
+
             if layer['config'] and 'batch_input_shape' in layer['config']:
                 layer['config']['batch_input_shape'] = \
                     tuple(np.reshape(np.array(
@@ -257,8 +261,12 @@ def onnx_to_keras(onnx_model, input_names,
         keras.backend.set_image_data_format('channels_last')
         model_tf_ordering = keras.models.Model.from_config(conf)
 
-        for dst_layer, src_layer in zip(model_tf_ordering.layers, model.layers):
-            dst_layer.set_weights(src_layer.get_weights())
+        for dst_layer, src_layer, conf in zip(model_tf_ordering.layers, model.layers, conf['layers']):
+            W = src_layer.get_weights()
+            # TODO: check axes first (if it's not 4D tensor)
+            if conf['config'] and 'shared_axes' in conf['config']:
+                W[0] = W[0].transpose(1, 2, 0)
+            dst_layer.set_weights(W)
 
         model = model_tf_ordering
 
