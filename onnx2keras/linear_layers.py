@@ -13,7 +13,7 @@ def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:gemm')
+    logger = logging.getLogger('onnx2keras.gemm')
 
     # Check if Bias available
     if len(node.input) == 3:

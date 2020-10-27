@@ -162,7 +162,7 @@ def convert_prelu(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:prelu')
+    logger = logging.getLogger('onnx2keras.prelu')
 
     if len(node.input) != 2:
         assert AttributeError('Activation layer PReLU should have 2 inputs.')

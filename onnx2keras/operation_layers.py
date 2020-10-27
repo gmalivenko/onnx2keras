@@ -22,7 +22,7 @@ def convert_clip(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:clip')
+    logger = logging.getLogger('onnx2keras.clip')
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for clip layer.')
 
@@ -269,7 +269,7 @@ def convert_cast(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:cast')
+    logger = logging.getLogger('onnx2keras.cast')
 
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for cast layer.')

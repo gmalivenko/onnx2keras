@@ -14,7 +14,7 @@ def convert_upsample(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:upsample')
+    logger = logging.getLogger('onnx2keras.upsample')
     logger.warning('!!! EXPERIMENTAL SUPPORT (upsample) !!!')
 
     if "scales" in params:

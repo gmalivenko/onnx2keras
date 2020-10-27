@@ -14,7 +14,7 @@ def convert_elementwise_div(node, params, layers, lambda_func, node_name, keras_
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:div')
+    logger = logging.getLogger('onnx2keras.div')
 
     if len(node.input) != 2:
         raise AttributeError('Number of inputs is not equal 2 for element-wise layer')
@@ -51,7 +51,7 @@ def convert_elementwise_add(node, params, layers, lambda_func, node_name, keras_
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:add')
+    logger = logging.getLogger('onnx2keras.add')
 
     if len(node.input) != 2:
         raise AttributeError('Number of inputs is not equal 2 for element-wise layer')
@@ -95,7 +95,7 @@ def convert_elementwise_mul(node, params, layers, lambda_func, node_name, keras_
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:mul')
+    logger = logging.getLogger('onnx2keras.mul')
 
     if len(node.input) != 2:
         raise AttributeError('Number of inputs is not equal 2 for element-wise layer')
@@ -137,7 +137,7 @@ def convert_elementwise_sub(node, params, layers, lambda_func, node_name, keras_
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:sub')
+    logger = logging.getLogger('onnx2keras.sub')
 
     if len(node.input) != 2:
         raise AttributeError('Number of inputs is not equal 2 for element-wise layer')

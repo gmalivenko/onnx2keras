@@ -14,7 +14,7 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:conv')
+    logger = logging.getLogger('onnx2keras.conv')
 
     if len(node.input) == 3:
         logger.debug('Conv with bias')
@@ -233,7 +233,7 @@ def convert_convtranspose(node, params, layers,
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:convtranpose')
+    logger = logging.getLogger('onnx2keras.convtranpose')
 
     if len(node.input) == 3:
         logger.debug('ConvTranspose with bias')

@@ -15,7 +15,7 @@ def convert_transpose(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:transpose')
+    logger = logging.getLogger('onnx2keras.transpose')
     input_name = node.input[0]
 
     if params['perm'][0] != 0:
@@ -41,7 +41,7 @@ def convert_shape(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:shape')
+    logger = logging.getLogger('onnx2keras.shape')
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
     logger.debug('Actual shape:')
@@ -68,7 +68,7 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:gather')
+    logger = logging.getLogger('onnx2keras.gather')
 
     if is_numpy(layers[node.input[0]]) and is_numpy(layers[node.input[1]]):
         logger.debug('Gather from numpy array')
@@ -98,7 +98,7 @@ def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:concat')
+    logger = logging.getLogger('onnx2keras.concat')
 
     layer_input = [layers[node.input[i]] for i in range(len(node.input))]
 
@@ -140,7 +140,7 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:reshape')
+    logger = logging.getLogger('onnx2keras.reshape')
 
     input_0 = layers[node.input[0]]
     input_1 = layers[node.input[1]]
@@ -204,7 +204,7 @@ def convert_unsqueeze(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:unsqueeze')
+    logger = logging.getLogger('onnx2keras.unsqueeze')
 
     if len(node.input) != 1:
         raise AttributeError('Number of inputs is not equal 1 for unsqueeze layer')
@@ -242,7 +242,7 @@ def convert_flatten(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:flatten')
+    logger = logging.getLogger('onnx2keras.flatten')
 
     if len(node.input) != 1:
         raise AttributeError('Number of inputs is not equal 1 for flatten layer')
@@ -278,7 +278,7 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:slice')
+    logger = logging.getLogger('onnx2keras.slice')
 
     if is_numpy(layers[node.input[0]]):
         if params['change_ordering']:
