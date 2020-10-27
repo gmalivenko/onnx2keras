@@ -5,6 +5,7 @@ The ONNX to keras converter module
 from tensorflow import keras
 import logging
 import inspect
+import collections
 from onnx import numpy_helper
 
 from .layers import AVAILABLE_CONVERTERS
@@ -226,7 +227,7 @@ def onnx_to_keras(onnx_model, input_names,
                 layer['config']['data_format'] = 'channels_last'
             if layer['config'] and 'axis' in layer['config']:
                 if layer['config']['axis'] == 3:
-                    layer['config']['axis'] = 1
+                    layer['config']['axis'] = 2
                 if layer['config']['axis'] == 1:
                     layer['config']['axis'] = 3
 
@@ -237,7 +238,10 @@ def onnx_to_keras(onnx_model, input_names,
                 func = lambda_funcs.get(layer['name'])
 
                 if func:
-                    if len(dargs) > 1:
+                    # ReduceSum operation has 'axis' param as array of ints. When onnx uses ReduceSum
+                    # to reproduce SoftMax - dargs become something like [[1]] (list of lists)
+                    # that why we handle collections.Iterable
+                    if len(dargs) > 1 or isinstance(dargs[0], collections.Iterable):
                         params = inspect.signature(func).parameters
                         i = list(params.keys()).index('axes') if ('axes' in params) else -1
 
@@ -258,7 +262,7 @@ def onnx_to_keras(onnx_model, input_names,
                         if dargs[0] == -1:
                             dargs = [1]
                         elif dargs[0] == 3:
-                            dargs = [1]
+                            dargs = [2]
 
                 kerasf[1] = tuple(dargs)
                 layer['config']['function'] = tuple(kerasf)
