@@ -226,9 +226,13 @@ def onnx_to_keras(onnx_model, input_names,
             if layer['config'] and 'data_format' in layer['config']:
                 layer['config']['data_format'] = 'channels_last'
             if layer['config'] and 'axis' in layer['config']:
-                if layer['config']['axis'] == 3:
+                axis = layer['config']['axis']
+                # BatchNorm wrap axis with ListWrapper instead single INT value
+                if isinstance(axis, (tuple, list)):
+                    axis = axis[0]
+                if axis == 3:
                     layer['config']['axis'] = 2
-                if layer['config']['axis'] == 1:
+                if axis == 1:
                     layer['config']['axis'] = 3
 
         for layer in conf['layers']:
@@ -241,7 +245,7 @@ def onnx_to_keras(onnx_model, input_names,
                     # ReduceSum operation has 'axis' param as array of ints. When onnx uses ReduceSum
                     # to reproduce SoftMax - dargs become something like [[1]] (list of lists)
                     # that why we handle collections.Iterable
-                    if len(dargs) > 1 or isinstance(dargs[0], collections.Iterable):
+                    if len(dargs) > 1 or isinstance(dargs[0], (tuple, list)):
                         params = inspect.signature(func).parameters
                         i = list(params.keys()).index('axes') if ('axes' in params) else -1
 
