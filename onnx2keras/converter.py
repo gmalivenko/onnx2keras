@@ -261,7 +261,8 @@ def onnx_to_keras(onnx_model, input_names,
                             i -= 1
                             axis = np.array(dargs[i])
                             axes_map = np.array([0, 3, 1, 2])
-                            dargs[i] = axes_map[axis]
+                            # to list because some tf operations check only for core python types (e.g tf.norm)
+                            dargs[i] = axes_map[axis].tolist()
                     else:
                         if dargs[0] == -1:
                             dargs = [1]
