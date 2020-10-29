@@ -65,7 +65,6 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
     if isinstance(input_np, np.ndarray):
         input_np = [input_np.astype(np.float32)]
 
-    l__ = input_np[0].copy()
 
     input_var = [Variable(torch.FloatTensor(i)) for i in input_np]
     pytorch_output = model(*input_var)

@@ -1,10 +1,7 @@
 import io
-import numpy as np
 import torch
 import onnx
-import collections
 
-from typing import Union, Tuple
 from onnx2keras import onnx_to_keras, check_torch_keras_error
 
 

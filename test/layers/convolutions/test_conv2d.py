@@ -53,13 +53,3 @@ def test_conv2d_case1(change_ordering, kernel_size, padding, stride, bias, dilat
 @pytest.mark.parametrize('groups', [1, 2, 3])
 def test_conv2d_case2(change_ordering, kernel_size, padding, stride, bias, dilation, groups):
     func(change_ordering, kernel_size, padding, stride, bias, dilation, groups)
-
-# @pytest.mark.parametrize('change_ordering', [False])
-# @pytest.mark.parametrize('kernel_size', [7])
-# @pytest.mark.parametrize('padding', [5])
-# @pytest.mark.parametrize('stride', [1])
-# @pytest.mark.parametrize('bias', [False])
-# @pytest.mark.parametrize('dilation', [2])
-# @pytest.mark.parametrize('groups', [2])
-# def test_conv2d_case2(change_ordering, kernel_size, padding, stride, bias, dilation, groups):
-#     func(change_ordering, kernel_size, padding, stride, bias, dilation, groups)
