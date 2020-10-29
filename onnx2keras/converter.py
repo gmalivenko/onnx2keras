@@ -198,6 +198,12 @@ def onnx_to_keras(onnx_model, input_names,
     model = keras.models.Model(inputs=keras_inputs, outputs=keras_outputs)
 
     if change_ordering:
+        change_ord_axes_map = {
+            3: 2,
+            1: 3,
+            -1: 1
+        }
+
         import numpy as np
         conf = model.get_config()
 
@@ -230,10 +236,7 @@ def onnx_to_keras(onnx_model, input_names,
                 # BatchNorm wrap axis with ListWrapper instead single INT value
                 if isinstance(axis, (tuple, list)):
                     axis = axis[0]
-                if axis == 3:
-                    layer['config']['axis'] = 2
-                if axis == 1:
-                    layer['config']['axis'] = 3
+                layer['config']['axis'] = change_ord_axes_map.get(axis, layer['config']['axis'])
 
         for layer in conf['layers']:
             if 'function' in layer['config'] and layer['config']['function'][1] is not None:
@@ -264,10 +267,8 @@ def onnx_to_keras(onnx_model, input_names,
                             # to list because some tf operations check only for core python types (e.g tf.norm)
                             dargs[i] = axes_map[axis].tolist()
                     else:
-                        if dargs[0] == -1:
-                            dargs = [1]
-                        elif dargs[0] == 3:
-                            dargs = [2]
+                        # if map exits will change else will remain the same
+                        dargs[0] = change_ord_axes_map.get(dargs[0], dargs[0])
 
                 kerasf[1] = tuple(dargs)
                 layer['config']['function'] = tuple(kerasf)
