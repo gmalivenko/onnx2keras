@@ -1,3 +1,4 @@
 tensorflow
+tensorflow-addons
 numpy 
 onnx

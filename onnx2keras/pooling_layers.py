@@ -14,7 +14,7 @@ def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:maxpool')
+    logger = logging.getLogger('onnx2keras.maxpool')
 
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
@@ -83,7 +83,7 @@ def convert_avgpool(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:avgpool')
+    logger = logging.getLogger('onnx2keras.avgpool')
 
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
@@ -142,7 +142,7 @@ def convert_global_avg_pool(node, params, layers, lambda_func, node_name, keras_
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:global_avg_pool')
+    logger = logging.getLogger('onnx2keras.global_avg_pool')
 
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 

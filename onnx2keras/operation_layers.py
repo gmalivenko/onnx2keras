@@ -22,7 +22,7 @@ def convert_clip(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:clip')
+    logger = logging.getLogger('onnx2keras.clip')
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for clip layer.')
 
@@ -269,7 +269,7 @@ def convert_cast(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras:cast')
+    logger = logging.getLogger('onnx2keras.cast')
 
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for cast layer.')
@@ -398,10 +398,11 @@ def convert_reduce_l2(node, params, layers, lambda_func, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     axis = params.get("axes", [-1])
+    keepdims = params.get("keepdims", 0)
 
-    def target_layer(x, axis=axis):
+    def target_layer(x, axis=axis, keepdims=keepdims):
         import tensorflow as tf
-        return tf.norm(x, axis=axis)
+        return tf.norm(x, axis=axis, keepdims=keepdims == 1)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
