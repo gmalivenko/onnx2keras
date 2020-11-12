@@ -127,7 +127,7 @@ def onnx_to_keras(onnx_model, input_names,
         keras_names = []
         for output_index, output in enumerate(node.output):
             if name_policy == 'short':
-                keras_name = keras_name_i = str(output)[:8]
+                keras_name = keras_name_i = "krs_"+str(output)[:8]
                 suffix = 1
                 while keras_name_i in node_names:
                     keras_name_i = keras_name + '_' + str(suffix)
