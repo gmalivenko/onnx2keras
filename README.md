@@ -31,7 +31,7 @@ TensorFlow 2.0
 ## Getting started
 
 ### ONNX model
-```
+```python
 import onnx
 from onnx2keras import onnx_to_keras
 
@@ -49,7 +49,7 @@ Keras model will be stored to the `k_model` variable. So simple, isn't it?
 
 Using ONNX as intermediate format, you can convert PyTorch model as well.
 
-```
+```python
 import numpy as np
 import torch
 from torch.autograd import Variable
@@ -78,7 +78,7 @@ if __name__ == '__main__':
 
 You can try using the snippet below to convert your onnx / PyTorch model to frozen graph. It may be useful for deploy for Tensorflow.js / for Tensorflow for Android / for Tensorflow C-API.
 
-```
+```python
 import numpy as np
 import torch
 from pytorch2keras.converter import pytorch_to_keras
