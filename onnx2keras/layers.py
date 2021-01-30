@@ -1,6 +1,6 @@
 from .convolution_layers import convert_conv, convert_convtranspose
 from .activation_layers import convert_relu, convert_elu, convert_lrelu, convert_selu, \
-    convert_sigmoid, convert_tanh, convert_softmax, convert_prelu
+    convert_sigmoid, convert_tanh, convert_softmax, convert_prelu, convert_log_softmax
 from .operation_layers import convert_clip, convert_exp, convert_reduce_sum, convert_reduce_mean, \
     convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity, \
     convert_argmax, convert_reduce_l2, convert_reduce_max
@@ -73,4 +73,6 @@ AVAILABLE_CONVERTERS = {
     'Upsample': convert_upsample,
     # Experimental - tested only on a couple of models
     'Sign': convert_sign,
+    # Experimental - tested only on a couple of models
+    'LogSoftmax': convert_log_softmax,
 }
