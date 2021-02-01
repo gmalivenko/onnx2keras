@@ -17,6 +17,7 @@ def onnx_node_attributes_to_dict(args):
     :param args: ONNX attributes object
     :return: Python dictionary
     """
+
     def onnx_attribute_to_dict(onnx_attr):
         """
         Parse ONNX attribute
@@ -33,6 +34,7 @@ def onnx_node_attributes_to_dict(args):
         for attr_type in ['floats', 'ints', 'strings']:
             if getattr(onnx_attr, attr_type):
                 return list(getattr(onnx_attr, attr_type))
+
     return {arg.name: onnx_attribute_to_dict(arg) for arg in args}
 
 
@@ -89,8 +91,8 @@ def onnx_to_keras(onnx_model, input_names,
             weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
 
         logger.debug('Found weight {0} with shape {1}.'.format(
-                     onnx_extracted_weights_name,
-                     weights[onnx_extracted_weights_name].shape))
+            onnx_extracted_weights_name,
+            weights[onnx_extracted_weights_name].shape))
 
     layers = dict()
     lambda_funcs = dict()
@@ -225,9 +227,9 @@ def onnx_to_keras(onnx_model, input_names,
                 if len(list(layer['config']['target_shape'][1:][:])) > 0:
                     layer['config']['target_shape'] = \
                         tuple(np.reshape(np.array(
-                                list(layer['config']['target_shape'][1:]) +
-                                [layer['config']['target_shape'][0]]
-                            ), -1),)
+                            list(layer['config']['target_shape'][1:]) +
+                            [layer['config']['target_shape'][0]]
+                        ), -1), )
 
             if layer['config'] and 'data_format' in layer['config']:
                 layer['config']['data_format'] = 'channels_last'
