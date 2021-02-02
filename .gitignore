@@ -5,3 +5,4 @@ __pycache__/
 *.onnx
 *.h5
 dist/
+*.DS_Store
