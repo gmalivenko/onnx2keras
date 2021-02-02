@@ -142,21 +142,15 @@ def convert_global_avg_pool(node, params, layers, lambda_func, node_name, keras_
     :param keras_name: resulting layer name
     :return: None
     """
-    logger = logging.getLogger('onnx2keras.global_avg_pool')
 
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
     global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', name=keras_name)
     input_0 = global_pool(input_0)
+    new_shape = input_0.shape.as_list()
+    new_shape = new_shape[1:]
+    new_shape.extend([1, 1])
+    reshape_layer = keras.layers.Reshape(new_shape)
+    input_0 = reshape_layer(input_0)
 
-    def target_layer(x):
-        from tensorflow import keras
-        return keras.backend.expand_dims(x)
-
-    logger.debug('Now expand dimensions twice.')
-    lambda_layer1 = keras.layers.Lambda(target_layer, name=keras_name + '_EXPAND1')
-    lambda_layer2 = keras.layers.Lambda(target_layer, name=keras_name + '_EXPAND2')
-    input_0 = lambda_layer1(input_0)  # double expand dims
-    layers[node_name] = lambda_layer2(input_0)
-    lambda_func[keras_name + '_EXPAND1'] = target_layer
-    lambda_func[keras_name + '_EXPAND2'] = target_layer
+    layers[node_name] = input_0
