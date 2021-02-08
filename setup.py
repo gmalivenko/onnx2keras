@@ -14,14 +14,14 @@ with open('README.md') as f:
     long_description = f.read()
 
 
-setup(name='onnx2keras',
-      version='0.0.24',
+setup(name='onnx2keras_tl_fork',
+      version='0.0.25',
       description='The deep learning models converter',
       long_description=long_description,
       long_description_content_type='text/markdown',
-      url='https://github.com/gmalivenko/onnx2keras',
-      author='Grigory Malivenko',
-      author_email='',
+      url='https://github.com/tensorleap/onnx2keras',
+      author='Grigory Malivenko, Doron Har Noy',
+      author_email='nerox8664@gmail.com, doron.harnoy@tensorleap.ai',
       classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
@@ -31,7 +31,7 @@ setup(name='onnx2keras',
         'Topic :: Scientific/Engineering :: Image Recognition',
       ],
       keywords='machine-learning deep-learning pytorch keras neuralnetwork vgg resnet '
-               'densenet drn dpn darknet squeezenet mobilenet',
+               'densenet drn dpn darknet squeezenet mobilenet onnx tensorleap',
       license='MIT',
       packages=find_packages(),
       install_requires=reqs,
