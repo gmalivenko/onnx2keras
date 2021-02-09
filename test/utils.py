@@ -2,7 +2,7 @@ import io
 import torch
 import onnx
 
-from onnx2keras import onnx_to_keras, check_torch_keras_error
+from onnx2kerastl import onnx_to_keras, check_torch_keras_error
 
 
 def torch2keras(model: torch.nn.Module, input_variable, verbose=True, change_ordering=False):

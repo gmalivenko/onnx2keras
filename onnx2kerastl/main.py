@@ -1,5 +1,5 @@
 import onnx
-from onnx2keras import onnx_to_keras
+from onnx2kerastl import onnx_to_keras
 
 
 def main():
