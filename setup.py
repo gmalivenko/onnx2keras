@@ -9,26 +9,25 @@ def parse_requirements(filename):
 
 reqs = parse_requirements('requirements.txt')
 
-
 with open('README.md') as f:
     long_description = f.read()
 
-
 setup(name='onnx2keras_tl_fork',
-      version='0.0.1',
+      version='0.0.26',
       description='The deep learning models converter',
       long_description=long_description,
       long_description_content_type='text/markdown',
       url='https://github.com/tensorleap/onnx2keras',
+      download_url='https://github.com/tensorleap/onnx2keras/archive/v0.0.25.tar.gz',
       author='Grigory Malivenko, Doron Har Noy',
       author_email='nerox8664@gmail.com, doron.harnoy@tensorleap.ai',
       classifiers=[
-        'Development Status :: 3 - Alpha',
-        'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: MIT License',
-        'Operating System :: OS Independent',
-        'Programming Language :: Python',
-        'Topic :: Scientific/Engineering :: Image Recognition',
+          'Development Status :: 3 - Alpha',
+          'Intended Audience :: Science/Research',
+          'License :: OSI Approved :: MIT License',
+          'Operating System :: OS Independent',
+          'Programming Language :: Python',
+          'Topic :: Scientific/Engineering :: Image Recognition',
       ],
       keywords='machine-learning deep-learning pytorch keras neuralnetwork vgg resnet '
                'densenet drn dpn darknet squeezenet mobilenet onnx tensorleap',
