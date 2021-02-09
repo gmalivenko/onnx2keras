@@ -2,7 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
-from onnx2keras import onnx_to_keras, check_torch_keras_error
+from onnx2kerastl import onnx_to_keras, check_torch_keras_error
 import onnx
 import pytest
 

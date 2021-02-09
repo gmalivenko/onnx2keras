@@ -31,9 +31,10 @@ TensorFlow 2.0
 ## Getting started
 
 ### ONNX model
+
 ```python
 import onnx
-from onnx2keras import onnx_to_keras
+from onnx2kerastl import onnx_to_keras
 
 # Load ONNX model
 onnx_model = onnx.load('resnet18.onnx')
