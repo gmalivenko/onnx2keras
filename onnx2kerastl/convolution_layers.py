@@ -65,7 +65,6 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
             use_bias=has_bias,
             activation=None,
             dilation_rate=dilation,
-            bias_initializer='zeros', kernel_initializer='zeros',
             name=keras_name,
             groups=n_groups
         )
@@ -111,7 +110,6 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
                 depth_multiplier=1,
                 weights=weights,
                 dilation_rate=dilation,
-                bias_initializer='zeros', kernel_initializer='zeros',
                 name=keras_name
             )
             layers[node_name] = conv(input_0)
@@ -170,7 +168,6 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
                 use_bias=has_bias,
                 activation=None,
                 dilation_rate=dilation,
-                bias_initializer='zeros', kernel_initializer='zeros',
                 name=keras_name
             )
 
@@ -285,7 +282,6 @@ def convert_convtranspose(node, params, layers,
             use_bias=has_bias,
             activation=None,
             dilation_rate=dilation,
-            bias_initializer='zeros', kernel_initializer='zeros',
             name=keras_name
         )
 
