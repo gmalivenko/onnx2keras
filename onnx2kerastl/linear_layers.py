@@ -39,7 +39,7 @@ def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
     if is_numpy(keras_weights[0]):
         dense = keras.layers.Dense(
             output_channels,
-            weights=keras_weights, name=keras_name, bias_initializer='zeros', kernel_initializer='zeros', use_bias=has_bias
+            weights=keras_weights, name=keras_name, use_bias=has_bias
         )
 
         # The first input - always X
