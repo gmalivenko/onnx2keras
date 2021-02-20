@@ -200,7 +200,7 @@ def onnx_to_keras(onnx_model, input_names,
     if change_ordering:
         change_ord_axes_map = {
             3: 2,
-            1: 3,
+            1: -1,
             -1: 1
         }
 
