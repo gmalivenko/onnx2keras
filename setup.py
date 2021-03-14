@@ -13,12 +13,12 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(name='onnx2kerastl',
-      version='0.0.27',
+      version='0.0.29',
       description='The deep learning models converter',
       long_description=long_description,
       long_description_content_type='text/markdown',
       url='https://github.com/tensorleap/onnx2keras',
-      download_url='https://github.com/tensorleap/onnx2keras/archive/v0.0.27.tar.gz',
+      download_url='https://github.com/tensorleap/onnx2keras/archive/v0.0.28.tar.gz',
       author='Grigory Malivenko, Doron Har Noy',
       author_email='nerox8664@gmail.com, doron.harnoy@tensorleap.ai',
       classifiers=[
