@@ -401,6 +401,10 @@ def convert_expand(node, params, layers, lambda_func, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     input_1 = ensure_numpy_type(layers[node.input[1]])
 
+    # skipping empty expand
+    if np.all(input_1 == 1):
+        layers[node_name] = input_0
+
     def target_layer(x, shape=input_1):
         from tensorflow import keras
 
