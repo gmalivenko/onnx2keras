@@ -149,3 +149,27 @@ def convert_lrn(node, params, layers, lambda_func, node_name, keras_name):
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
     lambda_func[keras_name] = target_layer
+
+
+def convert_sign(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert Sign layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    logger = logging.getLogger('onnx2keras:Sign')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+
+    def target_layer(x):
+        import tensorflow as tf
+        return tf.math.sign(x)
+
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+    layers[node_name] = lambda_layer(input_0)
+    lambda_func[keras_name] = target_layer

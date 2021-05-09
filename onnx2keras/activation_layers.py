@@ -151,6 +151,32 @@ def convert_softmax(node, params, layers, lambda_func, node_name, keras_name):
     lambda_func[keras_name] = target_layer
 
 
+def convert_log_softmax(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert logSoftmax activation layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for an activation layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+
+    def target_layer(x, axis=params['axis']):
+        import tensorflow as tf
+        return tf.nn.log_softmax(x, axis=axis)
+
+    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+    layers[node_name] = lambda_layer(input_0)
+    layers[node_name].set_shape(layers[node_name].shape)
+    lambda_func[keras_name] = target_layer
+
+
 def convert_prelu(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert PReLU activation layer
