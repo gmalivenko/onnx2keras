@@ -77,7 +77,14 @@ def onnx_to_keras(onnx_model, input_names,
 
     logger.debug('Gathering weights to dictionary.')
     weights = {}
+
     for onnx_w in onnx_weights:
+        # Simpler solution.  Seems to work with all keras2onnx-made models (July 28 2020)
+        # Unsure if it works with others. See below alternate solution
+        onnx_extracted_weights_name = onnx_w.ListFields()[-1][1]
+        weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
+        # Previous code, does not work for models from keras2onnx as of July 28 2020, and likely earlier
+        '''
         try:
             if len(onnx_w.ListFields()) < 4:
                 onnx_extracted_weights_name = onnx_w.ListFields()[1][1]
@@ -87,7 +94,24 @@ def onnx_to_keras(onnx_model, input_names,
         except:
             onnx_extracted_weights_name = onnx_w.ListFields()[3][1]
             weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
-
+        '''
+        # Alternate (ugly) solution, based on previous code
+        '''
+        try:
+            if len(onnx_w.ListFields()) < 4:
+                onnx_extracted_weights_name = onnx_w.ListFields()[1][1]
+            else:
+                onnx_extracted_weights_name = onnx_w.ListFields()[2][1]
+            weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
+        except:
+            # Ugly fix
+            try:
+                onnx_extracted_weights_name = onnx_w.ListFields()[3][1]
+                weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
+            except:
+                onnx_extracted_weights_name = onnx_w.ListFields()[-1][1]
+                weights[onnx_extracted_weights_name] = numpy_helper.to_array(onnx_w)
+        '''
         logger.debug('Found weight {0} with shape {1}.'.format(
                      onnx_extracted_weights_name,
                      weights[onnx_extracted_weights_name].shape))
