@@ -25,7 +25,8 @@ def convert_upsample(node, params, layers, lambda_func, node_name, keras_name):
     else:
         # for opset version - 9+
         # Upsample since opset version 9 uses input[1] as 'scales' instead of attributes.
-        scale = np.uint8(layers[node.input[1]][-2:])
+        #
+        scale = np.uint8(layers[node.input[2]][-2:])
 
     if params['mode'].decode('utf-8') != 'nearest':
         logger.error('Cannot convert non-nearest upsampling.')
