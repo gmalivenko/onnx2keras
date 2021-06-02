@@ -70,4 +70,5 @@ AVAILABLE_CONVERTERS = {
     'Pad': convert_padding,
     'Flatten': convert_flatten,
     'Upsample': convert_upsample,
+    'Resize': convert_upsample
 }
