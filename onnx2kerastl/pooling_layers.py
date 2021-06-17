@@ -91,14 +91,17 @@ def convert_avgpool(node, params, layers, lambda_func, node_name, keras_name):
     stride_shape = params['strides']
 
     pads = params['pads'] if 'pads' in params else [0, 0, 0, 0, 0, 0]
-    pad = 'valid'
 
-    if all([shape % 2 == 1 for shape in kernel_shape]) and \
+    if not any(pads):
+        pad = 'valid'
+
+    elif all([shape % 2 == 1 for shape in kernel_shape]) and \
        all([kernel_shape[i] // 2 == pads[i] for i in range(len(kernel_shape))]) and \
        all([shape == 1 for shape in stride_shape]):
         pad = 'same'
         logger.debug('Use `same` padding parameters.')
     else:
+        pad = 'valid'
         logger.warning('Unable to use `same` padding. Add ZeroPadding2D layer to fix shapes.')
         padding_name = keras_name + '_pad'
         if len(kernel_shape) == 2:
@@ -112,6 +115,7 @@ def convert_avgpool(node, params, layers, lambda_func, node_name, keras_name):
                 name=padding_name
             )
         layers[padding_name] = input_0 = padding_layer(input_0)
+
     if len(kernel_shape) == 2:
         pooling = keras.layers.AveragePooling2D(
             pool_size=kernel_shape,
