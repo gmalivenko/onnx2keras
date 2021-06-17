@@ -124,6 +124,14 @@ def convert_avgpool(node, params, layers, lambda_func, node_name, keras_name):
             name=keras_name,
             data_format='channels_first'
         )
+    elif len(kernel_shape) == 1:
+        pooling = keras.layers.AveragePooling1D(
+            pool_size=kernel_shape,
+            strides=stride_shape,
+            padding=pad,
+            name=keras_name,
+            data_format='channels_first'
+        )
     else:
         pooling = keras.layers.AveragePooling3D(
             pool_size=kernel_shape,
