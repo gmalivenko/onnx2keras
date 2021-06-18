@@ -25,6 +25,9 @@ def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
         pads = layers[node.input[1]]
 
     print(pads)
+    if not any(pads):
+        layers[node_name] = input_0
+        return
 
     if params['mode'] == 'constant':
 
