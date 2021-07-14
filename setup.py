@@ -13,7 +13,7 @@ with open('README.md') as f:
     long_description = f.read()
 
 setup(name='onnx2kerastl',
-      version='0.0.30',
+      version='0.0.32',
       description='The deep learning models converter',
       long_description=long_description,
       long_description_content_type='text/markdown',
