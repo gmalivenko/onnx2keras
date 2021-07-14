@@ -45,7 +45,7 @@ def onnx_to_keras(onnx_model, input_names,
     :param onnx_model: loaded ONNX model
     :param input_names: list with input names
     :param input_shapes: override input shapes (experimental)
-    :param name_policy: override layer names. None, "short" or "renumerate" (experimental)
+    :param name_policy: override layer names. None, "short", "renumerate" or "attach_weights_name" (last 2 are experimental)
     :param verbose: verbose output
     :param change_ordering: change ordering to HWC (experimental)
     :return: Keras model
@@ -138,6 +138,19 @@ def onnx_to_keras(onnx_model, input_names,
             elif name_policy == 'renumerate':
                 postfix = node_index if len(node.output) == 1 else "%s_%s" % (node_index, output_index)
                 keras_names.append('LAYER_%s' % postfix)
+            elif name_policy == 'attach_weights_name':
+                attached_weights_names = []
+                for node_input in node.input:
+                    if node_input in weights:
+                        weight_name = ".".join(node_input.split(".")[:-1])
+                        attached_weights_names.append(weight_name)
+                set_weights_names = set(attached_weights_names)
+                set_weights_names = "__".join(set_weights_names)
+                layer_name = output.replace(":", "_")
+                if set_weights_names:
+                    layer_name = f"{layer_name}__{set_weights_names}"
+
+                keras_names.append(layer_name)
             else:
                 output = output.replace(":", "_")
                 keras_names.append(output)

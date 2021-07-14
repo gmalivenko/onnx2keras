@@ -21,7 +21,7 @@ TensorFlow 2.0
 
 `input_shapes`: override input shapes (experimental)
 
-`name_policy`: ['renumerate', 'short', 'default'] override layer names (experimental)
+`name_policy`: ['renumerate', 'short', 'default', 'attach_weights_name'] override layer names (experimental)
 
 `verbose`: detailed output
 
