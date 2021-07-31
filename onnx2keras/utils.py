@@ -1,5 +1,6 @@
 import numpy as np
 from tensorflow import keras
+from onnx import numpy_helper
 
 
 def is_numpy(obj):
@@ -8,7 +9,7 @@ def is_numpy(obj):
     :param obj: object to check
     :return: True if the object is numpy-type array.
     """
-    return isinstance(obj, (np.ndarray, np.generic))
+    return isinstance(obj, (np.ndarray, np.generic, list))
 
 
 def ensure_numpy_type(obj):
@@ -65,7 +66,6 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
     if isinstance(input_np, np.ndarray):
         input_np = [input_np.astype(np.float32)]
 
-
     input_var = [Variable(torch.FloatTensor(i)) for i in input_np]
     pytorch_output = model(*input_var)
     if not isinstance(pytorch_output, tuple):
@@ -117,3 +117,46 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
             max_error = error
 
     return max_error
+
+
+def onnx_node_attributes_to_dict(args):
+    """
+    Parse ONNX attributes to Python dictionary
+    :param args: ONNX attributes object
+    :return: Python dictionary
+    """
+    def onnx_attribute_to_dict(onnx_attr):
+        """
+        Parse ONNX attribute
+        :param onnx_attr: ONNX attribute
+        :return: Python data type
+        """
+        if onnx_attr.HasField('t'):
+            return numpy_helper.to_array(getattr(onnx_attr, 't'))
+
+        for attr_type in ['f', 'i', 's']:
+            if onnx_attr.HasField(attr_type):
+                return getattr(onnx_attr, attr_type)
+
+        for attr_type in ['floats', 'ints', 'strings']:
+            if getattr(onnx_attr, attr_type):
+                return list(getattr(onnx_attr, attr_type))
+    return {arg.name: onnx_attribute_to_dict(arg) for arg in args}
+
+
+def change_ordering_fix_dims_list(dims_input, dims_to_fix_list):
+    if len(dims_input) == 4:
+        REMAP = {
+            2: 1,
+            3: 2,
+            1: 3,
+        }
+    elif len(dims_input) == 3:
+        REMAP = {
+            2: 1,
+            1: 2,
+        }
+    else:
+        raise AttributeError('Only 3D and 4D tensors are supported')
+
+    return [REMAP[i] for i in dims_to_fix_list]
