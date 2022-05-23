@@ -1,5 +1,7 @@
 from tensorflow import keras
 import logging
+
+from .customonnxlayer.onnxhardsigmoid import OnnxHardSigmoid
 from .utils import ensure_tf_type, ensure_numpy_type
 
 
@@ -176,3 +178,25 @@ def convert_prelu(node, params, layers, lambda_func, node_name, keras_name):
 
     prelu = keras.layers.PReLU(weights=[W], shared_axes=shared_axes, name=keras_name)
     layers[node_name] = prelu(input_0)
+
+
+def convert_hard_sigmoid(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert Hard Sigmoid activation layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for an activation layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+
+    alpha = params.get("alpha", 0.2)
+    beta = params.get("beta", 0.5)
+    onnx_hard_sigmoid = OnnxHardSigmoid(alpha=alpha, beta=beta, name=keras_name)
+    layers[node_name] = onnx_hard_sigmoid(input_0)

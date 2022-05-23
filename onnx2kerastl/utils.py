@@ -1,5 +1,6 @@
 import numpy as np
 from tensorflow import keras
+from keras_data_format_converter import convert_channels_first_to_last
 
 
 def is_numpy(obj):
@@ -47,7 +48,8 @@ def ensure_tf_type(obj, fake_input_layer=None, name=None):
         return obj
 
 
-def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_ordering=False):
+def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_ordering=False,
+                            should_transform_inputs=False):
     """
     Check difference between Torch and Keras models
     :param model: torch model
@@ -55,23 +57,24 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
     :param input_np: input data as numpy array or list of numpy array
     :param epsilon: allowed difference
     :param change_ordering: change ordering for keras input
+    :param should_transform_inputs: default False, set to True for converting channel first inputs to  channel last format
     :return: actual difference
+
     """
     from torch.autograd import Variable
     import torch
 
-    initial_keras_image_format = keras.backend.image_data_format()
-
     if isinstance(input_np, np.ndarray):
         input_np = [input_np.astype(np.float32)]
 
-
     input_var = [Variable(torch.FloatTensor(i)) for i in input_np]
     pytorch_output = model(*input_var)
-    if not isinstance(pytorch_output, tuple):
-        pytorch_output = [pytorch_output.data.numpy()]
-    else:
+    if isinstance(pytorch_output, dict):
+        pytorch_output = [p.data.numpy() for p in list(pytorch_output.values())]
+    elif isinstance(pytorch_output, (tuple, list)):
         pytorch_output = [p.data.numpy() for p in pytorch_output]
+    else:
+        pytorch_output = [pytorch_output.data.numpy()]
 
     if change_ordering:
         # change image data format
@@ -101,13 +104,31 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
             _koutput.append(k)
         keras_output = _koutput
     else:
-        keras.backend.set_image_data_format("channels_first")
-        keras_output = k_model.predict(input_np)
+        inputs_to_transpose = []
+        if should_transform_inputs:
+            inputs_to_transpose = [k_input.name for k_input in k_model.inputs]
+
+            _input_np = []
+            for i in input_np:
+                axes = list(range(len(i.shape)))
+                axes = axes[0:1] + axes[2:] + axes[1:2]
+                _input_np.append(np.transpose(i, axes))
+            input_np = _input_np
+
+        k_model = convert_channels_first_to_last(k_model, inputs_to_transpose)
+        keras_output = k_model(*input_np)
         if not isinstance(keras_output, list):
             keras_output = [keras_output]
 
-    # reset to previous image_data_format
-    keras.backend.set_image_data_format(initial_keras_image_format)
+        _koutput = []
+        for i, k in enumerate(keras_output):
+            if k.shape != pytorch_output[i].shape:
+                axes = list(range(len(k.shape)))
+                axes = axes[0:1] + axes[-1:] + axes[1:-1]
+                k = np.transpose(k, axes)
+            _koutput.append(k)
+        keras_output = _koutput
+
 
     max_error = 0
     for p, k in zip(pytorch_output, keras_output):

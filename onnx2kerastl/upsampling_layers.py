@@ -27,12 +27,17 @@ def convert_upsample(node, params, layers, lambda_func, node_name, keras_name):
         # Upsample since opset version 9 uses input[1] as 'scales' instead of attributes.
         scale = np.uint8(layers[node.input[1]][-2:])
 
-    if params['mode'].decode('utf-8') != 'nearest':
-        logger.error('Cannot convert non-nearest upsampling.')
-        raise AssertionError('Cannot convert non-nearest upsampling')
+    interpolation_mode = params['mode'].decode('utf-8')
+    if interpolation_mode == 'nearest':
+        interpolation = "nearest"
+    elif interpolation_mode in ['bilinear', 'linear']:
+        interpolation = "bilinear"
+    elif interpolation_mode in "cubic":
+        interpolation = "bicubic"
+    else:
+        logger.error(f'Cannot convert upsampling. interpolation mode: {interpolation_mode} is not supported')
+        raise AssertionError(f'Cannot convert upsampling. interpolation mode: {interpolation_mode} is not supported')
 
-    upsampling = keras.layers.UpSampling2D(
-        size=scale, name=keras_name
-    )
+    upsampling = keras.layers.UpSampling2D(size=scale, name=keras_name, interpolation=interpolation)
 
     layers[node_name] = upsampling(layers[node.input[0]])

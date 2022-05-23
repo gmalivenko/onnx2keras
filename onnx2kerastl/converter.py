@@ -8,6 +8,7 @@ import inspect
 import collections
 from onnx import numpy_helper
 
+from .customonnxlayer import onnx_custom_objects_map
 from .layers import AVAILABLE_CONVERTERS
 
 
@@ -290,7 +291,7 @@ def onnx_to_keras(onnx_model, input_names,
                 layer['config']['function'] = tuple(kerasf)
 
         keras.backend.set_image_data_format('channels_last')
-        model_tf_ordering = keras.models.Model.from_config(conf)
+        model_tf_ordering = keras.models.Model.from_config(conf, custom_objects=onnx_custom_objects_map)
 
         for dst_layer, src_layer, conf in zip(model_tf_ordering.layers, model.layers, conf['layers']):
             W = src_layer.get_weights()
