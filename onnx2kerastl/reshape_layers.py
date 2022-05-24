@@ -320,8 +320,8 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
             def target_layer(x, axes=np.array(axes), starts=starts, ends=ends):
                 import tensorflow as tf
                 rank = max(axes)
-                s = [0 for _ in range(rank+1)]
-                e = [0 for _ in range(rank+1)]
+                s = [0 for _ in range(rank + 1)]
+                e = [0 for _ in range(rank + 1)]
                 mask = 0xff
                 for _s, _e, axis in zip(starts, ends, axes):
                     s[axis] = _s
@@ -336,8 +336,8 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
             def target_layer(x, axis=axes, starts=starts, ends=ends):
                 import tensorflow as tf
                 rank = axis
-                s = [0 for _ in range(rank+1)]
-                e = [0 for _ in range(rank+1)]
+                s = [0 for _ in range(rank + 1)]
+                e = [0 for _ in range(rank + 1)]
                 mask = 0xff
                 s[axis] = starts
                 e[axis] = ends
