@@ -1,8 +1,12 @@
+import logging
+from typing import Dict, Any
+
+import numpy as np
 from tensorflow import keras
 from tensorflow.keras import backend as K
-import logging
+
+from onnx2kerastl.customonnxlayer.onnxreducemean import OnnxReduceMean
 from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
-import numpy as np
 
 # Handle python 2.7 import error
 try:
@@ -35,6 +39,7 @@ def convert_clip(node, params, layers, lambda_func, node_name, keras_name):
         def target_layer(x, vmin=params['min'], vmax=params['max']):
             import tensorflow as tf
             return tf.clip_by_value(x, vmin, vmax)
+
         layer = keras.layers.Lambda(target_layer, name=keras_name)
         lambda_func[keras_name] = target_layer
 
@@ -134,14 +139,27 @@ def convert_reduce_mean(node, params, layers, lambda_func, node_name, keras_name
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    def target_layer(x, axis=params['axes'], keepdims=params['keepdims']):
-        import tensorflow.keras.backend as K
-        return K.mean(x, keepdims=(keepdims == 1), axis=axis)
+    keepdims = params['keepdims'] == 1
+    axes = params['axes']
+    reduce_mean_layer = OnnxReduceMean(axes=axes, keepdims=keepdims)
 
-    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-    layers[node_name] = lambda_layer(input_0)
-    layers[node_name].set_shape(layers[node_name].shape)
-    lambda_func[keras_name] = target_layer
+    axes_for_last = [a - 1 for a in axes]
+    if 0 in axes:
+        axes_for_last.remove(0)
+        rank = len(input_0.shape)
+        axes_for_last.append(rank)
+
+    def get_special_data_format_handler():
+        def handle_axis_change(target_data_format: str, config: Dict[str, Any]) -> Dict[str, Any]:
+            if target_data_format == "channels_last":
+                config["axes"] = axes_for_last
+
+            return config
+
+        return handle_axis_change
+
+    reduce_mean_layer.get_special_data_format_handler = get_special_data_format_handler
+    layers[node_name] = reduce_mean_layer(input_0)
 
 
 def convert_reduce_max(node, params, layers, lambda_func, node_name, keras_name):
@@ -247,7 +265,7 @@ def convert_split(node, params, layers, lambda_func, node_name, keras_names):
     for i, split in enumerate(splits):
         node_name = params['_outputs'][i]
 
-        def target_layer(x, axis=axis, start_i=cur, end_i=cur+split):
+        def target_layer(x, axis=axis, start_i=cur, end_i=cur + split):
             slices = [slice(None, None)] * len(K.int_shape(x))
             slices[axis] = slice(start_i, end_i)
             return x[tuple(slices)]

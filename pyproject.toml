@@ -10,7 +10,7 @@ python = ">=3.8, <3.11"
 tensorflow = "^2.8"
 tensorflow-addons = "^0.16.1"
 onnx = "^1.11.0"
-keras-data-format-converter = "^0.0.8"
+keras-data-format-converter = "0.0.9"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
