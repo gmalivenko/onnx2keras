@@ -1,12 +1,13 @@
 import numpy as np
 import pytest
-from torchvision.models import resnet18, wide_resnet50_2
+from torchvision.models import inception_v3
 
 from test.utils import convert_and_test
 
 
-@pytest.mark.parametrize('model_class', [resnet18, wide_resnet50_2])
-def test_resnet18(model_class):
+@pytest.mark.slow
+@pytest.mark.parametrize('model_class', [inception_v3])
+def test_inception(model_class):
     model = model_class()
     model.eval()
 
