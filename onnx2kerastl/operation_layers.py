@@ -139,7 +139,8 @@ def convert_reduce_mean(node, params, layers, lambda_func, node_name, keras_name
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    keepdims = params['keepdims'] == 1
+    param_keepdims = params.get('keepdims',1)
+    keepdims = param_keepdims == 1
     axes = params['axes']
     reduce_mean_layer = OnnxReduceMean(axes=axes, keepdims=keepdims)
 
