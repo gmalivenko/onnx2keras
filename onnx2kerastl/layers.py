@@ -1,10 +1,11 @@
 from .convolution_layers import convert_conv, convert_convtranspose
 from .activation_layers import convert_relu, convert_elu, convert_lrelu, convert_selu, \
-    convert_sigmoid, convert_tanh, convert_softmax, convert_prelu, convert_hard_sigmoid
+    convert_sigmoid, convert_tanh, convert_softmax, convert_prelu, convert_hard_sigmoid, convert_erf
 from .operation_layers import convert_clip, convert_exp, convert_reduce_sum, convert_reduce_mean, \
     convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity, \
     convert_argmax, convert_reduce_l2, convert_reduce_max
-from .elementwise_layers import convert_elementwise_div, convert_elementwise_add, convert_elementwise_mul, convert_elementwise_sub, convert_max, convert_min, convert_mean
+from .elementwise_layers import convert_elementwise_div, convert_elementwise_add, convert_elementwise_mul, \
+    convert_elementwise_sub, convert_max, convert_min, convert_mean
 from .linear_layers import convert_gemm
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, \
     convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze, convert_expand
@@ -13,7 +14,6 @@ from .normalization_layers import convert_batchnorm, convert_instancenorm, conve
 from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
 from .padding_layers import convert_padding
 from .upsampling_layers import convert_upsample
-
 
 AVAILABLE_CONVERTERS = {
     'Conv': convert_conv,
@@ -71,4 +71,5 @@ AVAILABLE_CONVERTERS = {
     'Pad': convert_padding,
     'Flatten': convert_flatten,
     'Upsample': convert_upsample,
+    'Erf': convert_erf
 }
