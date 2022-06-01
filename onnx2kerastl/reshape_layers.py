@@ -1,4 +1,6 @@
+from keras.layers import SlicingOpLambda
 from tensorflow import keras
+import tensorflow as tf
 import numpy as np
 import logging
 from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
@@ -299,11 +301,18 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
         layers[node_name] = input_0
 
         if 'axes' in params:
-            if len(params["axes"]) != 1:
-                raise NotImplementedError("Multiple axes in Slice is not implemented")
-            axes = params["axes"][0]
-            ends = params["ends"][0]
-            starts = params["starts"][0]
+            slice_spec = []
+            for i in range(len(params["axes"])):
+                slice_spec.append({
+                    'start': params['starts'][i],
+                    'step': None,
+                    'stop': params['ends'][i] if params['ends'][i] < 2147483647 else None
+                })
+            slice_spec = [slice_spec[i] for i in sorted(range(len(params["axes"])), key=params["axes"].__getitem__)]
+
+            slicing_layer = SlicingOpLambda(tf.__operators__.getitem)
+            layers[node_name] = slicing_layer(input_0, slice_spec=slice_spec)
+            return
         else:
             starts = ensure_numpy_type(layers[node.input[1]])
             ends = ensure_numpy_type(layers[node.input[2]])

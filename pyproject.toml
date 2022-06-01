@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "onnx2kerastl"
-version = "0.0.34"
+version = "0.0.35"
 description = ""
 authors = ["dorhar <doron.harnoy@tensorleap.ai>"]
 license = "MIT"
@@ -15,7 +15,7 @@ onnx = "^1.11.0"
 pytest = "^7.1.2"
 torch = "^1.11.0"
 torchvision = "^0.12.0"
-keras-data-format-converter = "0.0.10"
+keras-data-format-converter = "0.0.11"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
