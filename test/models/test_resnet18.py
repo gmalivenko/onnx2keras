@@ -7,8 +7,9 @@ from test.utils import convert_and_test
 
 @pytest.mark.parametrize('model_class', [resnet18, resnet34, resnet50, resnet101, resnet152, wide_resnet50_2,
                                          wide_resnet101_2])
-def test_resnet18(model_class):
-    model = model_class()
+@pytest.mark.parametrize('pretrained', [True])
+def test_resnet18(pretrained, model_class):
+    model = model_class(pretrained=pretrained)
     model.eval()
 
     input_np = np.random.uniform(0, 1, (1, 3, 224, 224))
