@@ -129,7 +129,6 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
             _koutput.append(k)
         keras_output = _koutput
 
-
     max_error = 0
     for p, k in zip(pytorch_output, keras_output):
         error = np.max(np.abs(p - k))

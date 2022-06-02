@@ -86,7 +86,9 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
         else:
             raise AttributeError('Can\'t gather by axis more than 3.')
     else:
-        raise AttributeError('Can\'t gather from tf tensor.')
+        input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+        indices = layers[node.input[1]].tolist()
+        layers[node_name] = tf.gather(input_0, indices, axis=params['axis'])
 
 
 def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
@@ -221,16 +223,7 @@ def convert_unsqueeze(node, params, layers, lambda_func, node_name, keras_name):
         if len(params['axes']) != 1:
             raise AttributeError('Number of axes is not equal 1. Cannot unsqueeze')
 
-        # if params['axes'][0] != 0:
-        #     raise AttributeError('Axes is not 0. Cannot unsqueeze')
-
-        def target_layer(x, axis=params['axes'][0]):
-            from tensorflow import keras
-            return keras.backend.expand_dims(x, axis)
-
-        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-        layers[node_name] = lambda_layer(layers[node.input[0]])
-        lambda_func[keras_name] = target_layer
+        layers[node_name] = tf.expand_dims(layers[node.input[0]], params['axes'][0])
 
 
 def convert_flatten(node, params, layers, lambda_func, node_name, keras_name):

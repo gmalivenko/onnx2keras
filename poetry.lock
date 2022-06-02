@@ -205,9 +205,9 @@ python-versions = "*"
 
 [[package]]
 name = "keras-data-format-converter"
-version = "0.0.11"
+version = "0.0.12"
 description = "Generates equal keras models with the desired data format"
-category = "dev"
+category = "main"
 optional = false
 python-versions = ">=3.6.8,<4.0.0"
 
@@ -679,7 +679,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8, <3.11"
-content-hash = "e400f0e28a8b745dea4b3753f9db518d96b0df3ab8d33f84ab7155901a4dbfec"
+content-hash = "2c17de5ce0c56b7b8343d80ccf943379b0a1aba0d477f8b83296a8cb77c64184"
 
 [metadata.files]
 absl-py = [
@@ -829,8 +829,8 @@ keras = [
     {file = "keras-2.9.0-py2.py3-none-any.whl", hash = "sha256:55911256f89cfc9343c9fbe4b61ec45a2d33d89729cbe1ab9dcacf8b07b8b6ab"},
 ]
 keras-data-format-converter = [
-    {file = "keras-data-format-converter-0.0.11.tar.gz", hash = "sha256:bff878cbcb351dc273713fe8758688308f4ef517a2166c06b103c9c426fdc7a6"},
-    {file = "keras_data_format_converter-0.0.11-py3-none-any.whl", hash = "sha256:fbb53df2ddb0e9e0d6954e2ad2673d9c4afdaf3b17381b6246a7acddb4488828"},
+    {file = "keras-data-format-converter-0.0.12.tar.gz", hash = "sha256:acb49672a15d3a9e8a022fbb752be0b8230786ad8ffc021f5f678041c45078d8"},
+    {file = "keras_data_format_converter-0.0.12-py3-none-any.whl", hash = "sha256:7c29980b10ed0e63fef70a14244880efa263bd25de4df3ac1d8de8553e20f135"},
 ]
 keras-preprocessing = [
     {file = "Keras_Preprocessing-1.1.2-py2.py3-none-any.whl", hash = "sha256:7b82029b130ff61cc99b55f3bd27427df4838576838c5b2f65940e4fcec99a7b"},
