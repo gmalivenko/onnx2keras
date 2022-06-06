@@ -1,11 +1,13 @@
 import numpy as np
+import pytest
 from torchvision.models import alexnet
 
 from test.utils import convert_and_test
 
 
-def test_alexnet():
-    model = alexnet()
+@pytest.mark.parametrize('pretrained', [True, False])
+def test_alexnet(pretrained):
+    model = alexnet(pretrained=pretrained)
     model.eval()
 
     input_np = np.random.uniform(0, 1, (1, 3, 224, 224))

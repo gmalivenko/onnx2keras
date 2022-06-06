@@ -6,8 +6,9 @@ from test.utils import convert_and_test
 
 
 @pytest.mark.slow
-def test_googlenet():
-    model = googlenet()
+@pytest.mark.parametrize('pretrained', [True, False])
+def test_googlenet(pretrained):
+    model = googlenet(pretrained=pretrained)
     model.eval()
 
     input_np = np.random.uniform(0, 1, (1, 3, 224, 224))

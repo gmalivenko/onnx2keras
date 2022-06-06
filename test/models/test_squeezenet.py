@@ -7,8 +7,9 @@ from test.utils import convert_and_test
 
 @pytest.mark.slow
 @pytest.mark.parametrize('model_class', [squeezenet1_1, squeezenet1_0])
-def test_squeezenet(model_class):
-    model = model_class()
+@pytest.mark.parametrize('pretrained', [True, False])
+def test_squeezenet(pretrained, model_class):
+    model = model_class(pretrained=pretrained)
     model.eval()
 
     input_np = np.random.uniform(0, 1, (1, 3, 224, 224))

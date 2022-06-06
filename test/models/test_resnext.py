@@ -7,8 +7,9 @@ from test.utils import convert_and_test
 
 @pytest.mark.slow
 @pytest.mark.parametrize('model_class', [resnext50_32x4d, resnext101_32x8d])
-def test_resnext(model_class):
-    model = model_class()
+@pytest.mark.parametrize('pretrained', [True, False])
+def test_resnext(pretrained, model_class):
+    model = model_class(pretrained=pretrained)
     model.eval()
 
     input_np = np.random.uniform(0, 1, (1, 3, 224, 224))
