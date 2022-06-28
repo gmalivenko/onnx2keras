@@ -1,5 +1,6 @@
 import numpy as np
 from tensorflow import keras
+import torch
 
 
 def is_numpy(obj):
@@ -45,6 +46,37 @@ def ensure_tf_type(obj, fake_input_layer=None, name=None):
         return lambda_layer(fake_input_layer)
     else:
         return obj
+
+
+def count_params_torch(model: torch.nn.Module, trainable_only: bool = False) -> int:
+    """Count the total number of scalars composing the parameters of PyTorch model."""
+
+    if trainable_only:
+        cond = lambda p: p.requires_grad
+    else:
+        cond = lambda p: True
+
+    return sum(p.numel() for p in model.parameters() if cond(p))
+
+
+def count_params_keras(model: keras.Model, trainable_only: bool = False) -> int:
+    # source: https://github.com/keras-team/keras/blob/master/keras/utils/layer_utils.py
+    # Adapted from keras.utils.layer_utils.layer_utils, part of the private API of keras.utils
+    """Count the total number of scalars composing the weights of Keras model."""
+
+    if trainable_only:
+        weights = model.trainable_weights
+    else:
+        weights = model.weights
+
+    unique_weights = {id(w): w for w in weights}.values()
+    # Ignore TrackableWeightHandlers, which will not have a shape defined.
+    unique_weights = [w for w in unique_weights if hasattr(w, 'shape')]
+    weight_shapes = [w.shape.as_list() for w in unique_weights]
+    standardized_weight_shapes = [
+      [0 if w_i is None else w_i for w_i in w] for w in weight_shapes
+    ]
+    return int(sum(np.prod(p) for p in standardized_weight_shapes))
 
 
 def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_ordering=False):
@@ -94,8 +126,9 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
         # change image data format if output shapes are different (e.g. the same for global_avgpool2d)
         _koutput = []
         for i, k in enumerate(keras_output):
+            # @fixme: necessary? see code for keras layer GlobalAvgPool2D to see how is data_format="channels_last" managed
             if k.shape != pytorch_output[i].shape:
-                axes = list(range(len(k.shape)))
+                axes = list(range(len(k.shape)))  # @fixme: axes = k.rank()?
                 axes = axes[0:1] + axes[-1:] + axes[1:-1]
                 k = np.transpose(k, axes)
             _koutput.append(k)
@@ -109,8 +142,12 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
     # reset to previous image_data_format
     keras.backend.set_image_data_format(initial_keras_image_format)
 
+    # assert outputs are all close up to an absolute tolerance
     max_error = 0
     for p, k in zip(pytorch_output, keras_output):
+        # assert shapes are the same
+        assert p.shape == k.shape
+
         error = np.max(np.abs(p - k))
         np.testing.assert_allclose(p, k, atol=epsilon, rtol=0.0)
         if error > max_error:

@@ -16,6 +16,8 @@ def convert_batchnorm(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
+    if isinstance(keras_name, list):
+        keras_name = keras_name[0]
     logger = logging.getLogger('onnx2keras.batchnorm2d')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
@@ -67,6 +69,8 @@ def convert_instancenorm(node, params, layers, lambda_func, node_name, keras_nam
     :param keras_name: resulting layer name
     :return: None
     """
+    if isinstance(keras_name, list):
+        keras_name = keras_name[0]
     logger = logging.getLogger('onnx2keras.instancenorm2d')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
