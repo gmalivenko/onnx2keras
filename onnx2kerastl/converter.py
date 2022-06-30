@@ -5,10 +5,10 @@ The ONNX to keras converter module
 from tensorflow import keras
 import logging
 import inspect
-import collections
 from onnx import numpy_helper
 
 from .customonnxlayer import onnx_custom_objects_map
+from .exceptions import UnsupportedLayer
 from .layers import AVAILABLE_CONVERTERS
 
 
@@ -190,7 +190,11 @@ def onnx_to_keras(onnx_model, input_names,
             logger.debug('... found all, continue')
 
         keras.backend.set_image_data_format('channels_first')
-        AVAILABLE_CONVERTERS[node_type](
+        try:
+            layer_converter_func = AVAILABLE_CONVERTERS[node_type]
+        except KeyError:
+            raise UnsupportedLayer(node_type)
+        layer_converter_func(
             node,
             node_params,
             layers,

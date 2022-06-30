@@ -3,6 +3,8 @@ from tensorflow import keras
 import tensorflow as tf
 import numpy as np
 import logging
+
+from .exceptions import UnsupportedLayer
 from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
 
 
@@ -26,7 +28,7 @@ def convert_transpose(node, params, layers, lambda_func, node_name, keras_name):
             logger.warning('Transposing numpy array.')
             layers[node_name] = np.transpose(layers[input_name], axes=params['perm'])
         else:
-            raise NotImplementedError('Can\'t modify this type of data')
+            raise UnsupportedLayer('Transpose with permute that changes the batch dim')
     else:
         permute = keras.layers.Permute(params['perm'][1:], name=keras_name)
         layers[node_name] = permute(layers[input_name])

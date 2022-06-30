@@ -4,9 +4,11 @@ from typing import Dict, Any
 import numpy as np
 from tensorflow import keras
 from tensorflow.keras import backend as K
+import tensorflow as tf
 
 from onnx2kerastl.customonnxlayer.onnxreducemean import OnnxReduceMean
 from .customonnxlayer.onnxsqrt import OnnxSqrt
+from .exceptions import UnsupportedLayer
 from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
 
 # Handle python 2.7 import error
@@ -33,18 +35,14 @@ def convert_clip(node, params, layers, lambda_func, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
+    if 'min' not in params or 'max' not in params:
+        raise UnsupportedLayer('Clip without max or min params')
     if params['min'] == 0:
         logger.debug("Using ReLU({0}) instead of clip".format(params['max']))
-        layer = keras.layers.ReLU(max_value=params['max'], name=keras_name)
+        layers[node_name] = keras.layers.ReLU(max_value=params['max'], name=keras_name)(input_0)
     else:
-        def target_layer(x, vmin=params['min'], vmax=params['max']):
-            import tensorflow as tf
-            return tf.clip_by_value(x, vmin, vmax)
+        layers[node_name] = tf.clip_by_value(input_0, params['min'], params['max'])
 
-        layer = keras.layers.Lambda(target_layer, name=keras_name)
-        lambda_func[keras_name] = target_layer
-
-    layers[node_name] = layer(input_0)
 
 
 def convert_log(node, params, layers, lambda_func, node_name, keras_name):
