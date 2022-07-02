@@ -146,17 +146,17 @@ def convert_global_avg_pool(node, params, layers, lambda_func, node_name, keras_
 
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
-    global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', name=keras_name)
-    input_0 = global_pool(input_0)
+    try:
+        global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', keepdims=True, name=keras_name)
+        output_0 = global_pool(input_0)
+    except TypeError:
+        # in TensorFlow < 2.6 keyword argument `keepdims` not understood: raises TypeError: ('Keyword argument not understood:', 'keepdims')
+        # reproduce behavior of keepdims=True by adding extra layer
+        logger.debug("Argument `keepdims` not understood. Add Reshape layer to expand dims.")
 
-    def target_layer(x):
-        from tensorflow import keras
-        return keras.backend.expand_dims(x)
+        global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', name=keras_name)
+        output_0 = global_pool(input_0)
+        reshape = keras.layers.Reshape(output_0.shape[1:] + (1, 1), name=keras_name + '_expand')
+        output_0 = reshape(output_0)
 
-    logger.debug('Now expand dimensions twice.')
-    lambda_layer1 = keras.layers.Lambda(target_layer, name=keras_name + '_EXPAND1')
-    lambda_layer2 = keras.layers.Lambda(target_layer, name=keras_name + '_EXPAND2')
-    input_0 = lambda_layer1(input_0)  # double expand dims
-    layers[node_name] = lambda_layer2(input_0)
-    lambda_func[keras_name + '_EXPAND1'] = target_layer
-    lambda_func[keras_name + '_EXPAND2'] = target_layer
+    layers[node_name] = output_0
