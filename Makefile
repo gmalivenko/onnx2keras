@@ -1,10 +1,15 @@
 PYTHONPATH := .
-POETRY_MODULE := poetry run python -m
+POETRY_MODULE := PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python poetry run python -m
 PYTEST := $(POETRY_MODULE) pytest
 
 .PHONY: run_tests
 run_tests:
 	$(PYTEST) test -v
+
+
+.PHONY: poetry_update
+poetry_update:
+	PROTOCOL_BUFFERS_PYTHON_IMPLEMENTATION=python poetry update
 
 .PHONY: test_models
 test_models:
@@ -29,3 +34,5 @@ lint_tests:
 .PHONY: test_with_coverage
 test_with_coverage:
 	$(PYTEST) --cov=code_loader --cov-branch --no-cov-on-fail --cov-report term-missing --cov-report html -v tests/
+
+
