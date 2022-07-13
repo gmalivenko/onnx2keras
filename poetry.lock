@@ -19,7 +19,7 @@ six = ">=1.6.1,<2.0"
 
 [[package]]
 name = "atomicwrites"
-version = "1.4.1"
+version = "1.4.0"
 description = "Atomic file writes."
 category = "dev"
 optional = false
@@ -203,7 +203,7 @@ python-versions = "*"
 
 [[package]]
 name = "keras-data-format-converter"
-version = "0.0.15"
+version = "0.0.16"
 description = "Generates equal keras models with the desired data format"
 category = "main"
 optional = false
@@ -255,7 +255,7 @@ testing = ["coverage", "pyyaml"]
 
 [[package]]
 name = "numpy"
-version = "1.23.1"
+version = "1.23.0"
 description = "NumPy is the fundamental package for array computing with Python."
 category = "main"
 optional = false
@@ -662,11 +662,11 @@ python-versions = ">=3.7"
 
 [[package]]
 name = "urllib3"
-version = "1.26.10"
+version = "1.26.9"
 description = "HTTP library with thread-safe connection pooling, file post, and more."
 category = "main"
 optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, !=3.5.*, <4"
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 
 [package.extras]
 brotli = ["brotlicffi (>=0.8.0)", "brotli (>=1.0.9)", "brotlipy (>=0.6.0)"]
@@ -707,7 +707,7 @@ testing = ["pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-flake8", "pytest-
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.8, <3.11"
-content-hash = "c380a9ce1291b7654036021790a48e1f5c8d0477dd67cf932f2dbb1f9ae58fb9"
+content-hash = "3f452ce168255d3b00df878967442b96d4b6eb55f62a8ca259232f1f8a30d5ba"
 
 [metadata.files]
 absl-py = []
