@@ -1,6 +1,7 @@
 """
 The ONNX to keras converter module
 """
+import re
 
 from tensorflow import keras
 import logging
@@ -126,6 +127,8 @@ def onnx_to_keras(onnx_model, input_names,
         node_name = str(node.output[0])
         keras_names = []
         for output_index, output in enumerate(node.output):
+            output = re.sub(r'^[^A-Za-z0-9.]|[^A-Za-z0-9_.\\/>-]', '.', output)
+
             if name_policy == 'short':
                 keras_name = keras_name_i = str(output)[:8]
                 suffix = 1
