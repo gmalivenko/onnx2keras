@@ -95,8 +95,14 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
         in_channels = channels_per_group * n_groups
 
         if n_groups == in_channels and n_groups != 1:
-            logger.debug('Number of groups is equal to input channels, use DepthWise convolution')
+            depth_multiplier = out_channels / in_channels
+            logger.debug('Number of groups is equal to input channels, use DepthWise convolution with depth_multiplier=%d', depth_multiplier)
+            if depth_multiplier != int(depth_multiplier):
+                logger.warning('Depthwise convolution out_channels (%d) must be evenly divisble with in_channels (%d)', out_channels, in_channels)
+            depth_multiplier = int(depth_multiplier)
+
             W = W.transpose(0, 1, 3, 2)
+            W = W.reshape(W.shape[0], W.shape[1], -1, depth_multiplier)
             if has_bias:
                 weights = [W, bias]
             else:
@@ -108,7 +114,7 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
                 padding='valid',
                 use_bias=has_bias,
                 activation=None,
-                depth_multiplier=1,
+                depth_multiplier=depth_multiplier,
                 weights=weights,
                 dilation_rate=dilation,
                 bias_initializer='zeros', kernel_initializer='zeros',
