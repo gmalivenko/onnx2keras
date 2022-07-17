@@ -14,8 +14,10 @@ from .normalization_layers import convert_batchnorm, convert_instancenorm, conve
 from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
 from .padding_layers import convert_padding
 from .upsampling_layers import convert_upsample
+from .caffe2_layers import convert_alias_with_name, convert_resize_nearest
 
 AVAILABLE_CONVERTERS = {
+    'AliasWithName': convert_alias_with_name,
     'Conv': convert_conv,
     'ConvTranspose': convert_convtranspose,
     'Relu': convert_relu,
@@ -68,6 +70,7 @@ AVAILABLE_CONVERTERS = {
     'Unsqueeze': convert_unsqueeze,
     'Concat': convert_concat,
     'Reshape': convert_reshape,
+    'ResizeNearest': convert_resize_nearest,
     'Pad': convert_padding,
     'Flatten': convert_flatten,
     'Upsample': convert_upsample,
