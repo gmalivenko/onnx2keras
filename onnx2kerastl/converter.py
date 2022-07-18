@@ -1,15 +1,23 @@
 """
 The ONNX to keras converter module
 """
+import importlib.util
+import inspect
+import logging
 
 from tensorflow import keras
-import logging
-import inspect
-from onnx import numpy_helper
 
 from .customonnxlayer import onnx_custom_objects_map
-from .exceptions import UnsupportedLayer
+from .exceptions import UnsupportedLayer, OnnxUnsupported
 from .layers import AVAILABLE_CONVERTERS
+
+onnx_imported = False
+package_name = 'onnx'
+spec = importlib.util.find_spec(package_name)
+if spec is not None:
+    from onnx import numpy_helper
+
+    onnx_imported = True
 
 
 def onnx_node_attributes_to_dict(args):
@@ -51,6 +59,8 @@ def onnx_to_keras(onnx_model, input_names,
     :param change_ordering: change ordering to HWC (experimental)
     :return: Keras model
     """
+    if not onnx_imported:
+        raise OnnxUnsupported()
     # Use channels first format by default.
     keras_fmt = keras.backend.image_data_format()
     keras.backend.set_image_data_format('channels_first')

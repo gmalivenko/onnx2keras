@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "onnx2kerastl"
-version = "0.0.44"
+version = "0.0.45"
 description = ""
 authors = ["dorhar <doron.harnoy@tensorleap.ai>"]
 license = "MIT"
@@ -9,7 +9,7 @@ license = "MIT"
 python = ">=3.8, <3.11"
 tensorflow = {version = "2.8.0", markers = "platform_machine  == 'x86_64'"}
 tensorflow-macos = {version = "2.8.0", markers = "platform_machine  == 'arm64'"}
-onnx = "^1.11.0"
+onnx = {version = "^1.11.0", markers = "platform_machine  == 'x86_64'"}
 keras-data-format-converter = "0.0.17"
 tensorflow-addons = "^0.17.1"
 
