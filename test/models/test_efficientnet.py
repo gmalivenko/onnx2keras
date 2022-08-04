@@ -1,10 +1,11 @@
 import numpy as np
 import pytest
 from torch import nn
+from test.utils import convert_and_test
 from torchvision.models import efficientnet_b0, efficientnet_b1, efficientnet_b2, efficientnet_b3, efficientnet_b4, \
     efficientnet_b5, efficientnet_b6, efficientnet_b7
 
-from test.utils import convert_and_test
+
 
 
 @pytest.mark.slow

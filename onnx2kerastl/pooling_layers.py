@@ -154,14 +154,18 @@ def convert_global_avg_pool(node, params, layers, lambda_func, node_name, keras_
     :param keras_name: resulting layer name
     :return: None
     """
-
     input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
-
-    global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', name=keras_name)
+    tensor_dim = len(input_0.shape)
+    if tensor_dim == 3:
+        global_pool = keras.layers.GlobalAveragePooling1D(data_format='channels_first', name=keras_name)
+    elif tensor_dim == 4:
+        global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', name=keras_name)
+    else:
+        raise NotImplementedError("Global average pooling of dims < 3 or dims > 4 is not supported")
     input_0 = global_pool(input_0)
     new_shape = input_0.shape.as_list()
     new_shape = new_shape[1:]
-    new_shape.extend([1, 1])
+    new_shape.extend([1]*(tensor_dim-2))
     reshape_layer = keras.layers.Reshape(new_shape)
     input_0 = reshape_layer(input_0)
 

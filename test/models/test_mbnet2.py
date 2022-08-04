@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
+from test.utils import convert_and_test
 from torchvision.models import mobilenet_v2
 
-from test.utils import convert_and_test
 
 
 @pytest.mark.parametrize('pretrained', [True, False])

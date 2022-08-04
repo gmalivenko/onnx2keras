@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 from torch import nn
+from test.utils import convert_and_test
 from torchvision.models import inception_v3
 
-from test.utils import convert_and_test
 
 
 @pytest.mark.slow

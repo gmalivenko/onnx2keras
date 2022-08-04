@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
+from test.utils import convert_and_test
 from torchvision.models import squeezenet1_0, squeezenet1_1
 
-from test.utils import convert_and_test
 
 
 @pytest.mark.slow

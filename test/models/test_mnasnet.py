@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
+from test.utils import convert_and_test
 from torchvision.models import mnasnet0_5, mnasnet1_0, mnasnet0_75, mnasnet1_3
 
-from test.utils import convert_and_test
 
 
 @pytest.mark.slow

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
+from test.utils import convert_and_test
 from torchvision.models.segmentation import deeplabv3_resnet50, deeplabv3_resnet101, deeplabv3_mobilenet_v3_large
 
-from test.utils import convert_and_test
 
 
 @pytest.mark.slow

@@ -10,7 +10,6 @@ class OnnxReduceMean(Layer):
         self.axes = axes
         self.keepdims = keepdims
 
-
     def call(self, inputs, **kwargs):
         tensor = K.mean(inputs, keepdims=self.keepdims, axis=self.axes)
         return tensor

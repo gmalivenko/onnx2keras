@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 from torch import nn
+from test.utils import convert_and_test
 from torchvision.models.densenet import densenet121, densenet161, densenet169, densenet201
 
-from test.utils import convert_and_test
 
 
 @pytest.mark.slow

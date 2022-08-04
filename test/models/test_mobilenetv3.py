@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 from torch import nn
+from test.utils import convert_and_test
 from torchvision.models import mobilenet_v3_small, mobilenet_v3_large
 
-from test.utils import convert_and_test
 
 
 @pytest.mark.slow

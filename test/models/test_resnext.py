@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
+from test.utils import convert_and_test
 from torchvision.models import resnext50_32x4d, resnext101_32x8d
 
-from test.utils import convert_and_test
 
 
 @pytest.mark.slow

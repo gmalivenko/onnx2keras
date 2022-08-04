@@ -142,7 +142,6 @@ def convert_reduce_mean(node, params, layers, lambda_func, node_name, keras_name
     keepdims = param_keepdims == 1
     axes = params['axes']
     reduce_mean_layer = OnnxReduceMean(axes=axes, keepdims=keepdims)
-
     axes_for_last = [a - 1 for a in axes]
     if 0 in axes:
         axes_for_last.remove(0)
@@ -223,7 +222,6 @@ def convert_sqrt(node, params, layers, lambda_func, node_name, keras_name):
         assert AttributeError('More than 1 input for sqrt layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-
     sqrt_layer = OnnxSqrt(name=keras_name)
     layers[node_name] = sqrt_layer(input_0)
 
@@ -314,10 +312,7 @@ def convert_cast(node, params, layers, lambda_func, node_name, keras_name):
                 11: tf.double,
             }
             return tf.cast(x, cast_map[dtype])
-
-        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-        layers[node_name] = lambda_layer(input_0)
-        lambda_func[keras_name] = target_layer
+        layers[node_name] = target_layer(input_0)
 
 
 def convert_floor(node, params, layers, lambda_func, node_name, keras_name):
@@ -414,3 +409,8 @@ def convert_reduce_l2(node, params, layers, lambda_func, node_name, keras_name):
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
     lambda_func[keras_name] = target_layer
+
+
+def convert_reciprocal(node, params, layers, lambda_func, node_name, keras_name):
+    input_0 = ensure_tf_type(layers[node.input[0]],  name="%s_const" % keras_name)
+    layers[node_name] = tf.math.reciprocal(input_0)

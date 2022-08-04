@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
-from torchvision.models import alexnet
-
 from test.utils import convert_and_test
+from torchvision.models import alexnet
 
 
 @pytest.mark.parametrize('pretrained', [True, False])

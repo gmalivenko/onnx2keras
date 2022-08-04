@@ -1,10 +1,10 @@
 import numpy as np
 import pytest
+from test.utils import convert_and_test
 from torchvision.models import regnet_y_400mf, regnet_y_800mf, regnet_y_8gf, regnet_y_128gf, regnet_x_8gf, \
     regnet_y_1_6gf, regnet_x_400mf, regnet_x_800mf, regnet_x_1_6gf, regnet_x_3_2gf, regnet_y_3_2gf, regnet_x_16gf, \
     regnet_x_32gf, regnet_y_16gf, regnet_y_32gf
 
-from test.utils import convert_and_test
 
 
 @pytest.mark.slow

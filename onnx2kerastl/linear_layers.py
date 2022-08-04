@@ -1,6 +1,8 @@
 from tensorflow import keras
 import logging
 from .utils import is_numpy
+import tensorflow as tf
+
 
 def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
     """
@@ -31,24 +33,26 @@ def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
     if 'transB' in params and params['transB'] == 1:
         logger.debug('Transposing W matrix.')
         keras_weights[0] = keras_weights[0].transpose()
-
     # Estimate input/output neurons
-    input_channels, output_channels = keras_weights[0].shape
+    input_channels, output_channels = keras_weights[0].shape[-2:]
     logger.debug('Input units %s, output units %s.', input_channels, output_channels)
-
-    if is_numpy(keras_weights[0]):
-        dense = keras.layers.Dense(
-            output_channels,
-            weights=keras_weights, name=keras_name, use_bias=has_bias
-        )
-
-        # The first input - always X
-        try:
-            layers[node_name] = dense(layers[node.input[0]])
-        except ValueError:
-            reshape = keras.layers.Reshape([input_channels], name=keras_name + '_reshape')
-            reshaped_x = reshape(layers[node.input[0]])
-            layers[node_name] = dense(reshaped_x)
-    
+    if len(layers[node.input[1]].shape) > 2: #N-dim tensor multipication Dense doesn't work
+        assert len(node.input) == 2
+        layers[node_name] = tf.matmul(layers[node.input[0]], layers[node.input[1]], name=keras_name)
     else:
-        layers[node_name] = keras.layers.Multiply()([layers[node.input[0]], layers[node.input[1]]])
+        if is_numpy(keras_weights[0]):
+            dense = keras.layers.Dense(
+                output_channels,
+                weights=keras_weights, name=keras_name, use_bias=has_bias
+            )
+
+            # The first input - always X
+            try:
+                layers[node_name] = dense(layers[node.input[0]])
+            except ValueError:
+                reshape = keras.layers.Reshape([input_channels], name=keras_name + '_reshape')
+                reshaped_x = reshape(layers[node.input[0]])
+                layers[node_name] = dense(reshaped_x)
+
+        else:
+            layers[node_name] = keras.layers.Multiply()([layers[node.input[0]], layers[node.input[1]]])

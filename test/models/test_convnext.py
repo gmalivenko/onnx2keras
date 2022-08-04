@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
-from torchvision.models import convnext_base, convnext_tiny, convnext_large, convnext_small
 from test.utils import convert_and_test
+
+from torchvision.models import convnext_base, convnext_tiny, convnext_large, convnext_small
 
 
 @pytest.mark.slow

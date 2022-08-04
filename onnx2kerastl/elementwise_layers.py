@@ -1,3 +1,4 @@
+import numpy as np
 from tensorflow import keras
 import logging
 from .utils import is_numpy, ensure_tf_type
@@ -136,7 +137,10 @@ def convert_elementwise_sub(node, params, layers, lambda_func, node_name, keras_
 
     except (IndexError, ValueError):
         logger.warning('Failed to use keras.layers.Subtract. Fallback to TF lambda.')
-        layers[node_name] = input_0 - input_1
+        if input_0_is_np and not input_1_is_np:  # constant - tensor does not parse well
+            layers[node_name] = - (input_1 - input_0)
+        else:
+            layers[node_name] = input_0 - input_1
 
 
 def convert_min(node, params, layers, lambda_func, node_name, keras_name):
