@@ -89,7 +89,8 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
             raise AttributeError('Can\'t gather by axis more than 3.')
     else:
         input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
-        if tf.keras.backend.is_keras_tensor(layers[node.input[1]]):
+        if not isinstance(layers[node.input[1]], np.ndarray) and \
+                tf.keras.backend.is_keras_tensor(layers[node.input[1]]):
             indices = layers[node.input[1]]
         else:
             indices = layers[node.input[1]].tolist()
