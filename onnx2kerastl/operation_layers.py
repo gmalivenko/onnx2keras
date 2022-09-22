@@ -44,7 +44,6 @@ def convert_clip(node, params, layers, lambda_func, node_name, keras_name):
         layers[node_name] = tf.clip_by_value(input_0, params['min'], params['max'])
 
 
-
 def convert_log(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Log layer
@@ -257,9 +256,7 @@ def convert_split(node, params, layers, lambda_func, node_name, keras_names):
             slices[axis] = slice(start_i, end_i)
             return x[tuple(slices)]
 
-        lambda_layer = keras.layers.Lambda(target_layer, name=keras_names[i])
-        layers[node_name] = lambda_layer(input_0)
-        lambda_func[keras_names[i]] = target_layer
+        layers[node_name] = target_layer(input_0)
         cur += split
 
 
@@ -312,6 +309,7 @@ def convert_cast(node, params, layers, lambda_func, node_name, keras_name):
                 11: tf.double,
             }
             return tf.cast(x, cast_map[dtype])
+
         layers[node_name] = target_layer(input_0)
 
 
@@ -374,14 +372,12 @@ def convert_argmax(node, params, layers, lambda_func, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     axis = params.get("axis", -1)
+    should_keep_dims = params.get("keepdims", True)
 
-    def target_layer(x, axis=axis):
-        import tensorflow as tf
-        return tf.argmax(x, axis=axis)
-
-    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-    layers[node_name] = lambda_layer(input_0)
-    lambda_func[keras_name] = target_layer
+    argmax = tf.argmax(input_0, axis=axis)
+    if should_keep_dims:
+        argmax = tf.expand_dims(argmax, axis=axis)
+    layers[node_name] = argmax
 
 
 def convert_reduce_l2(node, params, layers, lambda_func, node_name, keras_name):
@@ -412,5 +408,5 @@ def convert_reduce_l2(node, params, layers, lambda_func, node_name, keras_name):
 
 
 def convert_reciprocal(node, params, layers, lambda_func, node_name, keras_name):
-    input_0 = ensure_tf_type(layers[node.input[0]],  name="%s_const" % keras_name)
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     layers[node_name] = tf.math.reciprocal(input_0)

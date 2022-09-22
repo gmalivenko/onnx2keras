@@ -8,7 +8,7 @@ from .elementwise_layers import convert_elementwise_div, convert_elementwise_add
     convert_elementwise_sub, convert_max, convert_min, convert_mean
 from .linear_layers import convert_gemm
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, \
-    convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze, convert_expand
+    convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze, convert_expand, convert_resize
 from .constant_layers import convert_constant
 from .normalization_layers import convert_batchnorm, convert_instancenorm, convert_dropout, convert_lrn
 from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
@@ -21,6 +21,7 @@ AVAILABLE_CONVERTERS = {
     'Conv': convert_conv,
     'ConvTranspose': convert_convtranspose,
     'Relu': convert_relu,
+    'Resize': convert_resize,
     'Elu': convert_elu,
     'LeakyRelu': convert_lrelu,
     'Sigmoid': convert_sigmoid,

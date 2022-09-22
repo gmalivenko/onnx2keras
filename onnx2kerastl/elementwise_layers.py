@@ -2,6 +2,7 @@ import numpy as np
 from tensorflow import keras
 import logging
 from .utils import is_numpy, ensure_tf_type
+import tensorflow as tf
 
 
 def convert_elementwise_div(node, params, layers, lambda_func, node_name, keras_name):
@@ -64,8 +65,11 @@ def convert_elementwise_add(node, params, layers, lambda_func, node_name, keras_
     input_1_is_np = is_numpy(input_1)
     try:
         if not input_0_is_np and not input_1_is_np:
-            add = keras.layers.Add(name=keras_name)
-            layers[node_name] = add([input_0, input_1])
+            to_add = input_1
+            if input_0.shape != input_1.shape and input_0.shape[:-1] == input_1.shape:
+                to_add = tf.repeat(tf.expand_dims(input_1, axis=-1), input_0.shape[-1], axis=-1)
+
+            layers[node_name] = keras.layers.Add(name=keras_name)([input_0, to_add])
         else:
             raise ValueError('Operands are different.')
 

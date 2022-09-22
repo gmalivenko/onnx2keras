@@ -1,4 +1,5 @@
 from keras.layers import SlicingOpLambda
+from keras.layers.preprocessing.image_preprocessing import ResizeMethod
 from tensorflow import keras
 import tensorflow as tf
 import numpy as np
@@ -385,6 +386,47 @@ def convert_squeeze(node, params, layers, lambda_func, node_name, keras_name):
         from tensorflow import keras
         return keras.backend.squeeze(x, axis)
     layers[node_name] = target_layer(input_0)
+
+
+def convert_resize(node, params, layers, lambda_func, node_name, keras_name):
+    logger = logging.getLogger('onnx2keras.reshape')
+
+    input_tensor = layers[node.input[0]]
+    roi = layers[node.input[1]]
+    scales = layers[node.input[2]]
+    sizes = None
+    if len(node.input) == 4:
+        sizes = layers[node.input[3]]
+
+    if roi:
+        raise Exception("Resize with roi not supported")
+
+    if params['mode'] == b'nearest':
+        resize_method = ResizeMethod.NEAREST_NEIGHBOR
+    elif params['mode'] == b'cubic':
+        resize_method = ResizeMethod.BICUBIC
+    else:
+        raise Exception("unsupported resize method")
+
+
+    to_channel_last = keras.layers.Permute((2, 3, 1))(input_tensor)
+    if len(scales) > 0:
+        if scales[0] != 1 or scales[1] != 1:
+            raise Exception("Resize of channels or batch dim not suppported")
+
+        tf_resize_shapes = [int(scales[2] * to_channel_last.shape[1]),
+                            int(scales[3] * to_channel_last.shape[2])]
+    else:
+        if sizes[0] != 1 or sizes[1] != 1:
+            raise Exception("Resize of channels or batch dim not suppported")
+        tf_resize_shapes = [int(sizes[2]), int(sizes[3])]
+
+    resized = tf.image.resize(to_channel_last,
+                              size=[int(scales[2] * to_channel_last.shape[1]),
+                                    int(scales[3] * to_channel_last.shape[2])],
+                              method=resize_method)
+    to_channel_first = keras.layers.Permute((3, 1, 2))(resized)
+    layers[node_name] = to_channel_first
 
 
 def convert_expand(node, params, layers, lambda_func, node_name, keras_name):
