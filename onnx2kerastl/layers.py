@@ -5,7 +5,7 @@ from .operation_layers import convert_clip, convert_exp, convert_reduce_sum, con
     convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity, \
     convert_argmax, convert_reduce_l2, convert_reduce_max, convert_reciprocal
 from .elementwise_layers import convert_elementwise_div, convert_elementwise_add, convert_elementwise_mul, \
-    convert_elementwise_sub, convert_max, convert_min, convert_mean
+    convert_elementwise_sub, convert_max, convert_min, convert_mean, convert_equal, convert_where
 from .linear_layers import convert_gemm
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, \
     convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze, convert_expand, convert_resize
@@ -78,4 +78,7 @@ AVAILABLE_CONVERTERS = {
     'Erf': convert_erf,
     'Reciprocal': convert_reciprocal,
     'ConstantOfShape': convert_constant_of_shape,
+    'Equal': convert_equal,
+    'Where': convert_where,
+
 }

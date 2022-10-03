@@ -130,23 +130,17 @@ def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
     else:
         logger.debug('Concat Keras layers.')
         if len(layer_input) > 1:
-            try:
-                layers[node_name] = keras.layers.concatenate(inputs=layer_input,
-                                                             axis=params['axis'],
-                                                             name=keras_name)
-            except:
-                logger.warning('!!! IMPORTANT INFORMATION !!!')
-                logger.warning('Something goes wrong with concat layers. Will use TF fallback.')
-                logger.warning('---')
+            if not np.array([tf.is_tensor(layer_input[i]) and tf.keras.backend.is_keras_tensor(layer_input[i]) for i in range(len(layer_input))]).all():
+                try:
+                    layers[node_name] = tf.concat(layer_input, axis=params['axis'], name=keras_name)
+                except Exception as ex:
+                        # might be due to type mismatch between different inputs of tf.concat
+                        raise
 
-                def target_layer(x, axis=params['axis']):
-                    import tensorflow as tf
-                    x = tf.concat(x, axis=axis)
-                    return x
-
-                lambda_layer = keras.layers.Lambda(target_layer, name="%s_CHW" % keras_name)
-                layers[node_name] = lambda_layer(layer_input)
-                lambda_func["%s_CHW" % keras_name] = target_layer
+            else:
+                    layers[node_name] = keras.layers.concatenate(inputs=layer_input,
+                                                                 axis=params['axis'],
+                                                                 name=keras_name)
         else:
             layers[node_name] = layer_input[0]
 

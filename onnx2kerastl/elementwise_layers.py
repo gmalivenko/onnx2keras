@@ -211,3 +211,11 @@ def convert_mean(node, params, layers, lambda_func, node_name, keras_name):
         input_ = ensure_tf_type(layers[inp], layers[list(layers)[0]], name="%s_const%i" % (keras_name, i + 1))
         inputs.append(input_)
     layers[node_name] = keras.layers.Average(name=keras_name)(inputs)
+
+
+def convert_equal(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = layers[node.input[1]] == layers[node.input[1]]
+
+
+def convert_where(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = np.where(layers[node.input[0]], layers[node.input[1]],  layers[node.input[2]])
