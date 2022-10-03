@@ -9,7 +9,7 @@ from .elementwise_layers import convert_elementwise_div, convert_elementwise_add
 from .linear_layers import convert_gemm
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, \
     convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze, convert_expand, convert_resize
-from .constant_layers import convert_constant
+from .constant_layers import convert_constant, convert_constant_of_shape
 from .normalization_layers import convert_batchnorm, convert_instancenorm, convert_dropout, convert_lrn
 from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
 from .padding_layers import convert_padding
@@ -76,5 +76,6 @@ AVAILABLE_CONVERTERS = {
     'Flatten': convert_flatten,
     'Upsample': convert_upsample,
     'Erf': convert_erf,
-    'Reciprocal': convert_reciprocal
+    'Reciprocal': convert_reciprocal,
+    'ConstantOfShape': convert_constant_of_shape,
 }

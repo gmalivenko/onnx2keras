@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def convert_constant(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Constant layer
@@ -10,3 +13,10 @@ def convert_constant(node, params, layers, lambda_func, node_name, keras_name):
     :return: None
     """
     layers[node_name] = params['value']
+
+
+def convert_constant_of_shape(node, params, layers, lambda_func, node_name, keras_name):
+    value = params.get('value')
+    if value is None:
+        raise NotImplementedError("ConstantOfShape should have a value param")
+    layers[node_name] = np.ones(layers[node.input[0]], dtype=np.int32)*params['value']
