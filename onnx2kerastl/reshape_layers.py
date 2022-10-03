@@ -75,7 +75,7 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras.gather')
 
-    if is_numpy(layers[node.input[0]]) and is_numpy(layers[node.input[1]]):
+    if is_numpy(layers[node.input[0]]) and is_numpy(layers[node.input[1]]) and not 'is_embedding' in params:
         logger.debug('Gather from numpy array')
 
         if params['axis'] == 0:
@@ -99,7 +99,10 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
             if len(input_0.shape) == 2:
                 emb = tf.keras.layers.Embedding(input_0.shape[0], input_0.shape[1], weights=[layers[node.input[0]]],
                                                 name=keras_name)
-                layers[node_name] = emb(indices)
+                if isinstance(indices, list):
+                    layers[node_name] = emb(np.array(indices))
+                else:
+                    layers[node_name] = emb(indices)
             else:
                 raise AttributeError("Cannot transform gather into embedding with non 2D array")
         else:

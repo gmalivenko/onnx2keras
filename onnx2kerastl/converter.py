@@ -119,6 +119,8 @@ def onnx_to_keras(onnx_model, input_names,
                 else:
                     input_shape = [i.dim_value for i in onnx_i.type.tensor_type.shape.dim][1:]
                 dtype = None if input_types is None else input_types[i]
+                if input_shape == [0]:
+                    input_shape = (None,)
                 layers[input_name] = keras.layers.InputLayer(
                     input_shape=input_shape, name=input_name, dtype=dtype
                 ).output

@@ -3,6 +3,7 @@ from tensorflow import keras
 import logging
 from .utils import is_numpy, ensure_tf_type
 import tensorflow as tf
+from tensorflow.python.framework.ops import EagerTensor
 
 
 def convert_elementwise_div(node, params, layers, lambda_func, node_name, keras_name):
@@ -61,10 +62,10 @@ def convert_elementwise_add(node, params, layers, lambda_func, node_name, keras_
 
     input_0 = layers[node.input[0]]
     input_1 = layers[node.input[1]]
-    input_0_is_np = is_numpy(input_0)
-    input_1_is_np = is_numpy(input_1)
+    input_0_is_non_keras = is_numpy(input_0) or isinstance(input_1, EagerTensor)
+    input_1_is_non_keras = is_numpy(input_1) or isinstance(input_1, EagerTensor)
     try:
-        if not input_0_is_np and not input_1_is_np:
+        if not input_0_is_non_keras and not input_1_is_non_keras:
             to_add = input_1
             if input_0.shape != input_1.shape and input_0.shape[:-1] == input_1.shape:
                 to_add = tf.repeat(tf.expand_dims(input_1, axis=-1), input_0.shape[-1], axis=-1)
@@ -72,11 +73,12 @@ def convert_elementwise_add(node, params, layers, lambda_func, node_name, keras_
             layers[node_name] = keras.layers.Add(name=keras_name)([input_0, to_add])
         else:
             raise ValueError('Operands are different.')
-
     except (IndexError, ValueError):
         logger.warning('Failed to use keras.layers.Add. Fallback to TF lambda.')
-        layers[node_name] = input_0 + input_1
-
+        if input_0_is_non_keras:
+            layers[node_name] = input_1 + input_0
+        else:
+            layers[node_name] = input_0 + input_1
 
 def convert_elementwise_mul(node, params, layers, lambda_func, node_name, keras_name):
     """
