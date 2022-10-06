@@ -2,12 +2,12 @@ import numpy as np
 import pytest
 from test.utils import convert_and_test
 
-from torchvision.models import convnext_base, convnext_tiny, convnext_large, convnext_small
+from torchvision.models import convnext_base
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('model_class', [convnext_base, convnext_tiny, convnext_large, convnext_small])
-@pytest.mark.parametrize('pretrained', [True, False])
+@pytest.mark.parametrize('model_class', [convnext_base])
+@pytest.mark.parametrize('pretrained', [True])
 def test_convnext(pretrained, model_class):
     model = model_class(pretrained=pretrained)
     model.eval()

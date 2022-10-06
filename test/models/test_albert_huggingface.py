@@ -20,7 +20,6 @@ def test_albert_huggingface():
     real_inputs = tokenizer("Hello, my dog is cute", return_tensors="tf")
     OnnxConfig.default_fixed_batch = 1
     albert_features = list(FeaturesManager.get_supported_features_for_model_type(model_name_for_features).keys())
-    print(albert_features)
     onnx_path = Path(onnx_path)
     model_kind, model_onnx_config = FeaturesManager.check_supported_model_or_raise(model, feature='default')
     onnx_config = model_onnx_config(model.config)

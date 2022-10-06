@@ -1,13 +1,12 @@
 import numpy as np
 import pytest
 from test.utils import convert_and_test
-from torchvision.models import resnet18, resnet34, resnet50, resnet101, resnet152, wide_resnet50_2, wide_resnet101_2
+from torchvision.models import resnet18
 from torch import nn
 
 
-@pytest.mark.parametrize('model_class', [resnet18, resnet34, resnet50, resnet101, resnet152, wide_resnet50_2,
-                                         wide_resnet101_2])
-@pytest.mark.parametrize('pretrained', [True, False])
+@pytest.mark.parametrize('model_class', [resnet18])
+@pytest.mark.parametrize('pretrained', [True])
 def test_resnet18(pretrained, model_class):
     model = model_class(pretrained=pretrained)
     model = nn.Sequential(

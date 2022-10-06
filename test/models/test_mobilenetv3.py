@@ -2,13 +2,13 @@ import numpy as np
 import pytest
 from torch import nn
 from test.utils import convert_and_test
-from torchvision.models import mobilenet_v3_small, mobilenet_v3_large
+from torchvision.models import mobilenet_v3_small
 
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('model_class', [mobilenet_v3_small, mobilenet_v3_large])
-@pytest.mark.parametrize('pretrained', [True, False])
+@pytest.mark.parametrize('model_class', [mobilenet_v3_small])
+@pytest.mark.parametrize('pretrained', [True])
 def test_mobilenetv3(pretrained, model_class):
     model = model_class(pretrained=pretrained)
     model = nn.Sequential(

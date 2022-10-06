@@ -8,7 +8,7 @@ from torchvision.models import inception_v3
 
 @pytest.mark.slow
 @pytest.mark.parametrize('model_class', [inception_v3])
-@pytest.mark.parametrize('pretrained', [False, True])
+@pytest.mark.parametrize('pretrained', [True])
 def test_inception(model_class, pretrained):
     model = model_class(pretrained=pretrained)
     model = nn.Sequential(

@@ -2,13 +2,13 @@ import numpy as np
 import pytest
 from torch import nn
 from test.utils import convert_and_test
-from torchvision.models.densenet import densenet121, densenet161, densenet169, densenet201
+from torchvision.models.densenet import densenet121
 
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('model_class', [densenet121, densenet161, densenet169, densenet201])
-@pytest.mark.parametrize('pretrained', [True, False])
+@pytest.mark.parametrize('model_class', [densenet121])
+@pytest.mark.parametrize('pretrained', [True])
 def test_densenet(pretrained, model_class):
     model = model_class(pretrained=pretrained)
     model = nn.Sequential(

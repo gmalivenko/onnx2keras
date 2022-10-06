@@ -1,13 +1,13 @@
 import numpy as np
 import pytest
 from test.utils import convert_and_test
-from torchvision.models import resnext50_32x4d, resnext101_32x8d
+from torchvision.models import resnext50_32x4d
 
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize('model_class', [resnext50_32x4d, resnext101_32x8d])
-@pytest.mark.parametrize('pretrained', [True, False])
+@pytest.mark.parametrize('model_class', [resnext50_32x4d])
+@pytest.mark.parametrize('pretrained', [True])
 def test_resnext(pretrained, model_class):
     model = model_class(pretrained=pretrained)
     model.eval()
