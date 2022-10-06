@@ -8,6 +8,7 @@ from keras.models import Model
 from onnx2kerastl import onnx_to_keras
 from onnx2kerastl.utils import check_torch_keras_error
 
+NP_SEED = 42
 
 class LambdaLayerException(Exception):
     pass

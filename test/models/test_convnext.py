@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
-from test.utils import convert_and_test
-
+from test.utils import convert_and_test, NP_SEED
 from torchvision.models import convnext_base
 
 
@@ -9,6 +8,7 @@ from torchvision.models import convnext_base
 @pytest.mark.parametrize('model_class', [convnext_base])
 @pytest.mark.parametrize('pretrained', [True])
 def test_convnext(pretrained, model_class):
+    np.random.seed(seed=NP_SEED)
     model = model_class(pretrained=pretrained)
     model.eval()
 

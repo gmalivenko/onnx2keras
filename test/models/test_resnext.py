@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from test.utils import convert_and_test
+from test.utils import convert_and_test, NP_SEED
 from torchvision.models import resnext50_32x4d
 
 
@@ -9,6 +9,7 @@ from torchvision.models import resnext50_32x4d
 @pytest.mark.parametrize('model_class', [resnext50_32x4d])
 @pytest.mark.parametrize('pretrained', [True])
 def test_resnext(pretrained, model_class):
+    np.random.seed(seed=NP_SEED)
     model = model_class(pretrained=pretrained)
     model.eval()
 

@@ -1,12 +1,13 @@
 import numpy as np
 import pytest
-from test.utils import convert_and_test
+from test.utils import convert_and_test, NP_SEED
 from torchvision.models import mobilenet_v2
 
 
 
-@pytest.mark.parametrize('pretrained', [True, False])
+@pytest.mark.parametrize('pretrained', [True])
 def test_mobilenetv2(pretrained):
+    np.random.seed(seed=NP_SEED)
     model = mobilenet_v2(pretrained=pretrained)
     model.eval()
 

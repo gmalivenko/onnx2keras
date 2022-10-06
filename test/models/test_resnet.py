@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from test.utils import convert_and_test
+from test.utils import convert_and_test, NP_SEED
 from torchvision.models import resnet18
 from torch import nn
 
@@ -8,6 +8,7 @@ from torch import nn
 @pytest.mark.parametrize('model_class', [resnet18])
 @pytest.mark.parametrize('pretrained', [True])
 def test_resnet18(pretrained, model_class):
+    np.random.seed(seed=NP_SEED)
     model = model_class(pretrained=pretrained)
     model = nn.Sequential(
         model,

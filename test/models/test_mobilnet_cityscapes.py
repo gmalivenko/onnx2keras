@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from test.utils import convert_and_test
+from test.utils import convert_and_test, NP_SEED
 import torch
 from torch import nn
 from torchvision import transforms as T
@@ -41,6 +41,7 @@ def torch2keras(model, img, device='cpu'):
 @pytest.mark.parametrize('num_classes', [19])
 @pytest.mark.parametrize('output_strides', [16])
 def test_mobile_net_cityscape(model, num_classes, output_strides):
+    np.random.seed(seed=NP_SEED)
     LOAD_WEIGHTS = True
     device='cpu'
     urllib.request.urlretrieve(

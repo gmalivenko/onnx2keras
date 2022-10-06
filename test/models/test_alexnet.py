@@ -2,10 +2,11 @@ import numpy as np
 import pytest
 from test.utils import convert_and_test
 from torchvision.models import alexnet
+from test.utils import NP_SEED
 
-
-@pytest.mark.parametrize('pretrained', [True, False])
+@pytest.mark.parametrize('pretrained', [True])
 def test_alexnet(pretrained):
+    np.random.seed(seed=NP_SEED)
     model = alexnet(pretrained=pretrained)
     model.eval()
 
