@@ -14,6 +14,7 @@ import urllib.request
 
 DATASET = "KITTI" # KITTI
 
+
 def set_bn_momentum(model, momentum=0.1):
     for m in model.modules():
         if isinstance(m, nn.BatchNorm2d):
@@ -63,10 +64,10 @@ def test_mobile_net_cityscape(model, num_classes, output_strides):
     ])
     #Input size MUST be divisble by 16 in both axis (this restriction could be removed if we find a way for fractional upsample in keras)
     if DATASET == "KITTI":
-        img = np.random.randint(0, 255, (1232, 384, 3), dtype=np.uint8)
+        img = np.random.randint(0, 255, (384, 1232, 3), dtype=np.uint8)
 
     else:
-        img = np.random.randint(0, 255, (2048, 2048, 3), dtype=np.uint8)
+        img = np.random.randint(0, 255, (1024, 2048, 3), dtype=np.uint8)
     np.random.seed(42)
     img = transform(img).unsqueeze(0)  # To tensor of NCHW
     img = img.to(device)
