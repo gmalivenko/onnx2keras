@@ -343,6 +343,11 @@ def convert_floor(node, params, layers, lambda_func, node_name, keras_name):
     lambda_func[keras_name] = target_layer
 
 
+def convert_abs(node, params, layers, lambda_func, node_name, keras_name):
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    layers[node_name] = tf.math.abs(input_0)
+
+
 def convert_identity(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Identity layer
