@@ -73,6 +73,24 @@ def convert_log(node, params, layers, lambda_func, node_name, keras_name):
     lambda_func[keras_name] = target_layer
 
 
+def convert_neg(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert Neg layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for log layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+
+    layers[node_name] = tf.math.negative(input_0)
+
+
 def convert_exp(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Exp layer
