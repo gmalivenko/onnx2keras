@@ -1,6 +1,9 @@
 from tensorflow import keras
 import logging
 from .utils import ensure_tf_type
+import numpy as np
+import string
+import random
 
 
 def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
@@ -68,7 +71,23 @@ def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
             name=keras_name,
             data_format='channels_first'
         )
-
+    ceil_mode = params.get('ceil_mode', False)
+    if ceil_mode:
+        if pad == 'valid':
+            output_shape = ((np.array(input_0.shape[-len(kernel_shape):]) - np.array(kernel_shape)) / np.array(
+                stride_shape)) + 1
+        else:
+            output_shape = np.floor((np.array(input_0.shape[-len(kernel_shape):]) - 1) / np.array(stride_shape)) + 1
+        if not np.array([output_shape[i].is_integer() for i in range(len(output_shape))]).all():
+            padding = [0 if output_shape[i].is_integer() else stride_shape[i] for i in range(len(kernel_shape))]
+            rand_string = ''.join(random.choices(string.ascii_uppercase + string.digits, k=3))
+            if len(kernel_shape) == 2:
+                layers[node_name + "_pre_" + rand_string] = keras.layers.ZeroPadding2D(
+                    ((0, padding[0]), (0, padding[1])))(input_0)
+            else:
+                layers[node_name + "_pre_" + rand_string] = keras.layers.ZeroPadding3D(
+                    ((0, padding[0]), (0, padding[1]), (0, padding[2])))(input_0)
+            input_0 = layers[node_name + "_pre_" + rand_string]
     layers[node_name] = pooling(input_0)
 
 
