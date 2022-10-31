@@ -8,7 +8,7 @@ from torchvision.models import vit_b_16
 @pytest.mark.slow
 @pytest.mark.parametrize('model_class', [vit_b_16])
 @pytest.mark.parametrize('pretrained', [True])
-@pytest.mark.skip(reason="Fails on CI init")
+@pytest.mark.skip(reason="Has torch.chunck which does not export well in Onnx")
 def test_vit(pretrained, model_class):
     np.random.seed(seed=NP_SEED)
     model = model_class(pretrained=pretrained)
