@@ -8,7 +8,7 @@ from torchvision.models import shufflenet_v2_x0_5
 @pytest.mark.slow
 @pytest.mark.parametrize('model_class', [shufflenet_v2_x0_5])
 @pytest.mark.parametrize('pretrained', [True])
-@pytest.mark.skip(reason="Fails on CI init")
+@pytest.mark.skip(reason="Does not export  Pytorch->Onnx well due to torch.chunck")
 def test_shufflenet(pretrained, model_class):
     np.random.seed(seed=NP_SEED)
     model = model_class(pretrained=pretrained)
