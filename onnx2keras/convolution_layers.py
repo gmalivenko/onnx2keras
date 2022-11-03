@@ -186,11 +186,14 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
         else:
             weights = [W]
 
-        def target_layer(x, w=weights, stride=strides[0]):
+        def target_layer(x, wb=weights, stride=strides[0]):
             import tensorflow as tf
-            w = tf.convert_to_tensor(w[0])
+            w = tf.convert_to_tensor(wb[0])
             x = tf.transpose(x, [0, 2, 1])
-            x = tf.nn.conv1d(x, w, stride=stride, padding='SAME', data_format='NWC')
+            x = tf.nn.conv1d(x, w, stride=stride, padding='VALID', data_format='NWC')
+            if len(wb)==2:
+                b = tf.convert_to_tensor(wb[1])
+                x = x + b
             return tf.transpose(x, [0, 2, 1])
 
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
