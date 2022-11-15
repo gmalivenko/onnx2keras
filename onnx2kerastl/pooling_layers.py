@@ -19,7 +19,7 @@ def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras.maxpool')
 
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     kernel_shape = params['kernel_shape']
     stride_shape = params['strides']
@@ -104,7 +104,7 @@ def convert_avgpool(node, params, layers, lambda_func, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras.avgpool')
 
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     kernel_shape = params['kernel_shape']
     stride_shape = params['strides']
@@ -173,7 +173,7 @@ def convert_global_avg_pool(node, params, layers, lambda_func, node_name, keras_
     :param keras_name: resulting layer name
     :return: None
     """
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     tensor_dim = len(input_0.shape)
     if tensor_dim == 3:
         global_pool = keras.layers.GlobalAveragePooling1D(data_format='channels_first', name=keras_name)

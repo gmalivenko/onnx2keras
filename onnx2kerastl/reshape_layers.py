@@ -47,7 +47,7 @@ def convert_shape(node, params, layers, lambda_func, node_name, keras_name):
     :return: None
     """
     logger = logging.getLogger('onnx2keras.shape')
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     logger.debug('Actual shape:')
     logger.debug(np.array(input_0.shape))
@@ -89,7 +89,7 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
         else:
             raise AttributeError('Can\'t gather by axis more than 3.')
     else:
-        input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+        input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
         if not isinstance(layers[node.input[1]], np.ndarray) and \
                 tf.keras.backend.is_keras_tensor(layers[node.input[1]]):
             indices = layers[node.input[1]]
@@ -168,7 +168,7 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
             layers[node_name] = np.reshape(input_0, np.int32(input_1))
         else:
             if params['change_ordering']:
-                input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+                input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
                 # Fix critical issue with NHWC
                 if input_1[0] is None and input_1[1] == -1:
@@ -193,7 +193,7 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
                 layers[node_name] = reshape(layers[node_name])
 
             else:
-                input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+                input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
                 logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
                 logger.debug('Target shape :')
                 logger.debug(np.int32(input_1[1:]))
@@ -261,7 +261,7 @@ def convert_flatten(node, params, layers, lambda_func, node_name, keras_name):
         raise AttributeError('Number of inputs is not equal 1 for flatten layer')
 
     logger.debug('Convert inputs to Keras/TF layers if needed.')
-    input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     # Fix critical issue with flatten
     permute = keras.layers.Permute((3, 1, 2))
@@ -283,102 +283,42 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras.slice')
 
-    if is_numpy(layers[node.input[0]]):
-        if params['change_ordering']:
-            raise NotImplementedError("change_ordering for Slice is not implemented")
-        logger.debug('Slice numpy constants')
-        if 'axes' in params:
-            if len(params["axes"]) != 1:
-                raise NotImplementedError("Multiple axes in Slice is not implemented")
-            axes = params["axes"][0]
-            ends = params["ends"][0]
-            starts = params["starts"][0]
-        else:
-            try:
-                assert len(layers[node.input[1]]) == 1 and len(layers[node.input[2]]) == 1 \
-                        and len(layers[node.input[3]]) == 1
-                if len(node.input) == 4:
-                    axes = layers[node.input[3]][0]
-                    starts = layers[node.input[1]][0]
-                    ends = layers[node.input[2]][0]
-                    steps = 1
-                else:
-                    assert (len(node.input) == 5)
-                    axes = layers[node.input[3]][0]
-                    starts = layers[node.input[1]][0]
-                    ends = layers[node.input[2]][0]
-                    steps = layers[node.input[4]][0]
-            except:
-                raise AttributeError('Not implemented')
-
-        if axes == 0:
-            layers[node_name] = layers[node.input[0]][starts:ends:steps]
-        elif axes == 1:
-            layers[node_name] = layers[node.input[0]][:, starts:ends:steps]
-        elif axes == 2:
-            layers[node_name] = layers[node.input[0]][:, :, starts:ends:steps]
-        elif axes == 3:
-            layers[node_name] = layers[node.input[0]][:, :, :, starts:ends:steps]
-        else:
-            raise AttributeError('Not implemented')
+    if params['change_ordering']:
+        raise NotImplementedError("change_ordering for Slice is not implemented")
+    if 'axes' in params:
+        axes = list(params["axes"])
+        ends = list(params["ends"])
+        starts = list(params["starts"])
+        steps = list(params.get("steps", [None] * len(axes)))
     else:
-        logger.debug('Convert inputs to Keras/TF layers if needed.')
-        input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
-        layers[node_name] = input_0
+        starts = list(ensure_numpy_type(layers[node.input[1]]))
+        ends = list(ensure_numpy_type(layers[node.input[2]]))
+        axes = list(ensure_numpy_type(layers[node.input[3]]))
+        try:
+            steps = list(ensure_numpy_type(layers[node.input[4]]))
+        except IndexError:
+            steps = list(params.get("steps", [None] * len(axes)))
 
-        if 'axes' in params:
-            slice_spec = []
-            for i in range(len(params["axes"])):
-                slice_spec.append({
-                    'start': params['starts'][i],
-                    'step': None,
-                    'stop': params['ends'][i] if params['ends'][i] < 2147483647 else None
-                })
-            slice_spec = [slice_spec[i] for i in sorted(range(len(params["axes"])), key=params["axes"].__getitem__)]
-
-            slicing_layer = SlicingOpLambda(tf.__operators__.getitem)
-            layers[node_name] = slicing_layer(input_0, slice_spec=slice_spec)
-            return
+    input_shape_len = len(layers[node.input[0]].shape)
+    slice_spec_param = []
+    for axis in range(input_shape_len):
+        if axis in axes:
+            axis_index = axes.index(axis)
+            start = starts[axis_index]
+            end = ends[axis_index] if ends[axis_index] < 2147483647 else None
+            step = steps[axis_index]
+            slice_spec_param.append({'start': start, 'step': step, 'stop': end})
         else:
-            starts = ensure_numpy_type(layers[node.input[1]])
-            ends = ensure_numpy_type(layers[node.input[2]])
-            axes = ensure_numpy_type(layers[node.input[3]])
+            slice_spec_param.append({'start': None, 'step': None, 'stop': None})
 
-            for i in range(len(starts)):
-                if axes[i] != i:
-                    assert AttributeError('Cant slice permuted axes')
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    slicing_layer = SlicingOpLambda(tf.__operators__.getitem)
+    sliced = slicing_layer(input_0, slice_spec=slice_spec_param)
 
-        if isinstance(axes, list) or isinstance(axes, np.ndarray):
-            if params['change_ordering']:
-                raise NotImplementedError("change_ordering for Slice is not implemented")
-
-            def target_layer(x, axes=np.array(axes), starts=starts, ends=ends):
-                import tensorflow as tf
-                rank = max(axes)
-                s = [0 for _ in range(rank + 1)]
-                e = [0 for _ in range(rank + 1)]
-                mask = 0xff
-                for _s, _e, axis in zip(starts, ends, axes):
-                    s[axis] = _s
-                    e[axis] = _e
-                    mask = mask ^ (0x1 << axis)
-                return tf.strided_slice(x, s, e, begin_mask=mask, end_mask=mask)
-            layers[node_name] = target_layer(input_0)
-        else:
-            def target_layer(x, axis=axes, starts=starts, ends=ends):
-                import tensorflow as tf
-                rank = axis
-                s = [0 for _ in range(rank + 1)]
-                e = [0 for _ in range(rank + 1)]
-                mask = 0xff
-                s[axis] = starts
-                e[axis] = ends
-                mask = mask ^ (0x1 << axis)
-                return tf.strided_slice(x, s, e, begin_mask=mask, end_mask=mask)
-
-            lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-            layers[node_name] = lambda_layer(input_0)
-            lambda_func[keras_name] = target_layer
+    if is_numpy(layers[node.input[0]]):
+        layers[node_name] = sliced.numpy()
+    else:
+        layers[node_name] = sliced
 
 
 def convert_squeeze(node, params, layers, lambda_func, node_name, keras_name):
@@ -424,7 +364,6 @@ def convert_resize(node, params, layers, lambda_func, node_name, keras_name):
     else:
         raise Exception("unsupported resize method")
 
-
     to_channel_last = keras.layers.Permute((2, 3, 1))(input_tensor)
     if len(scales) > 0:
         if scales[0] != 1 or scales[1] != 1:
@@ -459,30 +398,7 @@ def convert_expand(node, params, layers, lambda_func, node_name, keras_name):
         assert AttributeError('More than 2 input for expand layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-    input_1 = ensure_numpy_type(layers[node.input[1]])
+    input_1 = ensure_numpy_type(layers[node.input[1]]).astype(np.int32)
 
-    # skipping empty expand
-    if np.all(input_1 == 1):
-        layers[node_name] = input_0
-        return
+    layers[node_name] = input_0 * tf.ones(input_1)
 
-    def target_layer(x, shape=input_1):
-        from tensorflow import keras
-
-        # if (len(x.shape) == len(shape)):
-        #     for axis, new_shape in enumerate(shape):
-        #         if axis == 0:
-        #             continue
-        #         x = keras.backend.repeat_elements(x, int(new_shape // x.shape[axis]), axis)
-        #     pass
-
-        x = keras.backend.repeat_elements(x, int(shape[1] // x.shape[1]), 1)
-        x = keras.backend.repeat_elements(x, int(shape[2] // x.shape[2]), 2)
-        return x
-
-        # Proper version
-        # return tf.broadcast_to(x, (1, *shape[1:]))
-
-    lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-    layers[node_name] = lambda_layer(input_0)
-    lambda_func[keras_name] = target_layer

@@ -47,14 +47,11 @@ def onnx_node_attributes_to_dict(args):
     return {arg.name: onnx_attribute_to_dict(arg) for arg in args}
 
 
-def onnx_to_keras(onnx_model, input_names,
-                  input_shapes=None, name_policy=None, verbose=True, change_ordering=False,
-                  input_types=None):
+def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, change_ordering=False, input_types=None):
     """
     Convert ONNX graph to Keras model format
     :param onnx_model: loaded ONNX model
     :param input_names: list with input names
-    :param input_shapes: override input shapes (experimental)
     :param name_policy: override layer names. None, "short", "renumerate" or "attach_weights_name" (last 2 are experimental)
     :param verbose: verbose output
     :param change_ordering: change ordering to HWC (experimental)
@@ -77,9 +74,6 @@ def onnx_to_keras(onnx_model, input_names,
     onnx_inputs = onnx_model.graph.input
     onnx_outputs = [i.name for i in onnx_model.graph.output]
     onnx_nodes = onnx_model.graph.node
-
-    logger.debug('List input shapes:')
-    logger.debug(input_shapes)
 
     logger.debug('List inputs:')
     for i, input in enumerate(onnx_inputs):
@@ -114,15 +108,17 @@ def onnx_to_keras(onnx_model, input_names,
     for i, input_name in enumerate(input_names):
         for onnx_i in onnx_inputs:
             if onnx_i.name == input_name:
-                if input_shapes:
-                    input_shape = input_shapes[i]
-                else:
-                    input_shape = [i.dim_value for i in onnx_i.type.tensor_type.shape.dim][1:]
                 dtype = None if input_types is None else input_types[i]
+                input_shape = [i.dim_value for i in onnx_i.type.tensor_type.shape.dim]
                 input_shape = [shape if shape != 0 else None for shape in input_shape]
-                layers[input_name] = keras.layers.InputLayer(
-                    input_shape=input_shape, name=input_name, dtype=dtype
-                ).output
+                batch_size = input_shape[0]
+                input_shape = input_shape[1:]
+                if batch_size is None:
+                    layers[input_name] = keras.layers.InputLayer(
+                        input_shape=input_shape, name=input_name, dtype=dtype).output
+                else:
+                    layers[input_name] = keras.layers.InputLayer(
+                        input_shape=input_shape, name=input_name, dtype=dtype, batch_size=batch_size).output
                 keras_inputs.append(layers[input_name])
 
                 logger.debug('Found input {0} with shape {1}'.format(input_name, input_shape))
@@ -194,7 +190,7 @@ def onnx_to_keras(onnx_model, input_names,
 
                 if node_input in weights:
                     logger.debug('Found in weights, add as a numpy constant.')
-                    if node_type == "Gather":
+                    if node_type == "Gather" and i == 0:
                         node_params['is_embedding'] = True
                     layers[node_input] = weights[node_input]
                 else:

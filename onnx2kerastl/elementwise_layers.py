@@ -219,3 +219,23 @@ def convert_equal(node, params, layers, lambda_func, node_name, keras_name):
 
 def convert_where(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = np.where(layers[node.input[0]], layers[node.input[1]],  layers[node.input[2]])
+
+def convert_scatter_nd(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert ScatterND layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    :TODO: Test if this supports multidirectional (i.e., Numpy-style) broadcasting as required
+    """
+    if len(node.input) < 3:
+        assert AttributeError('Less than 3 inputs')
+
+    data = ensure_tf_type(layers[node.input[0]])
+    indices = ensure_tf_type(layers[node.input[1]])
+    updates = ensure_tf_type(layers[node.input[2]])
+    layers[node_name] = tf.tensor_scatter_nd_update(data, indices, updates)
