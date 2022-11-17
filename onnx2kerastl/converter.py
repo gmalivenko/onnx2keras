@@ -4,6 +4,7 @@ The ONNX to keras converter module
 import importlib.util
 import inspect
 import logging
+import uuid
 
 from tensorflow import keras
 
@@ -155,6 +156,12 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
                 set_weights_names = set(attached_weights_names)
                 set_weights_names = "__".join(set_weights_names)
                 layer_name = output.replace(":", "_")
+                while layer_name[0] == '/':
+                    layer_name = layer_name.replace("/", "", 1)
+
+                if layer_name == "":
+                    layer_name = str(uuid.uuid4())[:10]
+
                 if set_weights_names:
                     layer_name = f"{layer_name}__{set_weights_names}"
 

@@ -38,7 +38,14 @@ def convert_and_test(model: torch.nn.Module,
                      epsilon=1e-5,
                      should_transform_inputs=False):
     k_model = torch2keras(model, input_variable, verbose=verbose, change_ordering=change_ordering)
-    error = check_torch_keras_error(model, k_model, input_variable, change_ordering=change_ordering, epsilon=epsilon,
+    error = test_conversion(model, k_model, input_variable, change_ordering=change_ordering, epsilon=epsilon,
+                            should_transform_inputs=should_transform_inputs)
+    return error
+
+
+def test_conversion(onnx_model, k_model, input_variable, change_ordering=False, epsilon=1e-5,
+                    should_transform_inputs=False):
+    error = check_torch_keras_error(onnx_model, k_model, input_variable, change_ordering=change_ordering, epsilon=epsilon,
                                     should_transform_inputs=should_transform_inputs)
     if is_lambda_layers_exist(k_model):
         raise LambdaLayerException("Found Lambda layers")
