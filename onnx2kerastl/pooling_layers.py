@@ -179,8 +179,10 @@ def convert_global_avg_pool(node, params, layers, lambda_func, node_name, keras_
         global_pool = keras.layers.GlobalAveragePooling1D(data_format='channels_first', name=keras_name)
     elif tensor_dim == 4:
         global_pool = keras.layers.GlobalAveragePooling2D(data_format='channels_first', name=keras_name)
+    elif tensor_dim == 5:
+        global_pool = keras.layers.GlobalAveragePooling3D(data_format='channels_first', name=keras_name)
     else:
-        raise NotImplementedError("Global average pooling of dims < 3 or dims > 4 is not supported")
+        raise NotImplementedError("Global average pooling of dims < 3 or dims > 5 is not supported")
     input_0 = global_pool(input_0)
     new_shape = input_0.shape.as_list()
     new_shape = new_shape[1:]
