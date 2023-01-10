@@ -6,7 +6,7 @@ import inspect
 import logging
 import uuid
 
-from tensorflow import keras
+import keras
 
 from .customonnxlayer import onnx_custom_objects_map
 from .exceptions import UnsupportedLayer, OnnxUnsupported

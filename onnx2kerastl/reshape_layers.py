@@ -1,11 +1,11 @@
-from keras.layers import SlicingOpLambda
-from keras.layers.preprocessing.image_preprocessing import ResizeMethod
-from tensorflow import keras
-import tensorflow as tf
-import numpy as np
 import logging
 
-from .exceptions import UnsupportedLayer
+import keras
+import numpy as np
+import tensorflow as tf
+from keras import backend as K
+from keras.layers import SlicingOpLambda
+
 from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
 
 
@@ -91,7 +91,7 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
     else:
         input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
         if not isinstance(layers[node.input[1]], np.ndarray) and \
-                tf.keras.backend.is_keras_tensor(layers[node.input[1]]):
+                K.is_keras_tensor(layers[node.input[1]]):
             indices = layers[node.input[1]]
         else:
             indices = layers[node.input[1]].tolist()
@@ -130,7 +130,7 @@ def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
     else:
         logger.debug('Concat Keras layers.')
         if len(layer_input) > 1:
-            if not np.array([tf.is_tensor(layer_input[i]) and tf.keras.backend.is_keras_tensor(layer_input[i]) for i in range(len(layer_input))]).all():
+            if not np.array([tf.is_tensor(layer_input[i]) and K.is_keras_tensor(layer_input[i]) for i in range(len(layer_input))]).all():
                 try:
                     layers[node_name] = tf.concat(layer_input, axis=params['axis'], name=keras_name)
                 except Exception as ex:
@@ -338,8 +338,8 @@ def convert_squeeze(node, params, layers, lambda_func, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x, axis=params['axes'][0]):
-        from tensorflow import keras
-        return keras.backend.squeeze(x, axis)
+        from keras import backend as K
+        return K.squeeze(x, axis)
     layers[node_name] = target_layer(input_0)
 
 
@@ -356,11 +356,11 @@ def convert_resize(node, params, layers, lambda_func, node_name, keras_name):
         raise Exception("Resize with roi not supported")
 
     if params['mode'] == b'nearest':
-        resize_method = ResizeMethod.NEAREST_NEIGHBOR
+        resize_method = tf.image.ResizeMethod.NEAREST_NEIGHBOR
     elif params['mode'] == b'cubic':
-        resize_method = ResizeMethod.BICUBIC
+        resize_method = tf.image.ResizeMethod.BICUBIC
     elif params['mode'] == b'linear':
-        resize_method = ResizeMethod.BILINEAR
+        resize_method = tf.image.ResizeMethod.BILINEAR
     else:
         raise Exception("unsupported resize method")
 

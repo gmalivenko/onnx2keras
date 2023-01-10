@@ -1,5 +1,5 @@
 import numpy as np
-from tensorflow import keras
+import keras
 from keras_data_format_converter import convert_channels_first_to_last
 
 

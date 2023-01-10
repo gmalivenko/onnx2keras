@@ -1,4 +1,4 @@
-from tensorflow import keras
+import keras
 import logging
 from .utils import ensure_tf_type
 import numpy as np

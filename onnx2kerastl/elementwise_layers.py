@@ -1,5 +1,5 @@
 import numpy as np
-from tensorflow import keras
+import keras
 import logging
 from .utils import is_numpy, ensure_tf_type
 import tensorflow as tf

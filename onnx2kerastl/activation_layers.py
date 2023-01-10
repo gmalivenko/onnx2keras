@@ -1,4 +1,4 @@
-from tensorflow import keras
+import keras
 import logging
 
 from .customonnxlayer.onnxerf import OnnxErf

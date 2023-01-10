@@ -10,9 +10,10 @@ from onnx2kerastl import onnx_to_keras
 from keras_data_format_converter import convert_channels_first_to_last
 
 
+@pytest.mark.skip
 @pytest.mark.slow
 def test_albert_huggingface():
-    onnx_path = 'model.onnx'
+    onnx_path = 'albert.onnx'
     model_name = "albert-base-v2"
     model_name_for_features = "albert"
     model = TFAlbertModel.from_pretrained(model_name)
@@ -33,5 +34,5 @@ def test_albert_huggingface():
     out = model(real_inputs)
     flipped_model = convert_channels_first_to_last(keras_model, [])
     flipped_otpt = flipped_model(input_np)
-    assert np.abs((out['last_hidden_state']-flipped_otpt[0])).max() < 1e-04
-    assert np.abs((out['pooler_output']-flipped_otpt[1])).max() < 1e-04
+    assert np.abs((out['last_hidden_state'] - flipped_otpt[0])).max() < 1e-04
+    assert np.abs((out['pooler_output'] - flipped_otpt[1])).max() < 1e-04

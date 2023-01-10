@@ -10,17 +10,18 @@ import numpy as np
 from onnx2kerastl import onnx_to_keras
 from keras_data_format_converter import convert_channels_first_to_last
 
+
 @pytest.mark.skip(reason="Fails on CI but works locally (might be too big?)")
 @pytest.mark.slow
 def test_bert_huggingface():
-    onnx_path = 'model.onnx'
+    onnx_path = 'bert_huggingface.onnx'
     model_name = "bert-base-uncased"
     model_name_for_features = "bert"
     model = BertModel.from_pretrained(model_name)
     tokenizer = BertTokenizer.from_pretrained(model_name)
     real_inputs = tokenizer("Hello, my dog is cute", return_tensors="pt")
-    OnnxConfig.default_fixed_sequence = 8 #this does nothing here, serves as a reminder
-    OnnxConfig.default_fixed_batch = 2 #this does nothing here, serves as a reminder
+    OnnxConfig.default_fixed_sequence = 8  # this does nothing here, serves as a reminder
+    OnnxConfig.default_fixed_batch = 2  # this does nothing here, serves as a reminder
     albert_features = list(FeaturesManager.get_supported_features_for_model_type(model_name_for_features).keys())
     print(albert_features)
     onnx_path = Path(onnx_path)
@@ -37,5 +38,5 @@ def test_bert_huggingface():
         out = model(**real_inputs)
     flipped_model = convert_channels_first_to_last(keras_model, [])
     flipped_otpt = flipped_model(input_np)
-    assert np.abs((out['last_hidden_state'].detach().numpy()-flipped_otpt[0])).max() < 1e-04
-    assert np.abs((out['pooler_output'].detach().numpy()-flipped_otpt[1])).max() < 1e-04
+    assert np.abs((out['last_hidden_state'].detach().numpy() - flipped_otpt[0])).max() < 1e-04
+    assert np.abs((out['pooler_output'].detach().numpy() - flipped_otpt[1])).max() < 1e-04

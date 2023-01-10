@@ -1,6 +1,7 @@
-from keras.layers import Conv3DTranspose
-from tensorflow import keras
 import logging
+
+import keras
+
 from .utils import ensure_tf_type, ensure_numpy_type
 
 

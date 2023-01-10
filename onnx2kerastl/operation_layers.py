@@ -2,8 +2,8 @@ import logging
 from typing import Dict, Any
 
 import numpy as np
-from tensorflow import keras
-from tensorflow.keras import backend as K
+import keras
+from keras import backend as K
 import tensorflow as tf
 
 from onnx2kerastl.customonnxlayer.onnxreducemean import OnnxReduceMean
@@ -65,7 +65,7 @@ def convert_log(node, params, layers, lambda_func, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x):
-        import tensorflow.keras.backend as K
+        import keras.backend as K
         return K.log(x)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -107,7 +107,7 @@ def convert_exp(node, params, layers, lambda_func, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x):
-        import tensorflow.keras.backend as K
+        import keras.backend as K
         return K.exp(x)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -134,7 +134,7 @@ def convert_reduce_sum(node, params, layers, lambda_func, node_name, keras_name)
     axis = params['axes']
 
     def target_layer(x, axis=axis):
-        import tensorflow.keras.backend as K
+        import keras.backend as K
         return K.sum(x, keepdims=True, axis=axis)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -199,7 +199,7 @@ def convert_reduce_max(node, params, layers, lambda_func, node_name, keras_name)
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     def target_layer(x, axis=params['axes'], keepdims=params['keepdims']):
-        import tensorflow.keras.backend as K
+        import keras.backend as K
         return K.max(x, keepdims=(keepdims == 1), axis=axis)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -312,8 +312,10 @@ def convert_cast(node, params, layers, lambda_func, node_name, keras_name):
             10: np.float16,
             11: np.double,
         }
-
-        layers[node_name] = cast_map[params['to']](layers[node.input[0]])
+        cast_result = layers[node.input[0]]
+        if not (layers[node.input[0]] == None).any():
+            cast_result = cast_map[params['to']](layers[node.input[0]])
+        layers[node_name] = cast_result
     else:
         input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 

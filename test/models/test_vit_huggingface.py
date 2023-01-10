@@ -32,7 +32,7 @@ class ViTOnnxConfig(OnnxConfig):
 
 def test_vit_huggingface():
     save_model = True
-    onnx_path = 'model.onnx'
+    onnx_path = 'vit_huggingface.onnx'
     model_name = "google/vit-base-patch16-224-in21k"
     model = ViTModel.from_pretrained(model_name)
     tokenizer = ViTFeatureExtractor.from_pretrained(model_name)
