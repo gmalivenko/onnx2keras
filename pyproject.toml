@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "onnx2kerastl"
-version = "0.0.75"
+version = "0.0.76"
 description = ""
 authors = ["dorhar <doron.harnoy@tensorleap.ai>"]
 license = "MIT"
@@ -14,6 +14,7 @@ protobuf = "^3.19.6"
 keras-data-format-converter = "0.1.12"
 tensorflow-addons = {version = "^0.19.0", markers = "platform_machine  == 'x86_64'"}
 numpy = "1.23.5"
+fvcore = "^0.1.5.post20221221"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"

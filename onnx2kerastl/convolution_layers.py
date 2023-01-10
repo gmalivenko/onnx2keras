@@ -4,7 +4,6 @@ import keras
 
 from .utils import ensure_tf_type, ensure_numpy_type
 
-
 def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert convolution layer
@@ -57,7 +56,6 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
             weights = [W, bias]
         else:
             weights = [W]
-
         conv = keras.layers.Conv3D(
             filters=out_channels,
             kernel_size=(dimension, height, width),
