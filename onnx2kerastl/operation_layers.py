@@ -262,7 +262,10 @@ def convert_split(node, params, layers, lambda_func, node_name, keras_names):
         assert AttributeError('More than 1 input for split layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_names[0])
-    splits = params["split"]
+    try: #onnx opset12
+        splits = params["split"]
+    except KeyError as e: #onnx opset 14
+        splits = layers[node.input[1]]
     axis = params.get("axis", 0)
     if not isinstance(splits, Iterable):
         # This might not work if `split` is a tensor.
