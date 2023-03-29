@@ -35,17 +35,26 @@ def convert_clip(node, params, layers, lambda_func, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    if 'min' not in params or 'max' not in params:
-        if len(node.input) == 3:
-            params['min'] = float(layers[node.input[1]])
-            params['max'] = float(layers[node.input[2]])
-        else:
+    clip_min = params.get('min')
+    clip_max = params.get('max')
+    if clip_min is None or clip_max is None:
+        if len(node.input) == 1:
             raise UnsupportedLayer('Clip without max or min params')
-    if params['min'] == 0:
-        logger.debug("Using ReLU({0}) instead of clip".format(params['max']))
-        layers[node_name] = keras.layers.ReLU(max_value=params['max'], name=keras_name)(input_0)
-    else:
-        layers[node_name] = tf.clip_by_value(input_0, params['min'], params['max'])
+        if len(node.input) > 1 and node.input[1] != '':
+            clip_min = float(layers[node.input[1]])
+        if len(node.input) == 3 and node.input[2] != '':
+            clip_max = float(layers[node.input[2]])
+
+    if clip_min is None and clip_max is None:
+        raise UnsupportedLayer('Clip without max or min params')
+
+    if clip_min is None:
+        clip_min = tf.float32.min
+
+    if clip_max is None:
+        clip_max = tf.float32.max
+
+    layers[node_name] = tf.clip_by_value(input_0, clip_min, clip_max)
 
 
 def convert_log(node, params, layers, lambda_func, node_name, keras_name):

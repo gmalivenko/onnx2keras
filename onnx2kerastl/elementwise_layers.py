@@ -6,6 +6,10 @@ import tensorflow as tf
 from tensorflow.python.framework.ops import EagerTensor
 
 
+def _is_integer_type(dtype) -> bool:
+    return dtype in (tf.int32, tf.int64, tf.int16, tf.int8, np.int32, np.int64, np.int16, np.int8)
+
+
 def convert_elementwise_div(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert element-wise division
@@ -27,7 +31,13 @@ def convert_elementwise_div(node, params, layers, lambda_func, node_name, keras_
 
     try:
         logger.debug('Divide numpy arrays.')
-        layers[node_name] = layers[node.input[0]] / layers[node.input[1]]
+        div = input_0 / input_1
+        if _is_integer_type(input_0.dtype) and _is_integer_type(input_1.dtype):
+            div = tf.cast(div, input_0.dtype)
+        if hasattr(div, 'numpy'):
+            div = div.numpy()
+        layers[node_name] = div
+
     except (IndexError, ValueError):
         logger.debug('Convert inputs to Keras/TF layers if needed.')
 
@@ -79,6 +89,7 @@ def convert_elementwise_add(node, params, layers, lambda_func, node_name, keras_
             layers[node_name] = input_1 + input_0
         else:
             layers[node_name] = input_0 + input_1
+
 
 def convert_elementwise_mul(node, params, layers, lambda_func, node_name, keras_name):
     """
@@ -218,7 +229,8 @@ def convert_equal(node, params, layers, lambda_func, node_name, keras_name):
 
 
 def convert_where(node, params, layers, lambda_func, node_name, keras_name):
-    layers[node_name] = np.where(layers[node.input[0]], layers[node.input[1]],  layers[node.input[2]])
+    layers[node_name] = np.where(layers[node.input[0]], layers[node.input[1]], layers[node.input[2]])
+
 
 def convert_scatter_nd(node, params, layers, lambda_func, node_name, keras_name):
     """

@@ -4,6 +4,7 @@ import keras
 
 from .utils import ensure_tf_type, ensure_numpy_type
 
+
 def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert convolution layer

@@ -201,7 +201,7 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
                         node_params['is_embedding'] = True
                     layers[node_input] = weights[node_input]
                 else:
-                    if node_input == "" and (node_type == 'Pad' or node_type == 'Resize'):
+                    if node_input == "" and node_type in ('Pad', 'Resize', 'Clip', 'LSTM'):
                         continue
                     else:
                         raise AttributeError('Current node is not in weights / model inputs / layers.')

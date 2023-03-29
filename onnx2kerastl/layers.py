@@ -1,6 +1,7 @@
 from .convolution_layers import convert_conv, convert_convtranspose
 from .activation_layers import convert_relu, convert_elu, convert_lrelu, convert_selu, \
     convert_sigmoid, convert_tanh, convert_softmax, convert_prelu, convert_hard_sigmoid, convert_erf
+from .ltsm_layers import convert_lstm
 from .operation_layers import convert_clip, convert_exp, convert_neg, convert_reduce_sum, convert_reduce_mean, \
     convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity, \
     convert_argmax, convert_reduce_l2, convert_reduce_max, convert_reciprocal, convert_abs
@@ -83,5 +84,7 @@ AVAILABLE_CONVERTERS = {
     'ConstantOfShape': convert_constant_of_shape,
     'Equal': convert_equal,
     'Where': convert_where,
+    'LSTM': convert_lstm
+
 
 }
