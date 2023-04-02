@@ -41,9 +41,8 @@ def convert_elu(node, params, layers, lambda_func, node_name, keras_name):
         assert AttributeError('More than 1 input for an activation layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-
-    elu = \
-        keras.layers.ELU(alpha=params['alpha'], name=keras_name)
+    alpha = params.get('alpha', keras.layers.ELU.__init__.__defaults__[0])
+    elu = keras.layers.ELU(alpha=alpha, name=keras_name)
     layers[node_name] = elu(input_0)
 
 
@@ -63,8 +62,8 @@ def convert_lrelu(node, params, layers, lambda_func, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    leakyrelu = \
-        keras.layers.LeakyReLU(alpha=params['alpha'], name=keras_name)
+    alpha = params.get('alpha', keras.layers.LeakyReLU.__init__.__defaults__[0])
+    leakyrelu = keras.layers.LeakyReLU(alpha=alpha, name=keras_name)
     layers[node_name] = leakyrelu(input_0)
 
 
@@ -143,8 +142,8 @@ def convert_softmax(node, params, layers, lambda_func, node_name, keras_name):
         assert AttributeError('More than 1 input for an activation layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-
-    softmax_layer = keras.layers.Softmax(axis=params['axis'], name=keras_name)
+    axis = params.get('axis', keras.layers.Softmax.__init__.__defaults__[0])
+    softmax_layer = keras.layers.Softmax(axis=axis, name=keras_name)
     layers[node_name] = softmax_layer(input_0)
     layers[node_name].set_shape(layers[node_name].shape)
 
