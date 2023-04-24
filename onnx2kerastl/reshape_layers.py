@@ -101,7 +101,10 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
                 K.is_keras_tensor(layers[node.input[1]]):
             indices = layers[node.input[1]]
         else:
-            indices = layers[node.input[1]].tolist()
+            indices = layers[node.input[1]]
+            if not is_numpy(layers[node.input[1]]):
+                indices = indices.numpy()
+            indices = indices.tolist()
         if "is_embedding" in params:
             if len(input_0.shape) == 2:
                 emb = tf.keras.layers.Embedding(input_0.shape[0], input_0.shape[1], weights=[layers[node.input[0]]],
@@ -410,5 +413,8 @@ def convert_expand(node, params, layers, lambda_func, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     input_1 = ensure_numpy_type(layers[node.input[1]]).astype(np.int32)
 
-    layers[node_name] = input_0 * tf.ones(input_1)
+    layers[node_name] = input_0 * tf.ones(input_1, dtype=input_0.dtype)
 
+
+def convert_tile(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.tile(layers[node.input[0]], layers[node.input[1]])

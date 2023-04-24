@@ -139,12 +139,19 @@ def convert_reduce_sum(node, params, layers, lambda_func, node_name, keras_name)
         assert AttributeError('More than 1 input for reduce sum layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    if 'axes' not in params:
+        axis = layers[node.input[1]]
+    else:
+        axis = params['axes']
 
-    axis = params['axes']
+    keep_dims = True
+    if 'keepdims' in params:
+        if params['keepdims'] == 0:
+            keep_dims = False
 
-    def target_layer(x, axis=axis):
+    def target_layer(x, axis=axis, keep_dims=keep_dims):
         import keras.backend as K
-        return K.sum(x, keepdims=True, axis=axis)
+        return K.sum(x, keepdims=keep_dims, axis=axis)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)

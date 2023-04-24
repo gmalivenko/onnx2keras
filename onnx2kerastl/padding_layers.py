@@ -16,7 +16,10 @@ def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
     """
     # It's binary by-default
     logger = logging.getLogger("onnx2keras.padding")
-    params['mode'] = params['mode'].decode('ascii')
+    if 'mode' in params:
+        params['mode'] = params['mode'].decode('ascii')
+    else:
+        params['mode'] = 'constant'
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     if 'pads' in params:

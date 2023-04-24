@@ -9,13 +9,15 @@ from .elementwise_layers import convert_elementwise_div, convert_elementwise_add
     convert_elementwise_sub, convert_max, convert_min, convert_mean, convert_equal, convert_where, convert_scatter_nd
 from .linear_layers import convert_gemm
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, \
-    convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze, convert_expand, convert_resize
+    convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze, convert_expand, convert_resize,\
+    convert_tile
 from .constant_layers import convert_constant, convert_constant_of_shape
 from .normalization_layers import convert_batchnorm, convert_instancenorm, convert_dropout, convert_lrn
 from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
 from .padding_layers import convert_padding
 from .upsampling_layers import convert_upsample
 from .caffe2_layers import convert_alias_with_name, convert_resize_nearest
+from .sampling_layers import convert_gridsample, convert_range
 
 AVAILABLE_CONVERTERS = {
     'Abs': convert_abs,
@@ -84,7 +86,10 @@ AVAILABLE_CONVERTERS = {
     'ConstantOfShape': convert_constant_of_shape,
     'Equal': convert_equal,
     'Where': convert_where,
-    'LSTM': convert_lstm
+    'LSTM': convert_lstm,
+    'Tile': convert_tile,
+    'GridSample': convert_gridsample,
+    'Range': convert_range
 
 
 }
