@@ -205,20 +205,31 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
 
             else:
                 input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-                logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
-                logger.debug('Target shape :')
-                logger.debug(np.int32(input_1[1:]))
-
-                if len(np.int32(input_1[1:])) == 1 and np.int32(input_1[1:])[0] == -1:
-                    logger.debug('The first argument is Keras/tf layer. Apply keras.Flatten.')
-                    flatten = keras.layers.Flatten(name=keras_name)
-                    layers[node_name] = flatten(input_0)
+                input_0_shape = input_0.shape
+                first_mismatch = np.argmin(np.array(input_0_shape[:len(input_1)]) == input_1)
+                if (input_1 == None).any() and (np.array(input_0_shape) == None).any() and len(input_1) < len(input_0_shape)\
+                        and input_1[first_mismatch] == -1: #reshape end
+                    end_match_arr = np.array(input_0_shape[-len(input_1):]) == input_1
+                    end_idx_match = np.argmax((np.array(input_0_shape[-len(input_1):]) == input_1))
+                    end_idx_match = end_idx_match + len(input_0_shape) - len(input_1) if end_idx_match > first_mismatch \
+                                                     and end_match_arr[end_idx_match] else len(input_0_shape) + 1
+                    tf_shape = tf.shape(input_0)
+                    layers[node_name] = tf.reshape(input_0, [*tf_shape[:first_mismatch], -1, *tf_shape[end_idx_match:]])
                 else:
-                    if input_0.shape[0] != input_1[0]:  # keras reshape don't work
-                        layers[node_name] = tf.reshape(input_0, input_1, name=keras_name)
+                    logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
+                    logger.debug('Target shape :')
+                    logger.debug(np.int32(input_1[1:]))
+
+                    if len(np.int32(input_1[1:])) == 1 and np.int32(input_1[1:])[0] == -1:
+                        logger.debug('The first argument is Keras/tf layer. Apply keras.Flatten.')
+                        flatten = keras.layers.Flatten(name=keras_name)
+                        layers[node_name] = flatten(input_0)
                     else:
-                        reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
-                        layers[node_name] = reshape(input_0)
+                        if input_0.shape[0] != input_1[0]:  # keras reshape don't work
+                            layers[node_name] = tf.reshape(input_0, input_1, name=keras_name)
+                        else:
+                            reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
+                            layers[node_name] = reshape(input_0)
     else:
         raise AttributeError('Can\'t reshape dynamic size.')
 
@@ -323,15 +334,16 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
             slice_spec_param.append({'start': start, 'step': step, 'stop': end})
         else:
             slice_spec_param.append({'start': None, 'step': None, 'stop': None})
-
-    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-    slicing_layer = SlicingOpLambda(tf.__operators__.getitem)
-    sliced = slicing_layer(input_0, slice_spec=slice_spec_param)
-
-    if is_numpy(layers[node.input[0]]):
-        layers[node_name] = sliced.numpy()
+    if is_numpy(layers[node.input[0]]) and np.array([_shape is None for _shape in layers[node.input[0]]]).any()\
+            and len(layers[node.input[0]].shape) == 1: # slice numpy array which is a shape
+        sliced = layers[node.input[0]][start:end:step]
     else:
-        layers[node_name] = sliced
+        input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+        slicing_layer = SlicingOpLambda(tf.__operators__.getitem)
+        sliced = slicing_layer(input_0, slice_spec=slice_spec_param)
+        if is_numpy(layers[node.input[0]]):
+            sliced = sliced.numpy()
+    layers[node_name] = sliced
 
 
 def convert_squeeze(node, params, layers, lambda_func, node_name, keras_name):

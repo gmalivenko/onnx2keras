@@ -1,6 +1,7 @@
 import logging
 import tensorflow as tf
 import numpy as np
+from onnx2kerastl.customonnxlayer.onnxlstm import OnnxLSTM
 
 from .exceptions import UnsupportedLayer
 from .utils import ensure_tf_type, ensure_numpy_type
@@ -27,7 +28,7 @@ def convert_lstm(node, params, layers, lambda_func, node_name, keras_name):
             direction = direction.decode("utf-8")
         if direction != 'forward':
             raise UnsupportedLayer(f"LSTM with {direction} direction")
-
+    should_return_state = len(node.output) == 3
     input_tensor = tf.transpose(ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name[0]), perm=[1, 0, 2])
     weights_w = ensure_numpy_type(layers[node.input[1]])[0]
     weights_r = ensure_numpy_type(layers[node.input[2]])[0]
@@ -38,9 +39,8 @@ def convert_lstm(node, params, layers, lambda_func, node_name, keras_name):
 
     tf.keras.backend.set_image_data_format("channels_last")
     hidden_size = params['hidden_size']
-    lstm_tensor = tf.keras.layers.LSTM(hidden_size, return_sequences=True) \
-        (input_tensor, initial_state=[initial_h_state, initial_c_state])
-
+    lstm_layer = OnnxLSTM(hidden_size, return_sequences=True, return_lstm_state=should_return_state)
+    res = lstm_layer(input_tensor, initial_h_state, initial_c_state)
     # prepare the keras lstm weights from the onnx inputs:
     w1 = np.concatenate([weights_w[0:hidden_size, :], weights_w[2 * hidden_size:3 * hidden_size, :],
                          weights_w[3 * hidden_size:4 * hidden_size, :],
@@ -57,10 +57,18 @@ def convert_lstm(node, params, layers, lambda_func, node_name, keras_name):
                             weights_b_part2[3 * hidden_size:4 * hidden_size],
                             weights_b_part2[hidden_size:2 * hidden_size]]).transpose()
     bias = bias1 + bias2
-    lstm_tensor.node.layer.set_weights([w1, w2, bias])
+    res.node.layer.set_weights([w1, w2, bias])
     tf.keras.backend.set_image_data_format("channels_first")
-
+    if should_return_state:
+        c_out = res[:, -hidden_size:]
+        h_out = res[:, -2*hidden_size:-hidden_size]
+        flat_lstm_tensor = res[:, :-2*hidden_size]
+        lstm_tensor = tf.keras.layers.Reshape((-1, hidden_size))(flat_lstm_tensor)
+        layers[node.output[1]] = c_out
+        layers[node.output[2]] = h_out
+    else:
+        lstm_tensor = res
     lstm_tensor_in_onnx_order = tf.transpose(lstm_tensor, perm=[1, 0, 2])
     lstm_tensor_in_onnx_order = tf.expand_dims(lstm_tensor_in_onnx_order, axis=1)
-
     layers[node_name] = lstm_tensor_in_onnx_order
+

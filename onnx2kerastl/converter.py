@@ -127,9 +127,17 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
     # Convert every operation separable
     node_names = []
     for node_index, node in enumerate(onnx_nodes):
+        if node.op_type == 'If':
+            if layers[node.input[0]][0]:
+                replace_node = node.attribute[0].g.node[0]
+            else:
+                replace_node = node.attribute[1].g.node[0]
+            replace_node.output.pop()
+            for i in range(len(node.output)):
+                replace_node.output.append(node.output[i])
+            node = replace_node
         node_type = node.op_type
         node_params = onnx_node_attributes_to_dict(node.attribute)
-
         # Add global converter info:
         node_params['change_ordering'] = change_ordering
         node_params['name_policy'] = name_policy
