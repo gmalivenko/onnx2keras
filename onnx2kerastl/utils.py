@@ -131,3 +131,34 @@ def check_torch_keras_error(model, k_model, input_np, epsilon=1e-5, change_order
             max_error = error
 
     return max_error
+
+
+def match_tensors_rank(tensor_list):
+    """
+    Adjusts the ranks of tensors in a given list to match the maximum rank by adding dummy dimensions
+    e.g., for input tensors shapes [(2,), (1, 4)] the unsqueezed tensors are [(1, 2), (1, 4)]
+
+    Args:
+        tensor_list (list): A list of tensors.
+
+    Returns:
+        list: A new list of tensors with adjusted ranks to match the maximum rank.
+              If all tensors in the input list already have the same rank, the original list is returned.
+    """
+    ranks = [tensor.shape.rank for tensor in tensor_list]
+    max_rank = max(ranks)
+
+    if len(set(ranks)) == 1:
+        return tensor_list
+
+    unsqueezed_tensors = []
+    for tensor in tensor_list:
+        tensor_rank = tensor.shape.rank
+        if tensor_rank < max_rank:
+            diff_shape = (1,) * (max_rank - tensor_rank) + tensor.shape
+            unsqueezed_tensor = keras.backend.expand_dims(tensor, axis=0)
+            unsqueezed_tensors.append(unsqueezed_tensor)
+        else:
+            unsqueezed_tensors.append(tensor)
+
+    return unsqueezed_tensors

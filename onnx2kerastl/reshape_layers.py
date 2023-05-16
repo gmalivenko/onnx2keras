@@ -6,7 +6,7 @@ import tensorflow as tf
 from keras import backend as K
 from keras.layers import SlicingOpLambda
 
-from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
+from .utils import is_numpy, ensure_tf_type, ensure_numpy_type, match_tensors_rank
 
 
 def convert_transpose(node, params, layers, lambda_func, node_name, keras_name):
@@ -149,6 +149,7 @@ def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
                     raise
 
             else:
+                layer_input = match_tensors_rank(layer_input)
                 layers[node_name] = keras.layers.concatenate(inputs=layer_input,
                                                              axis=params['axis'],
                                                              name=keras_name)
