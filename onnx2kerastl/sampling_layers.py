@@ -31,25 +31,11 @@ def convert_gridsample(node, params, layers, lambda_func, node_name, keras_name)
     max_xy = tf.expand_dims(
         tf.expand_dims(tf.expand_dims(tf.convert_to_tensor([torch_shape[3] - 1, torch_shape[2] - 1]), 0), 0), 0)
     max_xy = tf.cast(max_xy, tf.float32)
-    grid_index_coords = 0.5 * (sample_grid + 1.) * max_xy # transform from [-1,1] to [0,H-1]/[0,W-1]
-    lambda_layer = keras.layers.Lambda(interpolate_wrapper, name=keras_name)
-    layers[node_name] = lambda_layer([img, grid_index_coords, torch_shape])
-
-
-def interpolate_wrapper(x):
-    return _interpolate_bilinear_impl(x[0], x[1], x[2])
-
-
-def _interpolate_bilinear_impl(
-        torch_img,
-        grid_index_coords,
-        torch_shape,
-) -> tf.Tensor:
-    """tf.function implementation of interpolate_bilinear."""
+    grid_index_coords = 0.5 * (sample_grid + 1.) * max_xy  # transform from [-1,1] to [0,H-1]/[0,W-1]
     grid_index_coords = grid_index_coords + 1  # fix locs considering we add padding
     orig_query_shape = tf.shape(grid_index_coords)
     query_points = tf.reshape(grid_index_coords, [orig_query_shape[0], -1, 2])
-    padded_img = tf.keras.layers.ZeroPadding2D(padding=(1, 1), data_format="channels_first")(torch_img)
+    padded_img = tf.keras.layers.ZeroPadding2D(padding=(1, 1), data_format="channels_first")(img)
     grid = tf.keras.layers.Permute((2, 3, 1))(padded_img)
     indexing = 'ji'
     grid_shape = tf.shape(grid)
@@ -69,10 +55,11 @@ def _interpolate_bilinear_impl(
     floors = []
     ceils = []
     index_order = [0, 1] if indexing == "ij" else [1, 0]
-    unstacked_query_points = tf.unstack(query_points, axis=2, num=2)
+    # unstacked_query_points = tf.unstack(query_points, axis=2, num=2)
 
     for i, dim in enumerate(index_order):
-        queries = unstacked_query_points[dim]
+        queries = query_points[:, :, dim, ...]
+        # queries = unstacked_query_points[dim]
 
         size_in_indexing_dimension = grid_shape[i + 1]
 
@@ -124,4 +111,5 @@ def _interpolate_bilinear_impl(
     interp_bottom = alphas[1] * (bottom_right - bottom_left) + bottom_left
     interp = alphas[0] * (interp_bottom - interp_top) + interp_top
     tf_reshaped_results = tf.reshape(interp, tf.concat([orig_query_shape[:-1], torch_shape[1:2]], axis=0))
-    return tf.keras.layers.Permute((3,1,2))(tf_reshaped_results)
+    ret = tf.keras.layers.Permute((3, 1, 2))(tf_reshaped_results)
+    layers[node_name] = ret
