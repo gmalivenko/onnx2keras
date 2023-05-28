@@ -334,8 +334,8 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
             slice_spec_param.append({'start': start, 'step': step, 'stop': end})
         else:
             slice_spec_param.append({'start': None, 'step': None, 'stop': None})
-    if is_numpy(layers[node.input[0]]) and np.array([_shape is None for _shape in layers[node.input[0]]]).any()\
-            and len(layers[node.input[0]].shape) == 1: # slice numpy array which is a shape
+    if is_numpy(layers[node.input[0]]) and np.array([_shape is None for _shape in layers[node.input[0]]]).any() \
+            and len(layers[node.input[0]].shape) == 1:  # slice numpy array which is a shape
         sliced = layers[node.input[0]][start:end:step]
     else:
         input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
@@ -424,7 +424,8 @@ def convert_expand(node, params, layers, lambda_func, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     input_1 = ensure_numpy_type(layers[node.input[1]]).astype(np.int32)
-
+    if input_0.dtype.is_bool:
+        input_0 = tf.cast(input_0, dtype='int32')
     layers[node_name] = input_0 * tf.ones(input_1, dtype=input_0.dtype)
 
 
