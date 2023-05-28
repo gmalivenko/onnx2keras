@@ -458,3 +458,8 @@ def convert_reduce_l2(node, params, layers, lambda_func, node_name, keras_name):
 def convert_reciprocal(node, params, layers, lambda_func, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     layers[node_name] = tf.math.reciprocal(input_0)
+
+
+def convert_not(node, params, layers, lambda_func, node_name, keras_name):
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    layers[node_name] = tf.logical_not(input_0)
