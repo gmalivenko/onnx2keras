@@ -58,7 +58,7 @@ def convert_gridsample(node, params, layers, lambda_func, node_name, keras_name)
     # unstacked_query_points = tf.unstack(query_points, axis=2, num=2)
 
     for i, dim in enumerate(index_order):
-        queries = query_points[:, :, dim, ...]
+        queries = query_points[:, :, dim]
         # queries = unstacked_query_points[dim]
 
         size_in_indexing_dimension = grid_shape[i + 1]
