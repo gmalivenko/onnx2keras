@@ -6,7 +6,7 @@ import tensorflow as tf
 from keras import backend as K
 from keras.layers import SlicingOpLambda
 
-from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
+from .utils import is_numpy, ensure_tf_type, ensure_numpy_type, unsqueeze_tensors_of_rank_one
 
 
 def convert_transpose(node, params, layers, lambda_func, node_name, keras_name):
@@ -149,6 +149,7 @@ def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
                     raise
 
             else:
+                layer_input = unsqueeze_tensors_of_rank_one(layer_input, axis=params['axis'])
                 layers[node_name] = keras.layers.concatenate(inputs=layer_input,
                                                              axis=params['axis'],
                                                              name=keras_name)
@@ -220,16 +221,11 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
                     logger.debug('Target shape :')
                     logger.debug(np.int32(input_1[1:]))
 
-                    if len(np.int32(input_1[1:])) == 1 and np.int32(input_1[1:])[0] == -1:
-                        logger.debug('The first argument is Keras/tf layer. Apply keras.Flatten.')
-                        flatten = keras.layers.Flatten(name=keras_name)
-                        layers[node_name] = flatten(input_0)
+                    if input_0.shape[0] != input_1[0]:  # keras reshape don't work
+                        layers[node_name] = tf.reshape(input_0, input_1, name=keras_name)
                     else:
-                        if input_0.shape[0] != input_1[0]:  # keras reshape don't work
-                            layers[node_name] = tf.reshape(input_0, input_1, name=keras_name)
-                        else:
-                            reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
-                            layers[node_name] = reshape(input_0)
+                        reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
+                        layers[node_name] = reshape(input_0)
     else:
         raise AttributeError('Can\'t reshape dynamic size.')
 
@@ -423,10 +419,10 @@ def convert_expand(node, params, layers, lambda_func, node_name, keras_name):
         assert AttributeError('More than 2 input for expand layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-    input_1 = ensure_numpy_type(layers[node.input[1]]).astype(np.int32)
+    input_1 = layers[node.input[1]]
     if input_0.dtype.is_bool:
         input_0 = tf.cast(input_0, dtype='int32')
-    layers[node_name] = input_0 * tf.ones(input_1, dtype=input_0.dtype)
+    layers[node_name] = input_0 * tf.ones(shape=input_1, dtype=input_0.dtype)
 
 
 def convert_tile(node, params, layers, lambda_func, node_name, keras_name):

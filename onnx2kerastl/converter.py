@@ -7,7 +7,6 @@ import logging
 import uuid
 
 import keras
-
 from .customonnxlayer import onnx_custom_objects_map
 from .exceptions import UnsupportedLayer, OnnxUnsupported
 from .layers import AVAILABLE_CONVERTERS
@@ -126,6 +125,7 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
 
     # Convert every operation separable
     node_names = []
+    embedding_weights_mapping = {}
     for node_index, node in enumerate(onnx_nodes):
         if node.op_type == 'If':
             if layers[node.input[0]][0]:
@@ -197,16 +197,28 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
         logger.debug('Check if all inputs are available:')
         if len(node.input) == 0 and node_type != 'Constant':
             raise AttributeError('Operation doesn\'t have an input. Aborting.')
-
         for i, node_input in enumerate(node.input):
             logger.debug('Check input %i (name %s).', i, node_input)
+
+            # for case of weights sharing, map the shared weights to determine
+            # if a Gather layer is an embedding layer
+            if node_type == 'Identity' and node_input in weights:
+                embedding_weights_mapping[node_name] = node_input
+
+            # check conditions for embedding layer
+            is_in_weights = node_input in weights  # is this node input in weights
+            is_mapped_to_weights = embedding_weights_mapping.get(node_input, '') in weights  # is this node inputs weights are shared with other input
+            is_embedding = is_in_weights or is_mapped_to_weights  # if either is true this layer is a possible embedding layer
+
+            # if a layer is of type Gather and its input is in weights (or mapped to a weights input)
+            # it's an embedding layer
+            if node_type == "Gather" and is_embedding:
+                node_params['is_embedding'] = True
+
             if node_input not in layers:
                 logger.debug('The input not found in layers / model inputs.')
-
                 if node_input in weights:
                     logger.debug('Found in weights, add as a numpy constant.')
-                    if node_type == "Gather" and i == 0:
-                        node_params['is_embedding'] = True
                     layers[node_input] = weights[node_input]
                 else:
                     if node_input == "" and node_type in ('Pad', 'Resize', 'Clip', 'LSTM'):
