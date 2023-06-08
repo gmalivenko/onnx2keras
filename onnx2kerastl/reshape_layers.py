@@ -221,11 +221,18 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
                     logger.debug('Target shape :')
                     logger.debug(np.int32(input_1[1:]))
 
-                    if input_0.shape[0] != input_1[0]:  # keras reshape don't work
-                        layers[node_name] = tf.reshape(input_0, input_1, name=keras_name)
+                    if len(np.int32(input_1[1:])) == 1 and np.int32(input_1[1:])[0] == -1:
+                        if input_0.shape.rank == 1:
+                            input_0 = tf.expand_dims(input_0, 0)
+                        logger.debug('The first argument is Keras/tf layer. Apply keras.Flatten.')
+                        flatten = keras.layers.Flatten(name=keras_name)
+                        layers[node_name] = flatten(input_0)
                     else:
-                        reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
-                        layers[node_name] = reshape(input_0)
+                        if input_0.shape[0] != input_1[0]:  # keras reshape don't work
+                            layers[node_name] = tf.reshape(input_0, input_1, name=keras_name)
+                        else:
+                            reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
+                            layers[node_name] = reshape(input_0)
     else:
         raise AttributeError('Can\'t reshape dynamic size.')
 
