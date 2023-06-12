@@ -60,10 +60,9 @@ def convert_lstm(node, params, layers, lambda_func, node_name, keras_name):
     res.node.layer.set_weights([w1, w2, bias])
     tf.keras.backend.set_image_data_format("channels_first")
     if should_return_state:
-        c_out = res[:, -hidden_size:]
-        h_out = res[:, -2*hidden_size:-hidden_size]
-        flat_lstm_tensor = res[:, :-2*hidden_size]
-        lstm_tensor = tf.keras.layers.Reshape((-1, hidden_size))(flat_lstm_tensor)
+        c_out = res[:, -1, :]
+        h_out = res[:, 0, :]
+        lstm_tensor = res[:, 1:-1, :]
         layers[node.output[1]] = c_out
         layers[node.output[2]] = h_out
     else:

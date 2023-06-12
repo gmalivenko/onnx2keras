@@ -28,10 +28,7 @@ class OnnxLSTM(Layer):
         res = self.lstm_layer(inputs, initial_state=initial_states, **kwargs)
         if self.return_lstm_state:
             lstm_tensor, h_out, c_out = res
-            lstm_flat = tf.keras.layers.Flatten()(lstm_tensor)
-            h_flat = tf.keras.layers.Flatten()(h_out)
-            c_flat = tf.keras.layers.Flatten()(c_out)
-            concat_output = tf.keras.layers.Concatenate()([lstm_flat, h_flat, c_flat])
+            concat_output = tf.concat([tf.expand_dims(h_out, 1), lstm_tensor, tf.expand_dims(c_out, 1)], axis=1)
             return concat_output
         else:
             return res
