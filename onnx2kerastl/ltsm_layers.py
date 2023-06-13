@@ -34,8 +34,8 @@ def convert_lstm(node, params, layers, lambda_func, node_name, keras_name):
     weights_r = ensure_numpy_type(layers[node.input[2]])[0]
     weights_b = ensure_numpy_type(layers[node.input[3]])[0]
 
-    initial_h_state = tf.cast(tf.squeeze(ensure_tf_type(layers[node.input[5]]), axis=1), input_tensor.dtype)
-    initial_c_state = tf.cast(tf.squeeze(ensure_tf_type(layers[node.input[6]]), axis=1), input_tensor.dtype)
+    initial_h_state = tf.cast(tf.squeeze(ensure_tf_type(layers[node.input[5]]), axis=0), input_tensor.dtype)
+    initial_c_state = tf.cast(tf.squeeze(ensure_tf_type(layers[node.input[6]]), axis=0), input_tensor.dtype)
 
     tf.keras.backend.set_image_data_format("channels_last")
     hidden_size = params['hidden_size']
