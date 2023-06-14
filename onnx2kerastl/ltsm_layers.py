@@ -62,12 +62,19 @@ def convert_lstm(node, params, layers, lambda_func, node_name, keras_name):
     if should_return_state:
         c_out = res[:, -1, :]
         h_out = res[:, 0, :]
+
+        # the shapes of the hidden and cell should be [num_directions, batch_size, hidden_size]
+        # for now we support only direction=forward so num_direction = 1 and we add directions dimension,
+        # if we support direction=bidirectional we should handle it well in the lstm layer and probably remove the
+        # expand dims here
+        c_out = tf.expand_dims(c_out, 0)
+        h_out = tf.expand_dims(h_out, 0)
+
         lstm_tensor = res[:, 1:-1, :]
-        layers[node.output[1]] = c_out
-        layers[node.output[2]] = h_out
+        layers[node.output[1]] = h_out
+        layers[node.output[2]] = c_out
     else:
         lstm_tensor = res
     lstm_tensor_in_onnx_order = tf.transpose(lstm_tensor, perm=[1, 0, 2])
     lstm_tensor_in_onnx_order = tf.expand_dims(lstm_tensor_in_onnx_order, axis=1)
     layers[node_name] = lstm_tensor_in_onnx_order
-
