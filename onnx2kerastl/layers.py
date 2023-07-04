@@ -4,7 +4,8 @@ from .activation_layers import convert_relu, convert_elu, convert_lrelu, convert
 from .ltsm_layers import convert_lstm
 from .operation_layers import convert_clip, convert_exp, convert_neg, convert_reduce_sum, convert_reduce_mean, \
     convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity, \
-    convert_argmax, convert_reduce_l2, convert_reduce_max, convert_reciprocal, convert_abs, convert_not, convert_cosine
+    convert_argmax, convert_reduce_l2, convert_reduce_max, convert_reciprocal, convert_abs, convert_not, convert_cosine, \
+    convert_less, convert_less_equal, convert_and, convert_greater, convert_greater_equal, convert_xor, convert_or
 from .elementwise_layers import convert_elementwise_div, convert_elementwise_add, convert_elementwise_mul, \
     convert_elementwise_sub, convert_max, convert_min, convert_mean, convert_equal, convert_where, convert_scatter_nd
 from .linear_layers import convert_gemm
@@ -91,5 +92,12 @@ AVAILABLE_CONVERTERS = {
     'GridSample': convert_gridsample,
     'Range': convert_range,
     'Not': convert_not,
+    'Less': convert_less,
+    'LessOrEqual': convert_less_equal,
+    "And": convert_and,
+    "Greater": convert_greater,
+    "GreaterOrEqual": convert_greater_equal,
+    "Xor": convert_xor,
+    "Or": convert_or,
     'Cos': convert_cosine,
 }

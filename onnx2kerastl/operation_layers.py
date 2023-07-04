@@ -278,9 +278,9 @@ def convert_split(node, params, layers, lambda_func, node_name, keras_names):
         assert AttributeError('More than 1 input for split layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_names[0])
-    try: #onnx opset12
+    try:  # onnx opset12
         splits = params["split"]
-    except KeyError as e: #onnx opset 14
+    except KeyError as e:  # onnx opset 14
         splits = layers[node.input[1]]
     axis = params.get("axis", 0)
     if not isinstance(splits, Iterable):
@@ -465,6 +465,34 @@ def convert_not(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.logical_not(input_0)
 
 
+def convert_less(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.less(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_less_equal(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.less_equal(layers[node.input[0]], layers[node.input[1]])
+
+
 def convert_cosine(node, params, layers, lambda_func, node_name, keras_name):
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
     layers[node_name] = tf.cos(input_0)
+
+
+def convert_greater(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.greater(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_greater_equal(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.greater_equal(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_and(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.logical_and(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_xor(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.logical_xor(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_or(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.logical_or(layers[node.input[0]], layers[node.input[1]])
