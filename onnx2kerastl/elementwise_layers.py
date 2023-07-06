@@ -109,11 +109,10 @@ def convert_elementwise_mul(node, params, layers, lambda_func, node_name, keras_
 
     input_0 = layers[node.input[0]]
     input_1 = layers[node.input[1]]
-    input_0_is_np = is_numpy(input_0)
-    input_1_is_np = is_numpy(input_1)
-
+    input_0_is_constant = is_numpy(input_0) or isinstance(input_0, EagerTensor)
+    input_1_is_constant = is_numpy(input_1) or isinstance(input_1, EagerTensor)
     try:
-        if not input_0_is_np and not input_1_is_np:
+        if not input_0_is_constant and not input_1_is_constant:
             mul = keras.layers.Multiply(name=keras_name)
             layers[node_name] = mul([input_0, input_1])
         else:

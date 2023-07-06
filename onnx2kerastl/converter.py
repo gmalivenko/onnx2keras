@@ -208,7 +208,7 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
             # check conditions for embedding layer
             is_in_weights = node_input in weights  # is this node input in weights
             is_mapped_to_weights = embedding_weights_mapping.get(node_input, '') in weights  # is this node inputs weights are shared with other input
-            is_embedding = is_in_weights or is_mapped_to_weights  # if either is true this layer is a possible embedding layer
+            is_embedding = (is_in_weights or is_mapped_to_weights) and i == 0  # if either is true this layer is a possible embedding layer
 
             # if a layer is of type Gather and its input is in weights (or mapped to a weights input)
             # it's an embedding layer
