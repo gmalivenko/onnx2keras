@@ -496,3 +496,17 @@ def convert_xor(node, params, layers, lambda_func, node_name, keras_name):
 
 def convert_or(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.math.logical_or(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_trilu(node, params, layers, lambda_func, node_name, keras_name):
+    input = layers[node.input[0]]
+    k = 0
+    if len(node.input) > 1:
+        k = layers[node.input[1]]
+
+    if "upper" in params and not params["upper"]:
+        result = tf.experimental.numpy.tril(input, k)
+
+    else:
+        result = tf.experimental.numpy.triu(input, k)
+    layers[node_name] = result

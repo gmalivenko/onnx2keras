@@ -360,14 +360,14 @@ def convert_squeeze(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    if len(node.input) != 1:
-        assert AttributeError('More than 1 input for squeeze layer.')
-
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     axis = None
     if 'axes' in params:
         axis = params['axes'][0]
+
+    if len(node.input) == 2:
+        axis = ensure_numpy_type(layers[node.input[1]]).tolist()
     layers[node_name] = tf.squeeze(input_0, axis=axis)
 
 
