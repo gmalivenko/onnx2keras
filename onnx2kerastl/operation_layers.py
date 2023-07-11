@@ -469,6 +469,22 @@ def convert_less(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.math.less(layers[node.input[0]], layers[node.input[1]])
 
 
+def convert_sign(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.sign(layers[node.input[0]])
+
+
+def convert_sin(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.sin(layers[node.input[0]])
+
+
+def convert_cosh(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.cosh(layers[node.input[0]])
+
+
+def convert_sinh(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.sinh(layers[node.input[0]])
+
+
 def convert_less_equal(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.math.less_equal(layers[node.input[0]], layers[node.input[1]])
 
