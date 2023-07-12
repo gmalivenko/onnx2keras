@@ -1,6 +1,5 @@
 import logging
 from typing import Dict, Any
-
 import numpy as np
 import keras
 from keras import backend as K
@@ -9,7 +8,7 @@ import tensorflow as tf
 from onnx2kerastl.customonnxlayer.onnxreducemean import OnnxReduceMean
 from .customonnxlayer.onnxsqrt import OnnxSqrt
 from .exceptions import UnsupportedLayer
-from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
+from .utils import is_numpy, ensure_tf_type
 
 # Handle python 2.7 import error
 try:
@@ -237,11 +236,7 @@ def convert_pow(node, params, layers, lambda_func, node_name, keras_name):
     """
     if len(node.input) != 2:
         assert AttributeError('More than 2 inputs for pow layer.')
-
-    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-    power = ensure_numpy_type(layers[node.input[1]])
-
-    layers[node_name] = input_0 ** power
+    layers[node_name] = tf.math.pow(layers[node.input[0]], layers[node.input[1]])
 
 
 def convert_sqrt(node, params, layers, lambda_func, node_name, keras_name):
@@ -428,6 +423,30 @@ def convert_argmax(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = argmax
 
 
+def convert_argmin(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert ArgMax layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for argmax layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    axis = params.get("axis", -1)
+    should_keep_dims = params.get("keepdims", True)
+
+    argmin = tf.argmin(input_0, axis=axis)
+    if should_keep_dims:
+        argmin = tf.expand_dims(argmin, axis=axis)
+    layers[node_name] = argmin
+
+
 def convert_reduce_l2(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert ReduceL2 layer
@@ -481,12 +500,52 @@ def convert_cosh(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.math.cosh(layers[node.input[0]])
 
 
+def convert_ceil(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.ceil(layers[node.input[0]])
+
+
+def convert_acosh(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.acosh(layers[node.input[0]])
+
+
+def convert_acos(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.acos(layers[node.input[0]])
+
+
+def convert_asinh(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.asinh(layers[node.input[0]])
+
+
+def convert_asin(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.asin(layers[node.input[0]])
+
+
+def convert_atanh(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.asinh(layers[node.input[0]])
+
+
+def convert_atan(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.asin(layers[node.input[0]])
+
+
 def convert_sinh(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.math.sinh(layers[node.input[0]])
 
 
 def convert_less_equal(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.math.less_equal(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_bitwise_and(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.bitwise.bitwise_and(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_bitwise_or(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.bitwise.bitwise_or(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_bitwise_xor(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.bitwise.bitwise_xor(layers[node.input[0]], layers[node.input[1]])
 
 
 def convert_cosine(node, params, layers, lambda_func, node_name, keras_name):
