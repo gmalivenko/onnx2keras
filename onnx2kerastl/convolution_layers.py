@@ -1,10 +1,12 @@
 import logging
-from typing import List
-import tensorflow as tf
-import keras
-from .utils import ensure_tf_type, ensure_numpy_type, is_numpy
 from functools import partial
+from typing import List
+
+import keras
+import tensorflow as tf
 from tensorflow.python.framework.ops import EagerTensor
+
+from .utils import ensure_tf_type, is_numpy
 
 
 def calculate_permute_values(n_dims: int, to_channel_first: bool) -> List[int]:
@@ -14,14 +16,17 @@ def calculate_permute_values(n_dims: int, to_channel_first: bool) -> List[int]:
         return list(range(2, n_dims)) + [1]
 
 
-def permute_wrap_conv_if_constant(partial_func, conv_input, is_constant):
+def permute_wrap_conv_if_constant(partial_func, conv_input, is_constant, conv_channels):
     if is_constant:
         input_shape = tf.shape(conv_input)
         permuted = keras.layers.Permute(calculate_permute_values(len(input_shape), to_channel_first=False))(conv_input)
         conv_res = partial_func(data_format="channels_last")(permuted)
         result = keras.layers.Permute(calculate_permute_values(len(input_shape), to_channel_first=True))(conv_res)
     else:
-        result = partial_func()(conv_input)
+        conv = partial_func()
+        if conv_input.shape[-1] is None:
+            conv.build((None, conv_channels, *conv_input.shape[2:]))
+        result = conv(conv_input)
     return result
 
 
@@ -42,13 +47,13 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
         logger.debug('Conv with bias')
         # Has bias
         has_bias = True
-        W = ensure_numpy_type(layers[node.input[1]])
-        bias = ensure_numpy_type(layers[node.input[2]])
+        W = layers[node.input[1]]
+        bias = layers[node.input[2]]
 
     elif len(node.input) == 2:
         logger.debug('Conv without bias')
         has_bias = False
-        W = ensure_numpy_type(layers[node.input[1]])
+        W = layers[node.input[1]]
         bias = None
 
     else:
@@ -78,18 +83,18 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
             weights = [W, bias]
         else:
             weights = [W]
-        conv_args = { "filters": out_channels,
-        "kernel_size": (dimension, height, width),
-        "strides": (strides[0], strides[1], strides[2]),
-        "padding": 'valid',
-        "weights": weights,
-        "use_bias": has_bias,
-        "activation": None,
-        "dilation_rate": dilation,
-        "name": keras_name,
-        "groups": n_groups}
+        conv_args = {"filters": out_channels,
+                     "kernel_size": (dimension, height, width),
+                     "strides": (strides[0], strides[1], strides[2]),
+                     "padding": 'valid',
+                     "weights": weights,
+                     "use_bias": has_bias,
+                     "activation": None,
+                     "dilation_rate": dilation,
+                     "name": keras_name,
+                     "groups": n_groups}
         partial_conv = partial(keras.layers.Conv3D, **conv_args)
-        layers[node_name] = permute_wrap_conv_if_constant(partial_conv, input_0, is_constant)
+        layers[node_name] = permute_wrap_conv_if_constant(partial_conv, input_0, is_constant, weights[0].shape[-2])
 
     elif len(W.shape) == 4:  # 2D conv
         logger.debug('2D convolution')
@@ -119,17 +124,17 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
             weights = [W]
 
         conv_args = {"filters": out_channels,
-        "kernel_size": (height, width),
-        "strides": (strides[0], strides[1]),
-        "padding": 'valid',
-        "weights": weights,
-        "use_bias": has_bias,
-        "activation": None,
-        "dilation_rate": dilation,
-        "name": keras_name,
-        "groups": n_groups}
+                     "kernel_size": (height, width),
+                     "strides": (strides[0], strides[1]),
+                     "padding": 'valid',
+                     "weights": weights,
+                     "use_bias": has_bias,
+                     "activation": None,
+                     "dilation_rate": dilation,
+                     "name": keras_name,
+                     "groups": n_groups}
         partial_conv = partial(keras.layers.Conv2D, **conv_args)
-        layers[node_name] = permute_wrap_conv_if_constant(partial_conv, input_0, is_constant)
+        layers[node_name] = permute_wrap_conv_if_constant(partial_conv, input_0, is_constant, weights[0].shape[-2])
     else:
         # 1D conv
         W = W.transpose(2, 1, 0)
@@ -145,21 +150,21 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
         if len(pads) == 2 and (pads[0] > 0 or pads[1] > 0):
             padding = (pads[0], pads[1])
         conv_args = {"filters": n_filters,
-        "kernel_size": (width),
-        "strides": (strides[0]),
-        "weights": weights,
-        "use_bias": has_bias,
-        "activation": None,
-        "dilation_rate": dilation,
-        "name": keras_name,
-        "groups": n_groups}
+                     "kernel_size": (width),
+                     "strides": (strides[0]),
+                     "weights": weights,
+                     "use_bias": has_bias,
+                     "activation": None,
+                     "dilation_rate": dilation,
+                     "name": keras_name,
+                     "groups": n_groups}
         if padding:
             conv_args['padding'] = 'same'
         else:
             conv_args['padding'] = 'valid'
 
         partial_conv = partial(keras.layers.Conv1D, **conv_args)
-        layers[node_name] = permute_wrap_conv_if_constant(partial_conv, input_0, is_constant)
+        layers[node_name] = permute_wrap_conv_if_constant(partial_conv, input_0, is_constant, weights[0].shape[-2])
 
         # padding_name = keras_name + '_pad'
         # padding_layer = keras.layers.ZeroPadding1D(
@@ -203,13 +208,13 @@ def convert_convtranspose(node, params, layers,
         logger.debug('ConvTranspose with bias')
         # Has bias
         has_bias = True
-        W = ensure_numpy_type(layers[node.input[1]])
-        bias = ensure_numpy_type(layers[node.input[2]])
+        W = layers[node.input[1]]
+        bias = layers[node.input[2]]
 
     elif len(node.input) == 2:
         logger.debug('ConvTranspose without bias')
         has_bias = False
-        W = ensure_numpy_type(layers[node.input[1]])
+        W = layers[node.input[1]]
         bias = None
 
     else:

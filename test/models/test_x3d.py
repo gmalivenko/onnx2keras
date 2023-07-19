@@ -13,7 +13,7 @@ import urllib
 def test_x3d():
     import torch
     model_name = 'x3d_s'
-    model = torch.hub.load('facebookresearch/pytorchvideo', model_name, pretrained= True)
+    model = torch.hub.load('facebookresearch/pytorchvideo', model_name, pretrained=True)
     model = model.eval()
     # torch.onnx.export(n_model, torch.ones(1, 3, 13, 182, 182), 'x3d.onnx', export_params=True, input_names=['input'],
     #                   output_names=['output'],
@@ -33,4 +33,4 @@ def test_x3d():
     model = model.eval()
     this_pred = model(torch.Tensor(inputs)[None, ...])
     keras_preds = final_model(permuted_inputs[None, ...])
-    assert np.abs(keras_preds-this_pred.detach().numpy()).max() < 1e-04
+    assert np.abs(keras_preds - this_pred.detach().numpy()).max() < 1e-04

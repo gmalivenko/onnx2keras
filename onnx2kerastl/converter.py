@@ -111,15 +111,22 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
                 dtype = None if input_types is None else input_types[i]
                 input_shape = [i.dim_value for i in onnx_i.type.tensor_type.shape.dim]
                 input_shape = [shape if shape != 0 else None for shape in input_shape]
-                batch_size = input_shape[0]
-                input_shape = input_shape[1:]
-                if batch_size is None:
-                    layers[input_name] = keras.layers.InputLayer(
-                        input_shape=input_shape, name=input_name, dtype=dtype).output
+                if len(input_shape) <= 1:
+                    input_tensor = keras.layers.InputLayer(input_shape=input_shape, name=input_name, dtype=dtype).output
+                    layers[input_name] = input_tensor[0]
+                    keras_inputs.append(input_tensor)
+
                 else:
-                    layers[input_name] = keras.layers.InputLayer(
-                        input_shape=input_shape, name=input_name, dtype=dtype, batch_size=batch_size).output
-                keras_inputs.append(layers[input_name])
+                    batch_size = input_shape[0]
+                    input_shape = input_shape[1:]
+                    if batch_size is None:
+                        layers[input_name] = keras.layers.InputLayer(
+                            input_shape=input_shape, name=input_name, dtype=dtype).output
+                    else:
+                        layers[input_name] = keras.layers.InputLayer(
+                            input_shape=input_shape, name=input_name, dtype=dtype, batch_size=batch_size).output
+
+                    keras_inputs.append(layers[input_name])
 
                 logger.debug('Found input {0} with shape {1}'.format(input_name, input_shape))
 

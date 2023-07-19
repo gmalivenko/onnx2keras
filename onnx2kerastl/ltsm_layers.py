@@ -1,10 +1,11 @@
 import logging
-import tensorflow as tf
-import numpy as np
-from onnx2kerastl.customonnxlayer.onnxlstm import OnnxLSTM
 
+import numpy as np
+import tensorflow as tf
+
+from onnx2kerastl.customonnxlayer.onnxlstm import OnnxLSTM
 from .exceptions import UnsupportedLayer
-from .utils import ensure_tf_type, ensure_numpy_type
+from .utils import ensure_tf_type
 
 
 def convert_lstm(node, params, layers, lambda_func, node_name, keras_name):
@@ -30,9 +31,9 @@ def convert_lstm(node, params, layers, lambda_func, node_name, keras_name):
             raise UnsupportedLayer(f"LSTM with {direction} direction")
     should_return_state = len(node.output) == 3
     input_tensor = tf.transpose(ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name[0]), perm=[1, 0, 2])
-    weights_w = ensure_numpy_type(layers[node.input[1]])[0]
-    weights_r = ensure_numpy_type(layers[node.input[2]])[0]
-    weights_b = ensure_numpy_type(layers[node.input[3]])[0]
+    weights_w = layers[node.input[1]][0]
+    weights_r = layers[node.input[2]][0]
+    weights_b = layers[node.input[3]][0]
 
     initial_h_state = tf.cast(tf.squeeze(ensure_tf_type(layers[node.input[5]]), axis=0), input_tensor.dtype)
     initial_c_state = tf.cast(tf.squeeze(ensure_tf_type(layers[node.input[6]]), axis=0), input_tensor.dtype)

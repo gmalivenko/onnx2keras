@@ -4,7 +4,7 @@ import keras
 import numpy as np
 import tensorflow as tf
 
-from .utils import ensure_tf_type, ensure_numpy_type
+from .utils import ensure_tf_type
 
 
 def convert_batchnorm(node, params, layers, lambda_func, node_name, keras_name):
@@ -23,15 +23,15 @@ def convert_batchnorm(node, params, layers, lambda_func, node_name, keras_name):
 
     if len(node.input) == 5:
         weights = [
-            ensure_numpy_type(layers[node.input[1]]),
-            ensure_numpy_type(layers[node.input[2]]),
-            ensure_numpy_type(layers[node.input[3]]),
-            ensure_numpy_type(layers[node.input[4]])
+            layers[node.input[1]],
+            layers[node.input[2]],
+            layers[node.input[3]],
+            layers[node.input[4]]
         ]
     elif len(node.input) == 3:
         weights = [
-            ensure_numpy_type(layers[node.input[1]]),
-            ensure_numpy_type(layers[node.input[2]])
+            layers[node.input[1]],
+            layers[node.input[2]]
         ]
     else:
         raise AttributeError('Unknown arguments for batch norm')
@@ -77,8 +77,8 @@ def convert_instancenorm(node, params, layers, lambda_func, node_name, keras_nam
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     if len(node.input) == 3:
-        scale = ensure_numpy_type(layers[node.input[1]])
-        bias = ensure_numpy_type(layers[node.input[2]])
+        scale = layers[node.input[1]]
+        bias = layers[node.input[2]]
     else:
         raise AttributeError('Unknown arguments for instance norm')
 

@@ -442,13 +442,13 @@ files = [
 
 [[package]]
 name = "keras-data-format-converter"
-version = "0.1.15"
+version = "0.1.16"
 description = "Generates equal keras models with the desired data format"
 optional = false
 python-versions = ">=3.8,<3.11"
 files = [
-    {file = "keras_data_format_converter-0.1.15-py3-none-any.whl", hash = "sha256:31ff2b0e22508081d2b4f6f05d0ae686f888a6732d75371178d8d644a6a4faf6"},
-    {file = "keras_data_format_converter-0.1.15.tar.gz", hash = "sha256:6dbc18157dcd54982ac413b6d32e6a5fda612d73d3115588d6bd5df5595f525b"},
+    {file = "keras_data_format_converter-0.1.16-py3-none-any.whl", hash = "sha256:746af9be19c6704321c46c8ad525072da169327d71a328986e2959b59d94df87"},
+    {file = "keras_data_format_converter-0.1.16.tar.gz", hash = "sha256:825f8a35beff66f812a0a4688dcc37a7e1546fc23db631f3c897376e5f75ea11"},
 ]
 
 [package.dependencies]
@@ -1998,4 +1998,4 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8, <3.11"
-content-hash = "11d8bcdaf1d6b3b52d38a675a1700b0449df4636f92e62f8c2a6b89579d54ecb"
+content-hash = "43f611cfa76e08c9117f0d8d70a4ff02ed184656faac0bb7800abd7cac3d449a"
