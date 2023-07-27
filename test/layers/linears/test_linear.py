@@ -17,6 +17,14 @@ class LayerTest(nn.Module):
         return x
 
 
+class DetTest(nn.Module):
+    def __init__(self):
+        super(DetTest, self).__init__()
+
+    def forward(self, x):
+        return torch.det(x)
+
+
 @pytest.mark.repeat(10)
 @pytest.mark.parametrize('change_ordering', [True, False])
 @pytest.mark.parametrize('bias', [True, False])
@@ -28,3 +36,8 @@ def test_linear(change_ordering, bias):
 
     input_np = np.random.uniform(0, 1, (1, ins))
     error = convert_and_test(model, input_np, verbose=False, change_ordering=change_ordering)
+
+
+def test_det():
+    matrix = np.random.random((2, 4, 4))
+    error = convert_and_test(DetTest(), matrix, verbose=False, change_ordering=False)

@@ -56,3 +56,7 @@ def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
 
         else:
             layers[node_name] = keras.layers.Multiply()([layers[node.input[0]], layers[node.input[1]]])
+
+
+def convert_det(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.linalg.det(layers[node.input[0]])

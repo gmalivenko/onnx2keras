@@ -250,3 +250,8 @@ def convert_scatter_nd(node, params, layers, lambda_func, node_name, keras_name)
     indices = ensure_tf_type(layers[node.input[1]])
     updates = ensure_tf_type(layers[node.input[2]])
     layers[node_name] = tf.tensor_scatter_nd_update(data, indices, updates)
+
+
+def convert_round(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.round(layers[node.input[0]])
+

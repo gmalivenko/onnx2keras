@@ -223,6 +223,52 @@ def convert_reduce_max(node, params, layers, lambda_func, node_name, keras_name)
     lambda_func[keras_name] = target_layer
 
 
+def convert_reduce_min(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert reduce max.
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if params.get("axes") is not None: #opset 13
+        axes = params.get("axes")
+    elif len(node.input) == 2:
+        axes = layers.get(node.input[1])
+    noop_with_empty_axes = bool(params.get("noop_with_empty_axes", False))
+    keepdims = params.get("keepdims", True)
+    if noop_with_empty_axes and params.get("axes") is None:
+        layers[node_name] = layers[node.input[0]]
+    else:
+        layers[node_name] = tf.math.reduce_min(layers[node.input[0]], axis=axes, keepdims=keepdims)
+
+
+def convert_reduce_prod(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert reduce max.
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if params.get("axes") is not None: #opset 13
+        axes = params.get("axes")
+    elif len(node.input) == 2:
+        axes = layers.get(node.input[1])
+    noop_with_empty_axes = bool(params.get("noop_with_empty_axes", False))
+    keepdims = params.get("keepdims", True)
+    if noop_with_empty_axes and params.get("axes") is None:
+        layers[node_name] = layers[node.input[0]]
+    else:
+        layers[node_name] = tf.math.reduce_prod(layers[node.input[0]], axis=axes, keepdims=keepdims)
+
+
 def convert_pow(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Pow layer
@@ -524,6 +570,10 @@ def convert_atanh(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.math.asinh(layers[node.input[0]])
 
 
+def convert_tan(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.tan(layers[node.input[0]])
+
+
 def convert_atan(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.math.asin(layers[node.input[0]])
 
@@ -534,6 +584,10 @@ def convert_sinh(node, params, layers, lambda_func, node_name, keras_name):
 
 def convert_less_equal(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.math.less_equal(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_bitwise_not(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.bitwise.invert(tf.cast(layers[node.input[0]], tf.int32))
 
 
 def convert_bitwise_and(node, params, layers, lambda_func, node_name, keras_name):
@@ -585,3 +639,24 @@ def convert_trilu(node, params, layers, lambda_func, node_name, keras_name):
     else:
         result = tf.experimental.numpy.triu(input, k)
     layers[node_name] = result
+
+
+def convert_cumsum(node, params, layers, lambda_func, node_name, keras_name):
+    exclusive = bool(params.get("exclusive", 0))
+    reverse = bool(params.get("reverse", 0))
+    layers[node_name] = tf.math.cumsum(layers[node.input[0]], layers[node.input[1]],
+                                       exclusive=exclusive, reverse=reverse)
+
+
+def convert_is_inf(node, params, layers, lambda_func, node_name, keras_name):
+    if params.get("detect_negative") is not None or params.get("detect_negative") is not None:
+        raise AttributeError("Unsupported params detected in isInf conversion: detect_negative/detect_positive")
+    layers[node_name] = tf.math.is_inf(layers[node.input[0]])
+
+
+def convert_is_nan(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.math.is_nan(layers[node.input[0]])
+
+
+def convert_size(node, params, layers, lambda_func, node_name, keras_name):
+    layers[node_name] = tf.size(layers[node.input[0]])

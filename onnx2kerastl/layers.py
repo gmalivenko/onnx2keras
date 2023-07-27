@@ -8,10 +8,12 @@ from .operation_layers import convert_clip, convert_exp, convert_neg, convert_re
     convert_less, convert_less_equal, convert_and, convert_greater, convert_greater_equal, convert_xor, convert_or, \
     convert_trilu, convert_sign, convert_cosh, convert_sin, convert_sinh, convert_ceil, convert_acosh, convert_acos, \
     convert_asinh, convert_asin, convert_atanh, convert_atan, convert_bitwise_and, convert_argmin, convert_bitwise_xor, \
-    convert_bitwise_or
+    convert_bitwise_or, convert_tan, convert_cumsum, convert_bitwise_not, convert_reduce_prod, convert_reduce_min, \
+    convert_is_inf, convert_is_nan, convert_size
 from .elementwise_layers import convert_elementwise_div, convert_elementwise_add, convert_elementwise_mul, \
-    convert_elementwise_sub, convert_max, convert_min, convert_mean, convert_equal, convert_where, convert_scatter_nd
-from .linear_layers import convert_gemm
+    convert_elementwise_sub, convert_max, convert_min, convert_mean, convert_equal, convert_where, convert_scatter_nd, \
+    convert_round
+from .linear_layers import convert_gemm, convert_det
 from .reshape_layers import convert_transpose, convert_shape, convert_gather, convert_unsqueeze, \
     convert_concat, convert_reshape, convert_flatten, convert_slice, convert_squeeze, convert_expand, convert_resize, \
     convert_tile
@@ -22,6 +24,7 @@ from .padding_layers import convert_padding
 from .upsampling_layers import convert_upsample
 from .caffe2_layers import convert_alias_with_name, convert_resize_nearest
 from .sampling_layers import convert_gridsample, convert_range
+from .fft_layers import convert_dft
 
 AVAILABLE_CONVERTERS = {
     'Abs': convert_abs,
@@ -46,6 +49,8 @@ AVAILABLE_CONVERTERS = {
     'ReduceMax': convert_reduce_max,
     'ReduceSum': convert_reduce_sum,
     'ReduceMean': convert_reduce_mean,
+    'ReduceProd': convert_reduce_prod,
+    'ReduceMin': convert_reduce_min,
     'Pow': convert_pow,
     'Slice': convert_slice,
     'Squeeze': convert_squeeze,
@@ -118,8 +123,16 @@ AVAILABLE_CONVERTERS = {
     "BitwiseAnd": convert_bitwise_and,
     "BitwiseOr": convert_bitwise_or,
     "BitwiseXor": convert_bitwise_xor,
+    "BitwiseNot": convert_bitwise_not,
     "ArgMin": convert_argmin,
-    "OneHot": convert_one_hot
-
+    "OneHot": convert_one_hot,
+    "Round": convert_round,
+    "Tan": convert_tan,
+    "CumSum": convert_cumsum,
+    "IsInf": convert_is_inf,
+    "IsNaN": convert_is_nan,
+    "Size": convert_size,
+    "Det": convert_det,
+    "DFT": convert_dft
 }
 
