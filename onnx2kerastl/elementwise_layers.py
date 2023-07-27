@@ -255,3 +255,14 @@ def convert_scatter_nd(node, params, layers, lambda_func, node_name, keras_name)
 def convert_round(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.round(layers[node.input[0]])
 
+
+def convert_mod(node, params, layers, lambda_func, node_name, keras_name):
+    input_0 = layers[node.input[0]]
+    input_1 = layers[node.input[1]]
+    if params.get('fmod') == 1:
+        sign = tf.sign(layers[node.input[0]])
+        input_0 = tf.abs(layers[node.input[0]])
+        input_1 = tf.abs(layers[node.input[1]])
+        layers[node_name] = tf.math.mod(input_0, input_1)*sign
+    else:
+        layers[node_name] = tf.math.mod(input_0, input_1)
