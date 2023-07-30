@@ -3,6 +3,7 @@ from functools import partial
 from typing import List
 
 import keras
+import numpy as np
 import tensorflow as tf
 from tensorflow.python.framework.ops import EagerTensor
 
@@ -23,7 +24,8 @@ def permute_wrap_conv_if_constant(partial_func, conv_input, is_constant, conv_ch
         conv_res = partial_func(data_format="channels_last")(permuted)
         result = keras.layers.Permute(calculate_permute_values(len(input_shape), to_channel_first=True))(conv_res)
     else:
-        conv = partial_func()
+        data_fmt = keras.backend.image_data_format()
+        conv = partial_func(data_format=data_fmt)
         if conv_input.shape[-1] is None:
             conv.build((None, conv_channels, *conv_input.shape[2:]))
         result = conv(conv_input)
@@ -141,53 +143,40 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
         width, channels, n_filters = W.shape
         print(width, channels, n_filters, has_bias)
 
-        if has_bias:
-            weights = [W, bias]
-        else:
-            weights = [W]
-
-        padding = None
-        if len(pads) == 2 and (pads[0] > 0 or pads[1] > 0):
-            padding = (pads[0], pads[1])
+        weights = [W]
         conv_args = {"filters": n_filters,
                      "kernel_size": (width),
                      "strides": (strides[0]),
                      "weights": weights,
-                     "use_bias": has_bias,
+                     "use_bias": False,
                      "activation": None,
                      "dilation_rate": dilation,
                      "name": keras_name,
                      "groups": n_groups}
+
+        padding = None
+        if len(pads) == 2 and (pads[0] > 0 or pads[1] > 0):
+            padding = (pads[0], pads[1])
+
         if padding:
-            conv_args['padding'] = 'same'
+            # find the dimension to pad and use the exact padding values
+            input_shape = np.asarray(keras.backend.int_shape(input_0))
+            partitioned_dim = np.argwhere(input_shape == channels * n_groups)[0][0]
+            padding_dim = 2 if partitioned_dim == 1 else 1
+            tf_padding = np.zeros((2, len(input_shape))).astype(int)
+            tf_padding[:, padding_dim] = [padding[0], padding[1]]
+            input_0 = tf.pad(input_0, tf.constant(list(tf_padding.transpose())))
         else:
             conv_args['padding'] = 'valid'
-
         partial_conv = partial(keras.layers.Conv1D, **conv_args)
-        layers[node_name] = permute_wrap_conv_if_constant(partial_conv, input_0, is_constant, weights[0].shape[-2])
+        res = permute_wrap_conv_if_constant(partial_conv, input_0, is_constant, weights[0].shape[-2])
+        if has_bias:
+            res_shape = np.asarray(keras.backend.int_shape(res))
+            bias_dim = np.argwhere(res_shape == bias.shape)[0][0]
+            expanded_dims = [dim for dim in range(len(res_shape)) if dim != bias_dim]
+            res = res + np.expand_dims(bias, expanded_dims)
 
-        # padding_name = keras_name + '_pad'
-        # padding_layer = keras.layers.ZeroPadding1D(
-        #     padding=(pads[0]),
-        #     name=padding_name
-        # )
-        # print(input_0)
-        # layers[node_name] = padding_layer(input_0)
-        # input_0.set_shape(input_0._keras_shape)
-        # print(input_0._keras_shape)
-        # print(input_0, n_filters, width)
-        # conv = keras.layers.Conv1D(
-        #     filters=n_filters,
-        #     kernel_size=width,
-        #     strides=strides[0],
-        #     padding='valid',
-        #     weights=weights,
-        #     use_bias=has_bias,
-        #     activation=None,
-        #     dilation_rate=dilation,
-        #     name=keras_name
-        # )
-        # layers[node_name] = conv(input_0)
+        layers[node_name] = res
 
 
 def convert_convtranspose(node, params, layers,

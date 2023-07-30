@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "onnx2kerastl"
-version = "0.0.110"
+version = "0.0.111"
 description = ""
 authors = ["dorhar <doron.harnoy@tensorleap.ai>"]
 license = "MIT"
@@ -22,6 +22,10 @@ torch = {version = "1.12.1", markers = "platform_machine  == 'x86_64'"}
 torchvision = {version = "^0.12.0", markers = "platform_machine  == 'x86_64'"}
 transformers = {extras = ["onnx"], version = "^4.25.1", markers = "platform_machine  == 'x86_64'"}
 sentencepiece ={version = "^0.1.96", markers = "platform_machine  == 'x86_64'"}
+pandas = "^2.0.3"
+datasets = "^2.14.1"
+librosa = "^0.10.0.post2"
+
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
