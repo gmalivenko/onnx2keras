@@ -4,7 +4,7 @@ from .utils import ensure_tf_type
 import numpy as np
 import string
 import random
-
+import tensorflow as tf
 
 def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
     """
@@ -191,3 +191,56 @@ def convert_global_avg_pool(node, params, layers, lambda_func, node_name, keras_
     input_0 = reshape_layer(input_0)
 
     layers[node_name] = input_0
+
+
+def convert_topk(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert topk layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    axis = params.get('axis', -1)
+    largest = bool(params.get('largest', 1))
+    to_sort = bool(params.get('sorted', 1))
+    x = layers[node.input[0]]
+    k = layers[node.input[1]][0]
+    if not largest:
+        in_tensor = -x
+    else:
+        in_tensor = x
+
+    def target_layer(in_tensor,k=k, to_sort=to_sort, axis=axis):
+        rank = len(in_tensor.shape)
+        if axis >= rank-1 or axis == -1:
+            permuted = in_tensor
+        else:
+            ord_permute = np.arange(rank)
+            ord_permute[axis] = rank-1
+            ord_permute[-1] = axis
+            permuted = tf.transpose(in_tensor, ord_permute)
+        topk_res = tf.math.top_k(permuted, k=k, sorted=to_sort)
+        topk_1 = topk_res[0]
+        topk_2 = topk_res[1]
+        topk_concat = tf.stack([topk_1, tf.cast(topk_2, tf.float32)])
+        if axis >= rank - 1 or axis == -1:
+            out = topk_concat
+        else:
+            ord_permute = [0] + (ord_permute+1).tolist()
+            out = tf.transpose(topk_concat, ord_permute)
+        return out
+
+    lambda_layer = keras.layers.Lambda(target_layer)
+    result = lambda_layer(in_tensor)
+    values = result[0]
+    indices = tf.cast(result[1], tf.int32)
+    if not largest:
+        out_tensor = -values
+    else:
+        out_tensor = values
+    layers[keras_name[0]] = out_tensor
+    layers[keras_name[1]] = indices

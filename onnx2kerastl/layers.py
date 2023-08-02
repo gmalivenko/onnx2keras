@@ -19,7 +19,7 @@ from .reshape_layers import convert_transpose, convert_shape, convert_gather, co
     convert_tile
 from .constant_layers import convert_constant, convert_constant_of_shape, convert_one_hot
 from .normalization_layers import convert_batchnorm, convert_instancenorm, convert_dropout, convert_lrn
-from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool
+from .pooling_layers import convert_avgpool, convert_maxpool, convert_global_avg_pool, convert_topk
 from .padding_layers import convert_padding
 from .upsampling_layers import convert_upsample
 from .caffe2_layers import convert_alias_with_name, convert_resize_nearest
@@ -135,6 +135,7 @@ AVAILABLE_CONVERTERS = {
     "Det": convert_det,
     "DFT": convert_dft,
     "Mod": convert_mod,
-    "BitShift": convert_bitshift
+    "BitShift": convert_bitshift,
+    "TopK": convert_topk
 }
 
