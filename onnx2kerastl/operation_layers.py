@@ -234,7 +234,7 @@ def convert_reduce_min(node, params, layers, lambda_func, node_name, keras_name)
     :param keras_name: resulting layer name
     :return: None
     """
-    if params.get("axes") is not None: #opset 13
+    if params.get("axes") is not None:  # opset 13
         axes = params.get("axes")
     elif len(node.input) == 2:
         axes = layers.get(node.input[1])
@@ -257,7 +257,7 @@ def convert_reduce_prod(node, params, layers, lambda_func, node_name, keras_name
     :param keras_name: resulting layer name
     :return: None
     """
-    if params.get("axes") is not None: #opset 13
+    if params.get("axes") is not None:  # opset 13
         axes = params.get("axes")
     elif len(node.input) == 2:
         axes = layers.get(node.input[1])
@@ -660,3 +660,86 @@ def convert_is_nan(node, params, layers, lambda_func, node_name, keras_name):
 
 def convert_size(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.size(layers[node.input[0]])
+
+
+def convert_non_zero(node, params, layers, lambda_func, node_name, keras_name):
+    input_tensor = layers[node.input[0]]
+    condition = tf.not_equal(
+        input_tensor,
+        tf.zeros_like(input_tensor),
+    )
+    nonzero_indices = tf.where(condition)
+    nonzero_result = tf.transpose(nonzero_indices)
+    nonzero_result = tf.cast(nonzero_result, tf.int32)
+    layers[node_name] = nonzero_result
+    # tf.experimental.numpy.nonzero(layers[node.input[0]]) was not giving the right results
+
+
+def convert_gather_nd(node, params, layers, lambda_func, node_name, keras_name):
+    input_tensor = layers[node.input[0]]
+    indices_tensor = layers[node.input[1]]
+    batch_dims = params.get("batch_dims", 0)
+    # tesnsorflow implementation of gather_nd, in any case it fails please try also the pseudo_gathernd function here
+    # instead. basically it flattens the params and use normal gather to simulate the result of gathernd
+    res = tf.gather_nd(input_tensor, indices_tensor, batch_dims=batch_dims)
+    layers[node_name] = res
+
+
+def pseudo_gathernd(input_tensor, indices_tensor):
+    params_shape = input_tensor.shape
+    idx_shape = indices_tensor.shape
+    idx_dims = idx_shape[-1]
+    gather_shape = params_shape[idx_dims:]
+    params_flat = tf.reshape(
+        input_tensor,
+        tf.concat([[-1], gather_shape], axis=0),
+    )
+    axis_step = tf.math.cumprod(
+        params_shape[:idx_dims],
+        exclusive=True,
+        reverse=True,
+    )
+
+    NUMPY_DTYPES_TO_TF_DTYPES = {
+        np.dtype('float16'): tf.float16,
+        np.dtype('float32'): tf.float32,
+        np.dtype('float64'): tf.float64,
+
+        np.dtype('uint8'): tf.uint8,
+        np.dtype('uint16'): tf.uint16,
+        np.dtype('uint32'): tf.uint32,
+        np.dtype('uint64'): tf.uint64,
+
+        np.dtype('int8'): tf.int8,
+        np.dtype('int16'): tf.int16,
+        np.dtype('int32'): tf.int32,
+        np.dtype('int64'): tf.int64,
+
+        np.dtype('bool_'): tf.bool,
+    }
+
+    mul = tf.math.multiply(
+        indices_tensor,
+        tf.cast(
+            axis_step,
+            dtype=NUMPY_DTYPES_TO_TF_DTYPES[indices_tensor.dtype] \
+                if isinstance(indices_tensor.dtype, np.dtype) else indices_tensor.dtype,
+        ),
+    )
+    indices_flat = tf.reduce_sum(
+        mul,
+        axis=-1,
+    )
+    result_flat = tf.gather(
+        params_flat,
+        indices_flat,
+    )
+    if len(idx_shape) > 0 and len(idx_shape[:-1]) > 0 and idx_shape[:-1][0] is not None:
+        pseudo_gathernd_res = tf.reshape(
+            result_flat,
+            tf.concat([idx_shape[:-1], gather_shape], axis=0),
+        )
+    else:
+        pseudo_gathernd_res = result_flat
+
+    return pseudo_gathernd_res
