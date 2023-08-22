@@ -1,6 +1,7 @@
 import logging
 
 import keras
+import tensorflow as tf
 
 from .customonnxlayer.onnxerf import OnnxErf
 from .customonnxlayer.onnxhardsigmoid import OnnxHardSigmoid
@@ -126,6 +127,100 @@ def convert_selu(node, params, layers, lambda_func, node_name, keras_name):
 
     selu = keras.layers.Activation('selu', name=keras_name)
     layers[node_name] = selu(input_0)
+
+
+def convert_soft_plus(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert SELU activation layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for an activation layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    layers[node_name] = tf.keras.activations.softplus(input_0)
+
+
+def convert_soft_sign(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert SELU activation layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for an activation layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    layers[node_name] = tf.keras.activations.softsign(input_0)
+
+
+def convert_mish(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert SELU activation layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for an activation layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    layers[node_name] = input_0 * tf.math.tanh(tf.math.softplus(input_0))
+
+
+def convert_hard_swish(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert SELU activation layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for an activation layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    alpha = 1 / 6
+    beta = 0.5
+    hard_sigmoid = max(0, min(1, alpha * input_0 + beta))
+    hard_swish = input_0 * hard_sigmoid
+    layers[node_name] = hard_swish
+
+
+def convert_gelu(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert SELU activation layer
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    if len(node.input) != 1:
+        assert AttributeError('More than 1 input for an activation layer.')
+
+    input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+    layers[node_name] = tf.keras.activations.gelu(input_0)
 
 
 def convert_softmax(node, params, layers, lambda_func, node_name, keras_name):

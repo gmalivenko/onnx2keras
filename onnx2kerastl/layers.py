@@ -1,6 +1,7 @@
 from .convolution_layers import convert_conv, convert_convtranspose
 from .activation_layers import convert_relu, convert_elu, convert_lrelu, convert_selu, \
-    convert_sigmoid, convert_tanh, convert_softmax, convert_prelu, convert_hard_sigmoid, convert_erf
+    convert_sigmoid, convert_tanh, convert_softmax, convert_prelu, convert_hard_sigmoid, convert_erf, convert_soft_plus, \
+    convert_soft_sign, convert_mish, convert_gelu, convert_hard_swish
 from .ltsm_layers import convert_lstm
 from .operation_layers import convert_clip, convert_exp, convert_neg, convert_reduce_sum, convert_reduce_mean, \
     convert_log, convert_pow, convert_sqrt, convert_split, convert_cast, convert_floor, convert_identity, \
@@ -135,6 +136,11 @@ AVAILABLE_CONVERTERS = {
     "Det": convert_det,
     "NonZero": convert_non_zero,
     "GatherND": convert_gather_nd,
+    "Softplus": convert_soft_plus,
+    "Softsign": convert_soft_sign,
+    "Mish": convert_mish,
+    "Gelu": convert_gelu,
+    "HardSwish": convert_hard_swish,
+
     "DFT": convert_dft
 }
-
