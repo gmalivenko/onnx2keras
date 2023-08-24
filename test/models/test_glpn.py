@@ -14,16 +14,15 @@ import urllib
 
 
 def test_glpn():
-    model_name = 'glpn'
+    import sys
+    sys.setrecursionlimit(10000)
+
     model = GLPNForDepthEstimation.from_pretrained("vinvino02/glpn-kitti")
     model = model.eval()
-    # torch.onnx.export(n_model, torch.ones(1, 3, 13, 182, 182), 'x3d.onnx', export_params=True, input_names=['input'],
-    #                   output_names=['output'],
-    #                   dynamic_axes={'input': {0: 'batch_size'},  # variable length axes
-    #                                 'output': {0: 'batch_size'}}) - this requires an earlier version of tensorflow
+
     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
     image = Image.open(requests.get(url, stream=True).raw)
-    image_processor = AutoImageProcessor.from_pretrained("vinvino02/glpn-kitti")
+    image_processor = AutoImageProcessor.from_pretrained("vinvino02/gÏlpn-kitti")
     inputs = image_processor(images=image, return_tensors="pt")
     x = inputs.data['pixel_values']
     print(x.shape)
@@ -31,38 +30,14 @@ def test_glpn():
     onnx_model = onnx.load('glpn.onnx')
 
     keras_model = onnx_to_keras(onnx_model, ['input.1'], name_policy='attach_weights_name')
-    permuted_inputs = np.swapaxes(np.swapaxes(np.swapaxes(inputs, 0, 1), 1, 2), 2, 3)
+    permuted_inputs = np.swapaxes(np.swapaxes(x, 1, 2), 2, 3)
     final_model = convert_channels_first_to_last(keras_model, should_transform_inputs_and_outputs=True)
     model = model.eval()
-    this_pred = model(torch.Tensor(inputs)[None, ...])
-    keras_preds = final_model(permuted_inputs[None, ...])
+    this_pred = model(torch.Tensor(x))
+    keras_preds = final_model(permuted_inputs)
+    keras_preds = np.swapaxes(keras_preds, 1, 2)
+    torch_pred = this_pred['predicted_depth']
+    assert np.abs(keras_preds - torch_pred.detach().numpy()).max() < 1e-04
 
-    assert np.abs(keras_preds - this_pred.detach().numpy()).max() < 1e-04
 
 
-# def test_dpt():
-#     model = DPTForDepthEstimation.from_pretrained("Intel/dpt-large")
-#     model = model.eval()
-#     # torch.onnx.export(n_model, torch.ones(1, 3, 13, 182, 182), 'x3d.onnx', export_params=True, input_names=['input'],
-#     #                   output_names=['output'],
-#     #                   dynamic_axes={'input': {0: 'batch_size'},  # variable length axes
-#     #                                 'output': {0: 'batch_size'}}) - this requires an earlier version of tensorflow
-#     url = "http://images.cocodataset.org/val2017/000000039769.jpg"
-#     image = Image.open(requests.get(url, stream=True).raw)
-#
-#     image_processor = AutoImageProcessor.from_pretrained("Intel/dpt-large")
-#     inputs = image_processor(images=image, return_tensors="pt")
-#     x = inputs.data['pixel_values']
-#
-#
-#     torch.onnx.export(model, x, 'dpt.onnx')
-#     onnx_model = onnx.load('dpt.onnx')
-#
-#     keras_model = onnx_to_keras(onnx_model, ['input.1'], name_policy='attach_weights_name')
-#     permuted_inputs = np.swapaxes(np.swapaxes(np.swapaxes(inputs, 0, 1), 1, 2), 2, 3)
-#     final_model = convert_channels_first_to_last(keras_model, should_transform_inputs_and_outputs=True)
-#     model = model.eval()
-#     this_pred = model(torch.Tensor(inputs)[None, ...])
-#     keras_preds = final_model(permuted_inputs[None, ...])
-#
-#     assert np.abs(keras_preds - this_pred.detach().numpy()).max() < 1e-04
