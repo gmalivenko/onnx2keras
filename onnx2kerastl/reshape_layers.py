@@ -253,7 +253,7 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
                             if dims_to_set_as_zero is not None:
                                 new_shape[dims_to_set_as_zero] = 0
                             elif dims_to_keep_unchanged is not None:
-                                new_shape[dims_to_keep_unchanged] = input_0.shape[dims_to_keep_unchanged]
+                                new_shape[dims_to_keep_unchanged] = np.array(input_0.shape)[dims_to_keep_unchanged]
                             layers[node_name] = tf.reshape(input_0, new_shape, name=keras_name)
                         else:
                             reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
@@ -463,3 +463,39 @@ def convert_expand(node, params, layers, lambda_func, node_name, keras_name):
 
 def convert_tile(node, params, layers, lambda_func, node_name, keras_name):
     layers[node_name] = tf.tile(layers[node.input[0]], layers[node.input[1]])
+
+
+def convert_gather_elements(node, params, layers, lambda_func, node_name, keras_name):
+    """
+    Convert gather.
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param lambda_func: function for keras Lambda layer
+    :param node_name: internal converter name
+    :param keras_name: resulting layer name
+    :return: None
+    """
+    logger = logging.getLogger('onnx2keras.gather_elements')
+    axis = params.get('axis', 0)
+    data_input = layers[node.input[0]]
+    indices_input = layers[node.input[1]]
+
+    def torch_gather(x, indices, gather_axis):
+
+        all_indices = tf.where(tf.fill(indices.shape, True))
+        gather_locations = tf.reshape(indices, [indices.shape.num_elements()])
+
+        gather_indices = []
+        for axis in range(len(indices.shape)):
+            if axis == gather_axis:
+                gather_indices.append(tf.cast(gather_locations, dtype=tf.int64))
+            else:
+                gather_indices.append(tf.cast(all_indices[:, axis], dtype=tf.int64))
+
+        gather_indices = tf.stack(gather_indices, axis=-1)
+        gathered = tf.gather_nd(x, gather_indices)
+        reshaped = tf.reshape(gathered, indices.shape)
+        return reshaped
+
+    layers[node_name] = torch_gather(data_input, indices_input, axis)

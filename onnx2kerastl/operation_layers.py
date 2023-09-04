@@ -743,3 +743,38 @@ def pseudo_gathernd(input_tensor, indices_tensor):
         pseudo_gathernd_res = result_flat
 
     return pseudo_gathernd_res
+
+
+def convert_nms(node, params, layers, lambda_func, node_name, keras_name):
+    batch_size = layers[node.input[0]].shape[0]
+    if batch_size is None:
+        raise AttributeError("Onnx2kerras: NMS conversion does not support dynamic batch."
+                             "Please change batch to static or remove NMS from model")
+    center_point_box = params.get("center_point_box", 0)
+    if center_point_box != 0:
+        raise AttributeError("Onnx2kerras: We do not support the center_point_box parameter")
+    boxes = layers[node.input[0]]
+    scores = layers[node.input[1]]
+    iou_threshold = 0
+    score_threshold = float('-inf')
+    max_output_size = [2**30]
+    if len(node.input) > 2:
+        max_output_size = [min(layers.get(node.input[2], [2**30])[0], 2**30)]
+    if len(node.input) > 3:
+        iou_threshold = layers.get(node.input[3], [0])
+    if len(node.input) > 4:
+        score_threshold = layers.get(node.input[4], float('-inf'))
+    num_classes = scores.shape[1]
+    all_results = []
+    for batch in range(batch_size):
+        for c_class in range(num_classes):
+            indices = tf.image.non_max_suppression(boxes=boxes[batch],
+                                                   scores=scores[batch, c_class, ...],
+                                                   max_output_size=tf.cast(max_output_size[0], tf.int32),
+                                                   iou_threshold=iou_threshold[0],
+                                                   score_threshold=score_threshold)
+            class_tensor = c_class * tf.ones_like(indices)
+            batch_tensor = batch * tf.ones_like(indices)
+            res = tf.concat([batch_tensor[..., None], class_tensor[..., None], indices[..., None]], axis=-1)
+            all_results.append(res)
+    layers[node_name] = tf.concat(all_results, axis=0)
