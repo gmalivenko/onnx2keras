@@ -74,17 +74,17 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
     :return: None
     """
     logger = logging.getLogger('onnx2keras.gather')
-
+    axis = params.get('axis', 0)
     if is_numpy(layers[node.input[0]]) and is_numpy(layers[node.input[1]]) and not 'is_embedding' in params:
         logger.debug('Gather from numpy array')
 
-        if params['axis'] == 0:
+        if axis == 0:
             gathered = np.array(layers[node.input[0]][layers[node.input[1]]])
-        elif params['axis'] == 1:
+        elif axis == 1:
             gathered = np.array(layers[:, node.input[0]][layers[node.input[1]]])
-        elif params['axis'] == 2:
+        elif axis == 2:
             gathered = np.array(layers[:, :, node.input[0]][layers[node.input[1]]])
-        elif params['axis'] == 3:
+        elif axis == 3:
             gathered = np.array(layers[:, :, :, node.input[0]][layers[node.input[1]]])
         else:
             raise AttributeError('Can\'t gather by axis more than 3.')
@@ -116,7 +116,10 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
             else:
                 raise AttributeError("Cannot transform gather into embedding with non 2D array")
         else:
-            layers[node_name] = tf.gather(input_0, indices, axis=params['axis'])
+            if tf.is_tensor(indices) and indices.dtype not in [tf.int16, tf.int32, tf.int64]:
+                indices = tf.cast(indices, tf.int32)
+
+            layers[node_name] = tf.gather(input_0, indices, axis=axis)
 
 
 def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
