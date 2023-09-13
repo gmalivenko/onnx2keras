@@ -177,24 +177,7 @@ def convert_reduce_mean(node, params, layers, lambda_func, node_name, keras_name
     param_keepdims = params.get('keepdims', 1)
     keepdims = param_keepdims == 1
     axes = params['axes']
-    reduce_mean_layer = OnnxReduceMean(axes=axes, keepdims=keepdims)
-    axes_for_last = [a - 1 for a in axes]
-    if 0 in axes:
-        axes_for_last.remove(0)
-        rank = len(input_0.shape)
-        axes_for_last.append(rank)
-
-    def get_special_data_format_handler():
-        def handle_axis_change(target_data_format: str, config: Dict[str, Any]) -> Dict[str, Any]:
-            if target_data_format == "channels_last":
-                config["axes"] = axes_for_last
-
-            return config
-
-        return handle_axis_change
-
-    reduce_mean_layer.get_special_data_format_handler = get_special_data_format_handler
-    layers[node_name] = reduce_mean_layer(input_0)
+    layers[node_name] = K.mean(input_0, keepdims=keepdims, axis=axes)
 
 
 def convert_reduce_max(node, params, layers, lambda_func, node_name, keras_name):
