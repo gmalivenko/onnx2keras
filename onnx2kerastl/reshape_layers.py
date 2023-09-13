@@ -4,7 +4,7 @@ import keras
 import numpy as np
 import tensorflow as tf
 from keras import backend as K
-from keras.layers import SlicingOpLambda
+from keras.layers import SlicingOpLambda, Lambda
 
 from .utils import is_numpy, ensure_tf_type, unsqueeze_tensors_of_rank_one
 
@@ -118,6 +118,13 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
         else:
             if tf.is_tensor(indices) and indices.dtype not in [tf.int16, tf.int32, tf.int64]:
                 indices = tf.cast(indices, tf.int32)
+
+            dim_len = input_0.shape[axis]
+            if isinstance(indices, (int, np.integer)) and indices < 0:
+                indices += dim_len
+
+            if tf.is_tensor(indices):
+                indices = tf.where(indices < 0, indices+dim_len, indices)
 
             layers[node_name] = tf.gather(input_0, indices, axis=axis)
 
