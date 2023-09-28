@@ -3,6 +3,24 @@ import keras
 from keras_data_format_converter import convert_channels_first_to_last
 import tensorflow as tf
 
+ONNX_ELEM_TO_TF_TYPE = {
+    1: tf.float32,
+    2: tf.uint8,
+    3: tf.int8,
+    4: tf.uint16,
+    5: tf.int16,
+    6: tf.int32,
+    7: tf.int64,
+    8: tf.string,
+    9: tf.bool,
+    10: tf.float16,
+    11: tf.double,
+    12: tf.uint32,
+    13: tf.uint64,
+    14: tf.complex64,
+    15: tf.complex128,
+    16: tf.bfloat16
+}
 
 def is_numpy(obj):
     """
