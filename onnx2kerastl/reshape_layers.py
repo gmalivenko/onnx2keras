@@ -124,7 +124,7 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
                 indices += dim_len
 
             if tf.is_tensor(indices):
-                indices = tf.where(indices < 0, indices+dim_len, indices)
+                indices = tf.where(indices < 0, indices + dim_len, indices)
 
             layers[node_name] = tf.gather(input_0, indices, axis=axis)
 
@@ -291,17 +291,20 @@ def convert_unsqueeze(node, params, layers, lambda_func, node_name, keras_name):
         else:
             raise AttributeError('Number of inputs is not equal 1 for unsqueeze layer')
 
+    if len(np.unique(params['axes'])) < len(params['axes']):
+        raise AttributeError(f"The specified axes contains duplicates values: {params['axes']}")
+
     if is_numpy(layers[node.input[0]]):
         logger.debug('Work with numpy types.')
         layers[node_name] = layers[node.input[0]]
         for axis in params['axes']:
             layers[node_name] = np.expand_dims(layers[node_name], axis)
     else:
+        unsqueezed_input = layers[node.input[0]]
+        for axis in params['axes']:
+            unsqueezed_input = tf.expand_dims(unsqueezed_input, axis)
 
-        if len(params['axes']) != 1:
-            raise AttributeError('Number of axes is not equal 1. Cannot unsqueeze')
-
-        layers[node_name] = tf.expand_dims(layers[node.input[0]], params['axes'][0])
+        layers[node_name] = unsqueezed_input
 
 
 def convert_flatten(node, params, layers, lambda_func, node_name, keras_name):
@@ -323,11 +326,11 @@ def convert_flatten(node, params, layers, lambda_func, node_name, keras_name):
     logger.debug('Convert inputs to Keras/TF layers if needed.')
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    # Fix critical issue with flatten
-    permute = keras.layers.Permute((3, 1, 2))
-    tensor_chw = permute(input_0)
-    flatten = keras.layers.Flatten(name=keras_name)
-    layers[node_name] = flatten(tensor_chw)
+    input_dims = input_0.shape
+    flatten_axis = params.get('axis', 1)
+    reshaped_input = tf.reshape(input_0, [tf.reduce_prod(input_dims[:flatten_axis]),
+                                          tf.reduce_prod(input_dims[flatten_axis:])])
+    layers[node_name] = reshaped_input
 
 
 def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
