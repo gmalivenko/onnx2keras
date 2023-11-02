@@ -135,9 +135,10 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
     for node_index, node in enumerate(onnx_nodes):
         if node.op_type == 'If':
             if layers[node.input[0]][0]:
-                replace_node = node.attribute[0].g.node[0]
+                replace_node = node.attribute[0].g.node
             else:
-                replace_node = node.attribute[1].g.node[0]
+                replace_node = node.attribute[1].g.node
+            replace_node = extract_op_node(replace_node, layers, lambda_funcs, keras_names, change_ordering, name_policy)
             replace_node.output.pop()
             for i in range(len(node.output)):
                 replace_node.output.append(node.output[i])
@@ -354,3 +355,33 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
     keras.backend.set_image_data_format(keras_fmt)
 
     return model
+
+
+
+def extract_op_node(node_graph, layers, lambda_funcs, keras_names, change_ordering, name_policy):
+    op_node = None
+    for node_i, node in enumerate(node_graph):
+        if node.op_type == 'Constant':
+            node_params = onnx_node_attributes_to_dict(node.attribute)
+            # Add global converter info:
+            node_params['change_ordering'] = change_ordering
+            node_params['name_policy'] = name_policy
+            node_name = str(node.output[0])
+
+            AVAILABLE_CONVERTERS[node.op_type](
+                node,
+                node_params,
+                layers,
+                lambda_funcs,
+                node_name,
+                keras_names
+            )
+        else:       # op type
+            if op_node is not None:
+                raise NotImplementedError('Not Implemented: inner graph in If node with multiple operator nodes')
+            op_node = node
+    if op_node is None:
+        raise NotImplementedError('Something is off with If node')
+    return op_node
+
+
