@@ -50,8 +50,9 @@ def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
             try:
                 layers[node_name] = dense(layers[node.input[0]])
             except ValueError:
-                reshape = keras.layers.Reshape([input_channels], name=keras_name + '_reshape')
-                reshaped_x = reshape(layers[node.input[0]])
+                mid_shape = tf.shape(layers[node.input[0]], out_type=tf.int32)[:-1]
+                reshape_shape = tf.concat([mid_shape, [input_channels]], axis=0)
+                reshaped_x = tf.reshape(layers[node.input[0]], reshape_shape, name=keras_name + "_reshape")
                 layers[node_name] = dense(reshaped_x)
 
         else:

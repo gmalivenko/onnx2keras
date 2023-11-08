@@ -232,7 +232,11 @@ def convert_where(node, params, layers, lambda_func, node_name, keras_name):
         casted = tf.cast(layers[node.input[0]], tf.bool)
     else:
         casted = layers[node.input[0]]
-    layers[node_name] = tf.where(casted, layers[node.input[1]], layers[node.input[2]])
+    if layers[node.input[1]].dtype == np.int64 and is_numpy(layers[node.input[1]]):
+        #serialization doesn't work well for first argument if it is np array of type int64
+        layers[node_name] = tf.where(tf.logical_not(casted), layers[node.input[2]], layers[node.input[1]])
+    else:
+        layers[node_name] = tf.where(casted, layers[node.input[1]], layers[node.input[2]])
 
 
 def convert_scatter_nd(node, params, layers, lambda_func, node_name, keras_name):

@@ -302,11 +302,17 @@ def convert_split(node, params, layers, lambda_func, node_name, keras_names):
         assert AttributeError('More than 1 input for split layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_names[0])
+    axis = params.get("axis", 0)
     try:  # onnx opset12
         splits = params["split"]
     except KeyError as e:  # onnx opset 14
-        splits = layers[node.input[1]]
-    axis = params.get("axis", 0)
+        if len(node.input) > 1:
+            splits = layers[node.input[1]]
+        else:
+            if layers[node.input[0]].shape[axis] % 2 != 0:
+                raise AttributeError("No splits supplied to the split block but there are uneven number of channels")
+            else:
+                splits = [layers[node.input[0]].shape[axis] // 2]*2
     if not isinstance(splits, Iterable):
         # This might not work if `split` is a tensor.
         chunk_size = K.int_size(input_0)[axis] // splits

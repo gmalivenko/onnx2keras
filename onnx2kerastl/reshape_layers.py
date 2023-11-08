@@ -51,15 +51,17 @@ def convert_shape(node, params, layers, lambda_func, node_name, keras_name):
 
     logger.debug('Actual shape:')
     logger.debug(np.array(input_0.shape))
+    if not K.is_keras_tensor(input_0) or not any([input_0.shape[i] == None for i in range(len(input_0.shape))]):
+        shapes = []
+        for i in input_0.shape:
+            if i is not None:
+                shapes.append(i)
+            else:
+                shapes.append(None)
+        layers[node_name] = np.array(shapes)
+    else:
+        layers[node_name] = tf.shape(input_0, out_type=tf.int64)
 
-    shapes = []
-    for i in input_0.shape:
-        if i is not None:
-            shapes.append(i)
-        else:
-            shapes.append(None)
-
-    layers[node_name] = np.array(shapes)
 
 
 def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
@@ -268,8 +270,8 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
                         else:
                             reshape = keras.layers.Reshape(np.int32(input_1[1:]), name=keras_name)
                             layers[node_name] = reshape(input_0)
-    else:
-        raise AttributeError('Can\'t reshape dynamic size.')
+    else: #dynamic reshape
+        layers[node_name] = tf.reshape(input_0, input_1)
 
 
 def convert_unsqueeze(node, params, layers, lambda_func, node_name, keras_name):
@@ -370,25 +372,49 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
     axes_positives = [axis if axis >= 0 else input_shape_len + axis for axis in axes]
 
     slice_spec_param = []
-    for axis in range(input_shape_len):
-        if axis in axes_positives:
-            axis_index = axes_positives.index(axis)
-            start = starts[axis_index]
-            end = ends[axis_index]
-            step = steps[axis_index]
-            slice_spec_param.append({'start': start, 'step': step, 'stop': end})
+    is_dynamic = False
+    for i in range(len(starts)):
+        for index_li in [starts, steps, ends]:
+            if index_li[i] is not None and not isinstance(index_li[i], int) and not is_numpy(index_li[i]) and K.is_keras_tensor(index_li[i]):
+                is_dynamic = True
+    if not is_dynamic:
+        for axis in range(input_shape_len):
+            if axis in axes_positives:
+                axis_index = axes_positives.index(axis)
+                start = starts[axis_index]
+                end = ends[axis_index]
+                step = steps[axis_index]
+                slice_spec_param.append({'start': start, 'step': step, 'stop': end})
+            else:
+                slice_spec_param.append({'start': None, 'step': None, 'stop': None})
+        if is_numpy(layers[node.input[0]]) and np.array([_shape is None for _shape in layers[node.input[0]]]).any() \
+                and len(layers[node.input[0]].shape) == 1:  # slice numpy array which is a shape
+            sliced = layers[node.input[0]][start:end:step]
         else:
-            slice_spec_param.append({'start': None, 'step': None, 'stop': None})
-    if is_numpy(layers[node.input[0]]) and np.array([_shape is None for _shape in layers[node.input[0]]]).any() \
-            and len(layers[node.input[0]].shape) == 1:  # slice numpy array which is a shape
-        sliced = layers[node.input[0]][start:end:step]
+            input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
+            slicing_layer = SlicingOpLambda(tf.__operators__.getitem)
+            sliced = slicing_layer(input_0, slice_spec=slice_spec_param)
+            if is_numpy(layers[node.input[0]]) and not K.is_keras_tensor(sliced):
+                sliced = sliced.numpy()
+        layers[node_name] = sliced
     else:
         input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-        slicing_layer = SlicingOpLambda(tf.__operators__.getitem)
-        sliced = slicing_layer(input_0, slice_spec=slice_spec_param)
-        if is_numpy(layers[node.input[0]]):
-            sliced = sliced.numpy()
-    layers[node_name] = sliced
+        keras_shape = tf.shape(layers[node.input[0]])
+        start_vec = [0] * input_shape_len
+        end_vec = [keras_shape[i] for i in range(input_shape_len)]
+        step_vec = [1] * input_shape_len
+        for axis in range(input_shape_len):
+            if axis in axes_positives:
+                axis_index = axes_positives.index(axis)
+                for res_list, input_list in zip([start_vec, step_vec, end_vec],[starts, steps, ends]):
+                    slice_index = input_list[axis_index]
+                    if not is_numpy(input_list[axis_index]) and input_list[axis_index].dtype != tf.int32:
+                        slice_index = tf.cast(slice_index, tf.int32)
+                    res_list[axis] = slice_index
+        layers[node_name] = tf.strided_slice(input_0,
+                                             tf.concat([start_vec], axis=0),
+                                             tf.concat([end_vec], axis=0),
+                                             tf.concat([step_vec], axis=0))
 
 
 def convert_squeeze(node, params, layers, lambda_func, node_name, keras_name):
@@ -438,16 +464,16 @@ def convert_resize(node, params, layers, lambda_func, node_name, keras_name):
     if len(scales) > 0:
         if scales[0] != 1 or scales[1] != 1:
             raise Exception("Resize of channels or batch dim not suppported")
-
-        tf_resize_shapes = [int(scales[2] * to_channel_last.shape[1]),
-                            int(scales[3] * to_channel_last.shape[2])]
+        shape = tf.cast(tf.shape(to_channel_last), tf.float32)
+        tf_resize_shapes = [tf.cast(scales[2] * shape[1], tf.int32),
+                            tf.cast(scales[3] * shape[2], tf.int32)]
     else:
         if sizes[0] != input_tensor.shape[0] or sizes[1] != input_tensor.shape[1]:
             raise Exception("Resize of channels or batch dim not suppported")
         tf_resize_shapes = [int(sizes[2]), int(sizes[3])]
 
     resized = tf.image.resize(to_channel_last,
-                              size=tf_resize_shapes,
+                              size=tf.stack(tf_resize_shapes, axis=0),
                               method=resize_method)
     to_channel_first = keras.layers.Permute((3, 1, 2))(resized)
     layers[node_name] = to_channel_first
