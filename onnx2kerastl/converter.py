@@ -7,9 +7,12 @@ import logging
 import uuid
 
 import keras
+import keras.backend
+
 from .customonnxlayer import onnx_custom_objects_map
 from .exceptions import UnsupportedLayer, OnnxUnsupported
 from .layers import AVAILABLE_CONVERTERS
+import tensorflow as tf
 onnx_imported = False
 package_name = 'onnx'
 spec = importlib.util.find_spec(package_name)
@@ -134,7 +137,12 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
     embedding_weights_mapping = {}
     for node_index, node in enumerate(onnx_nodes):
         if node.op_type == 'If':
-            if layers[node.input[0]][0]:
+            cond = layers[node.input[0]][0]
+            if not isinstance(cond, bool) and not isinstance(cond, tf.Tensor) and keras.backend.is_keras_tensor(cond):
+                # the condition in If is a KerasTensor and needs to be evlauated.
+                inpt_sample = [tf.ones(inpt.shape) for inpt in keras_inputs]
+                cond = keras.models.Model(keras_inputs, cond)(inpt_sample)
+            if cond:
                 replace_node = node.attribute[0].g.node
             else:
                 replace_node = node.attribute[1].g.node
