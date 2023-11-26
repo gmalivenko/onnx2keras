@@ -3,8 +3,6 @@ import logging
 import keras
 import tensorflow as tf
 
-from .customonnxlayer.onnxerf import OnnxErf
-from .customonnxlayer.onnxhardsigmoid import OnnxHardSigmoid
 from .utils import ensure_tf_type
 
 
@@ -294,8 +292,12 @@ def convert_hard_sigmoid(node, params, layers, lambda_func, node_name, keras_nam
 
     alpha = params.get("alpha", 0.2)
     beta = params.get("beta", 0.5)
-    onnx_hard_sigmoid = OnnxHardSigmoid(alpha=alpha, beta=beta, name=keras_name)
-    layers[node_name] = onnx_hard_sigmoid(input_0)
+
+    # hard sigmoid logic
+    x = tf.multiply(input_0, alpha)
+    x = tf.add(x, beta)
+    x = tf.clip_by_value(x, 0., 1.)
+    layers[node_name] = x
 
 
 def convert_erf(node, params, layers, lambda_func, node_name, keras_name):
@@ -313,6 +315,4 @@ def convert_erf(node, params, layers, lambda_func, node_name, keras_name):
         assert AttributeError('More than 1 input for an activation layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-
-    onnx_erf = OnnxErf(name=keras_name)
-    layers[node_name] = onnx_erf(input_0)
+    layers[node_name] = tf.math.erf(input_0)

@@ -1,12 +1,10 @@
 import logging
-from typing import Dict, Any
-import numpy as np
-import keras
-from keras import backend as K
-import tensorflow as tf
 
-from onnx2kerastl.customonnxlayer.onnxreducemean import OnnxReduceMean
-from .customonnxlayer.onnxsqrt import OnnxSqrt
+import keras
+import numpy as np
+import tensorflow as tf
+from keras import backend as K
+
 from .exceptions import UnsupportedLayer
 from .utils import is_numpy, ensure_tf_type
 
@@ -283,8 +281,7 @@ def convert_sqrt(node, params, layers, lambda_func, node_name, keras_name):
         assert AttributeError('More than 1 input for sqrt layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-    sqrt_layer = OnnxSqrt(name=keras_name)
-    layers[node_name] = sqrt_layer(input_0)
+    layers[node_name] = tf.math.sqrt(input_0)
 
 
 def convert_split(node, params, layers, lambda_func, node_name, keras_names):
