@@ -33,6 +33,7 @@ def test_bert_huggingface_classifcation():
     onnx_model = onnx.load(onnx_path)
     keras_model = onnx_to_keras(onnx_model, ['input_ids', 'token_type_ids', 'attention_mask'],
                                 input_types=[tf.int32, tf.int32, tf.float32])
+    keras_model = keras_model.converted_model
     input_np = [real_inputs['input_ids'].numpy(),
                 real_inputs['token_type_ids'].numpy(),
                 real_inputs['attention_mask'].numpy()]

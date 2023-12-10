@@ -5,14 +5,18 @@ import importlib.util
 import inspect
 import logging
 import uuid
+from dataclasses import dataclass
+from typing import Optional
 
 import keras
 import keras.backend
+import tensorflow as tf
+from keras.models import Model
 
 from .customonnxlayer import onnx_custom_objects_map
 from .exceptions import UnsupportedLayer, OnnxUnsupported
 from .layers import AVAILABLE_CONVERTERS
-import tensorflow as tf
+
 onnx_imported = False
 package_name = 'onnx'
 spec = importlib.util.find_spec(package_name)
@@ -20,6 +24,12 @@ if spec is not None:
     from onnx import numpy_helper
 
     onnx_imported = True
+
+
+@dataclass
+class ConvertedResponse:
+    converted_model: Model
+    error_info: Optional[str] = None
 
 
 def onnx_node_attributes_to_dict(args):
@@ -49,7 +59,8 @@ def onnx_node_attributes_to_dict(args):
     return {arg.name: onnx_attribute_to_dict(arg) for arg in args}
 
 
-def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, change_ordering=False, input_types=None):
+def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, change_ordering=False, input_types=None) \
+        -> ConvertedResponse:
     """
     Convert ONNX graph to Keras model format
     :param onnx_model: loaded ONNX model
@@ -132,145 +143,172 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
 
                 logger.debug('Found input {0} with shape {1}'.format(input_name, input_shape))
 
-    # Convert every operation separable
-    node_names = []
-    embedding_weights_mapping = {}
-    for node_index, node in enumerate(onnx_nodes):
-        if node.op_type == 'If':
-            cond = layers[node.input[0]][0]
-            if not isinstance(cond, bool) and not isinstance(cond, tf.Tensor) and keras.backend.is_keras_tensor(cond):
-                # the condition in If is a KerasTensor and needs to be evlauated.
-                inpt_sample = [tf.ones(inpt.shape) for inpt in keras_inputs]
-                cond = keras.models.Model(keras_inputs, cond)(inpt_sample)
-            if cond:
-                replace_node = node.attribute[0].g.node
-            else:
-                replace_node = node.attribute[1].g.node
-            replace_node = extract_op_node(replace_node, layers, lambda_funcs, keras_names, change_ordering, name_policy)
-            replace_node.output.pop()
-            for i in range(len(node.output)):
-                replace_node.output.append(node.output[i])
-            node = replace_node
-        node_type = node.op_type
-        node_params = onnx_node_attributes_to_dict(node.attribute)
-        # Add global converter info:
-        node_params['change_ordering'] = change_ordering
-        node_params['name_policy'] = name_policy
-
-        node_name = str(node.output[0])
-        keras_names = []
-        for output_index, output in enumerate(node.output):
-            if name_policy == 'short':
-                keras_name = keras_name_i = str(output)[:8]
-                suffix = 1
-                while keras_name_i in node_names:
-                    keras_name_i = keras_name + '_' + str(suffix)
-                    suffix += 1
-                keras_names.append(keras_name_i)
-            elif name_policy == 'renumerate':
-                postfix = node_index if len(node.output) == 1 else "%s_%s" % (node_index, output_index)
-                keras_names.append('LAYER_%s' % postfix)
-            elif name_policy == 'attach_weights_name':
-                attached_weights_names = []
-                for node_input in node.input:
-                    if node_input in weights:
-                        weight_name = ".".join(node_input.split(".")[:-1])
-                        attached_weights_names.append(weight_name)
-                set_weights_names = set(attached_weights_names)
-                set_weights_names = "__".join(set_weights_names)
-                layer_name = output.replace(":", "_")
-                while not (str.isalpha(layer_name[0]) or str.isdigit(layer_name[0]) or layer_name[0] == "."):
-                    layer_name = layer_name[1:]
-
-                if layer_name == "":
-                    layer_name = str(uuid.uuid4())[:10]
-
-                if set_weights_names:
-                    layer_name = f"{layer_name}__{set_weights_names}"
-
-                keras_names.append(layer_name)
-            else:
-                output = output.replace(":", "_")
-                keras_names.append(output)
-        keras_names = [k.lstrip("/") for k in keras_names]
-        if len(node.output) != 1:
-            logger.warning('Trying to convert multi-output node')
-            node_params['_outputs'] = list(node.output)
-            node_names.extend(keras_names)
-        else:
-            keras_names = keras_names[0]
-            node_names.append(keras_names)
-
-        logger.debug('######')
-        logger.debug('...')
-        logger.debug('Converting ONNX operation')
-        logger.debug('type: %s', node_type)
-        logger.debug('node_name: %s', node_name)
-        logger.debug('node_params: %s', node_params)
-        logger.debug('...')
-
-        logger.debug('Check if all inputs are available:')
-        if len(node.input) == 0 and node_type != 'Constant':
-            raise AttributeError('Operation doesn\'t have an input. Aborting.')
-        for i, node_input in enumerate(node.input):
-            logger.debug('Check input %i (name %s).', i, node_input)
-
-            # for case of weights sharing, map the shared weights to determine
-            # if a Gather layer is an embedding layer
-            if node_type == 'Identity' and node_input in weights:
-                embedding_weights_mapping[node_name] = node_input
-
-            # check conditions for embedding layer
-            is_in_weights = node_input in weights  # is this node input in weights
-            is_mapped_to_weights = embedding_weights_mapping.get(node_input, '') in weights  # is this node inputs weights are shared with other input
-            is_embedding = (is_in_weights or is_mapped_to_weights) and i == 0  # if either is true this layer is a possible embedding layer
-
-            # if a layer is of type Gather and its input is in weights (or mapped to a weights input)
-            # it's an embedding layer
-            if node_type == "Gather" and is_embedding:
-                node_params['is_embedding'] = True
-
-            if node_input not in layers:
-                logger.debug('The input not found in layers / model inputs.')
-                if node_input in weights:
-                    logger.debug('Found in weights, add as a numpy constant.')
-                    layers[node_input] = weights[node_input]
+    keras_middle_outputs = {}
+    error_info = None
+    try:
+        # Convert every operation separable
+        node_names = []
+        embedding_weights_mapping = {}
+        for node_index, node in enumerate(onnx_nodes):
+            if node.op_type == 'If':
+                cond = layers[node.input[0]][0]
+                if not isinstance(cond, bool) and not isinstance(cond, tf.Tensor) and keras.backend.is_keras_tensor(
+                        cond):
+                    # the condition in If is a KerasTensor and needs to be evlauated.
+                    inpt_sample = [tf.ones(inpt.shape) for inpt in keras_inputs]
+                    cond = keras.models.Model(keras_inputs, cond)(inpt_sample)
+                if cond:
+                    replace_node = node.attribute[0].g.node
                 else:
-                    if node_input == "" and node_type in ('Pad', 'Resize', 'Clip', 'LSTM'):
-                        continue
+                    replace_node = node.attribute[1].g.node
+                replace_node = extract_op_node(replace_node, layers, lambda_funcs, keras_names, change_ordering,
+                                               name_policy)
+                replace_node.output.pop()
+                for i in range(len(node.output)):
+                    replace_node.output.append(node.output[i])
+                node = replace_node
+            node_type = node.op_type
+            node_params = onnx_node_attributes_to_dict(node.attribute)
+            # Add global converter info:
+            node_params['change_ordering'] = change_ordering
+            node_params['name_policy'] = name_policy
+
+            node_name = str(node.output[0])
+            keras_names = []
+            for output_index, output in enumerate(node.output):
+                if name_policy == 'short':
+                    keras_name = keras_name_i = str(output)[:8]
+                    suffix = 1
+                    while keras_name_i in node_names:
+                        keras_name_i = keras_name + '_' + str(suffix)
+                        suffix += 1
+                    keras_names.append(keras_name_i)
+                elif name_policy == 'renumerate':
+                    postfix = node_index if len(node.output) == 1 else "%s_%s" % (node_index, output_index)
+                    keras_names.append('LAYER_%s' % postfix)
+                elif name_policy == 'attach_weights_name':
+                    attached_weights_names = []
+                    for node_input in node.input:
+                        if node_input in weights:
+                            weight_name = ".".join(node_input.split(".")[:-1])
+                            attached_weights_names.append(weight_name)
+                    set_weights_names = set(attached_weights_names)
+                    set_weights_names = "__".join(set_weights_names)
+                    layer_name = output.replace(":", "_")
+                    while not (str.isalpha(layer_name[0]) or str.isdigit(layer_name[0]) or layer_name[0] == "."):
+                        layer_name = layer_name[1:]
+
+                    if layer_name == "":
+                        layer_name = str(uuid.uuid4())[:10]
+
+                    if set_weights_names:
+                        layer_name = f"{layer_name}__{set_weights_names}"
+
+                    keras_names.append(layer_name)
+                else:
+                    output = output.replace(":", "_")
+                    keras_names.append(output)
+            keras_names = [k.lstrip("/") for k in keras_names]
+            if len(node.output) != 1:
+                logger.warning('Trying to convert multi-output node')
+                node_params['_outputs'] = list(node.output)
+                node_names.extend(keras_names)
+            else:
+                keras_names = keras_names[0]
+                node_names.append(keras_names)
+
+            logger.debug('######')
+            logger.debug('...')
+            logger.debug('Converting ONNX operation')
+            logger.debug('type: %s', node_type)
+            logger.debug('node_name: %s', node_name)
+            logger.debug('node_params: %s', node_params)
+            logger.debug('...')
+
+            logger.debug('Check if all inputs are available:')
+            if len(node.input) == 0 and node_type != 'Constant':
+                raise AttributeError('Operation doesn\'t have an input. Aborting.')
+            for i, node_input in enumerate(node.input):
+                logger.debug('Check input %i (name %s).', i, node_input)
+
+                # for case of weights sharing, map the shared weights to determine
+                # if a Gather layer is an embedding layer
+                if node_type == 'Identity' and node_input in weights:
+                    embedding_weights_mapping[node_name] = node_input
+
+                # check conditions for embedding layer
+                is_in_weights = node_input in weights  # is this node input in weights
+                is_mapped_to_weights = embedding_weights_mapping.get(node_input,
+                                                                     '') in weights  # is this node inputs weights are shared with other input
+                is_embedding = (
+                                       is_in_weights or is_mapped_to_weights) and i == 0  # if either is true this layer is a possible embedding layer
+
+                # if a layer is of type Gather and its input is in weights (or mapped to a weights input)
+                # it's an embedding layer
+                if node_type == "Gather" and is_embedding:
+                    node_params['is_embedding'] = True
+
+                if node_input not in layers:
+                    logger.debug('The input not found in layers / model inputs.')
+                    if node_input in weights:
+                        logger.debug('Found in weights, add as a numpy constant.')
+                        layers[node_input] = weights[node_input]
                     else:
-                        raise AttributeError('Current node is not in weights / model inputs / layers.')
-        else:
-            logger.debug('... found all, continue')
+                        if node_input == "" and node_type in ('Pad', 'Resize', 'Clip', 'LSTM'):
+                            continue
+                        else:
+                            raise AttributeError('Current node is not in weights / model inputs / layers.')
+            else:
+                logger.debug('... found all, continue')
 
-        keras.backend.set_image_data_format('channels_first')
+            keras.backend.set_image_data_format('channels_first')
+            try:
+                layer_converter_func = AVAILABLE_CONVERTERS[node_type]
+            except KeyError:
+                raise UnsupportedLayer(node_type)
+            layer_converter_func(
+                node,
+                node_params,
+                layers,
+                lambda_funcs,
+                node_name,
+                keras_names
+            )
+            # remove node inputs
+            for inp in node.input:
+                keras_middle_outputs.pop(inp, None)
+            # add node to middle map
+            keras_middle_outputs[node_name] = layers[node_name]
+
+            if isinstance(keras_names, list):
+                keras_names = keras_names[0]
+
+            try:
+                logger.debug('Output TF Layer -> ' + str(layers[keras_names]))
+            except KeyError:
+                pass
+
+        # Check for terminal nodes
+        for layer in onnx_outputs:
+            if layer in layers:
+                keras_outputs.append(layers[layer])
+
+        # Create model
+        model = keras.models.Model(inputs=keras_inputs, outputs=keras_outputs)
+
+    except Exception as e:
+        if len(keras_middle_outputs) == 0:
+            raise e
+
+        error_info = repr(e)
+        if isinstance(e, UnsupportedLayer):
+            error_info = e.layer_description
+
+        keras_outputs = list(keras_middle_outputs.values())
         try:
-            layer_converter_func = AVAILABLE_CONVERTERS[node_type]
-        except KeyError:
-            raise UnsupportedLayer(node_type)
-        layer_converter_func(
-            node,
-            node_params,
-            layers,
-            lambda_funcs,
-            node_name,
-            keras_names
-        )
-        if isinstance(keras_names, list):
-            keras_names = keras_names[0]
-
-        try:
-            logger.debug('Output TF Layer -> ' + str(layers[keras_names]))
-        except KeyError:
-            pass
-
-    # Check for terminal nodes
-    for layer in onnx_outputs:
-        if layer in layers:
-            keras_outputs.append(layers[layer])
-
-    # Create model
-    model = keras.models.Model(inputs=keras_inputs, outputs=keras_outputs)
+            model = keras.models.Model(inputs=keras_inputs, outputs=keras_outputs)
+        except:
+            raise e
 
     if change_ordering:
         change_ord_axes_map = {
@@ -362,8 +400,8 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
 
     keras.backend.set_image_data_format(keras_fmt)
 
-    return model
-
+    response = ConvertedResponse(model, error_info)
+    return response
 
 
 def extract_op_node(node_graph, layers, lambda_funcs, keras_names, change_ordering, name_policy):
@@ -384,12 +422,10 @@ def extract_op_node(node_graph, layers, lambda_funcs, keras_names, change_orderi
                 node_name,
                 keras_names
             )
-        else:       # op type
+        else:  # op type
             if op_node is not None:
                 raise NotImplementedError('Not Implemented: inner graph in If node with multiple operator nodes')
             op_node = node
     if op_node is None:
         raise NotImplementedError('Something is off with If node')
     return op_node
-
-

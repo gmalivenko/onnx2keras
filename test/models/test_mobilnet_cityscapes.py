@@ -33,6 +33,7 @@ def torch2keras(model, img, device='cpu'):
     temp_f.seek(0)
     onnx_model = onnx.load(temp_f)
     k_model = onnx_to_keras(onnx_model, input_names, change_ordering=False)
+    k_model = k_model.converted_model
     error = check_torch_keras_error(model, k_model, np_input, change_ordering=False, epsilon=5*10**(-3),
                                     should_transform_inputs=True)
 

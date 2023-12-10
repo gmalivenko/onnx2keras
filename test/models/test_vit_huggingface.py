@@ -48,6 +48,7 @@ def test_vit_huggingface():
     onnx_model = onnx.load(onnx_path)
     # keras_model = onnx_to_keras(onnx_model, ['pixel_values'], batch_size=1)
     keras_model = onnx_to_keras(onnx_model, ['pixel_values'])
+    keras_model = keras_model.converted_model
     final_model = convert_channels_first_to_last(keras_model, ['pixel_values'])
     tokens = tokenizer(np.ones([300, 300, 3], dtype=np.uint8), return_tensors="pt")
     pt_res = model(**tokens)

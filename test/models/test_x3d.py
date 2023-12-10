@@ -28,6 +28,7 @@ def test_x3d():
     onnx_model = onnx.load('x3d_s.onnx')
     inputs = np.load('x3d_input.npy')
     keras_model = onnx_to_keras(onnx_model, ['input'], name_policy='attach_weights_name')
+    keras_model = keras_model.converted_model
     permuted_inputs = np.swapaxes(np.swapaxes(np.swapaxes(inputs, 0, 1), 1, 2), 2, 3)
     final_model = convert_channels_first_to_last(keras_model, should_transform_inputs_and_outputs=True)
     model = model.eval()

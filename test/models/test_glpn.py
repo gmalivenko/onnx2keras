@@ -45,7 +45,7 @@ def test_glpn():
     onnx_model = onnx.load(temp_f)
     onnx_model = remove_last_two_nodes(onnx_model)
     keras_model = onnx_to_keras(onnx_model, ['input.1'], name_policy='attach_weights_name')
-
+    keras_model = keras_model.converted_model
     permuted_inputs = np.swapaxes(np.swapaxes(pixel_values, 1, 2), 2, 3)
     final_model = convert_channels_first_to_last(keras_model, should_transform_inputs_and_outputs=True)
     model = model.eval()
