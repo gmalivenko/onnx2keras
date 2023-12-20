@@ -309,7 +309,7 @@ def convert_split(node, params, layers, lambda_func, node_name, keras_names):
             if layers[node.input[0]].shape[axis] % 2 != 0:
                 raise AttributeError("No splits supplied to the split block but there are uneven number of channels")
             else:
-                splits = [layers[node.input[0]].shape[axis] // 2]*2
+                splits = [layers[node.input[0]].shape[axis] // 2] * 2
     if not isinstance(splits, Iterable):
         # This might not work if `split` is a tensor.
         chunk_size = K.int_size(input_0)[axis] // splits
@@ -502,6 +502,8 @@ def convert_reduce_l2(node, params, layers, lambda_func, node_name, keras_name):
 
     def target_layer(x, axis=axis, keepdims=keepdims):
         import tensorflow as tf
+        if isinstance(axis, list) and len(axis) == 1:
+            axis = axis[0]
         return tf.norm(x, axis=axis, keepdims=keepdims == 1)
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
@@ -746,9 +748,9 @@ def convert_nms(node, params, layers, lambda_func, node_name, keras_name):
     scores = layers[node.input[1]]
     iou_threshold = 0
     score_threshold = float('-inf')
-    max_output_size = [2**30]
+    max_output_size = [2 ** 30]
     if len(node.input) > 2:
-        max_output_size = [min(layers.get(node.input[2], [2**30])[0], 2**30)]
+        max_output_size = [min(layers.get(node.input[2], [2 ** 30])[0], 2 ** 30)]
     if len(node.input) > 3:
         iou_threshold = layers.get(node.input[3], [0])
     if len(node.input) > 4:
