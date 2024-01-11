@@ -23,7 +23,11 @@ def convert_clip(node, params, layers, lambda_func, node_name, keras_name):
     :return: None
     """
     logger = logging.getLogger('onnx2keras.clip')
-    if len(node.input) != 1:
+
+    if len(node.input) == 3:
+        params["min"] = ensure_numpy_type(layers[node.input[1]]).astype(int)
+        params["max"] = ensure_numpy_type(layers[node.input[2]]).astype(int)
+    elif len(node.input) != 1:
         assert AttributeError('More than 1 input for clip layer.')
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
