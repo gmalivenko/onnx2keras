@@ -51,7 +51,8 @@ def convert_shape(node, params, layers, lambda_func, node_name, keras_name):
 
     logger.debug('Actual shape:')
     logger.debug(np.array(input_0.shape))
-    if not K.is_keras_tensor(input_0) or not any([input_0.shape[i] == None for i in range(len(input_0.shape))]):
+    is_unknown_tensor = input_0.shape == None
+    if not is_unknown_tensor and (not K.is_keras_tensor(input_0) or not any([input_0.shape[i] == None for i in range(len(input_0.shape))])):
         shapes = []
         for i in input_0.shape:
             if i is not None:
