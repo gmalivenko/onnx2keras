@@ -121,11 +121,15 @@ def convert_gather(node, params, layers, lambda_func, node_name, keras_name):
         else:
             if tf.is_tensor(indices) and indices.dtype not in [tf.int16, tf.int32, tf.int64]:
                 indices = tf.cast(indices, tf.int32)
-
-            dim_len = input_0.shape[axis]
+            if isinstance(indices, list):
+                indices = np.array(indices)
+            if type(indices) == int:
+                out_type = tf.int32
+            else:
+                out_type = indices.dtype
+            dim_len = tf.shape(input_0, out_type=out_type)[axis] #support None
             if isinstance(indices, (int, np.integer)) and indices < 0:
                 indices += dim_len
-
             if tf.is_tensor(indices):
                 indices = tf.where(indices < 0, indices + dim_len, indices)
 
