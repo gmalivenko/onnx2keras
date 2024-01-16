@@ -191,10 +191,9 @@ def convert_reduce_max(node, params, layers, lambda_func, node_name, keras_name)
     """
     if len(node.input) != 1:
         assert AttributeError('More than 1 input for reduce max layer.')
-
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    def target_layer(x, axis=params['axes'], keepdims=params['keepdims']):
+    def target_layer(x, axis=params.get('axes'), keepdims=params['keepdims']):
         import keras.backend as K
         return K.max(x, keepdims=(keepdims == 1), axis=axis)
 
