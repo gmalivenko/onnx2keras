@@ -158,7 +158,7 @@ def convert_concat(node, params, layers, lambda_func, node_name, keras_name):
         logger.debug('Concat Keras layers.')
         if len(layer_input) > 1:
             if not np.array([tf.is_tensor(layer_input[i]) and K.is_keras_tensor(layer_input[i]) for i in
-                             range(len(layer_input))]).all():
+                             range(len(layer_input))]).all() or any([layer_input[i].shape == None for i in range(len(layer_input))]):
                 try:
                     layers[node_name] = tf.concat(layer_input, axis=params['axis'], name=keras_name)
                 except Exception as ex:
