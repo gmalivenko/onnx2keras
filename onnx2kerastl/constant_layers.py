@@ -24,7 +24,7 @@ def convert_constant_of_shape(node, params, layers, lambda_func, node_name, kera
     input_0 = layers[node.input[0]]
     if not is_numpy(input_0) and not isinstance(input_0, list) and K.is_keras_tensor(
         input_0):
-        layers[node_name] = tf.ones(layers[node.input[0]], dtype=value.dtype) * params['value']
+        layers[node_name] = tf.ones(layers[node.input[0]], dtype=tf.as_dtype(value.dtype)) * params['value']
     else:
         layers[node_name] = np.ones(layers[node.input[0]], dtype=value.dtype) * params['value']
 
