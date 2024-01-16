@@ -1,10 +1,12 @@
 import keras
 import logging
-from .utils import ensure_tf_type
+from .utils import ensure_tf_type, is_numpy
 import numpy as np
 import string
 import random
 import tensorflow as tf
+import keras.backend as K
+
 
 def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
     """
@@ -244,3 +246,99 @@ def convert_topk(node, params, layers, lambda_func, node_name, keras_name):
         out_tensor = values
     layers[keras_name[0]] = out_tensor
     layers[keras_name[1]] = indices
+
+
+def convert_roi_align(node, params, layers, lambda_func, node_name, keras_name):
+    # extract params
+    output_height = params.get('output_height', 1)
+    output_width = params.get('output_width', 1)
+    sampling_ratio = params.get('sampling_ratio', 0)
+    spatial_scale = params.get('spatial_scale', 1.0)
+    mode = params.get('mode', 'avg')
+
+    feature_map = layers[node.input[0]]
+    rois = layers[node.input[1]]
+    batch_indices = layers[node.input[2]]
+
+    adaptive_ratio = False
+    if sampling_ratio <= 0:
+        sampling_ratio = int((output_height + output_width) / 2)
+        adaptive_ratio = True
+
+    rois = rois * spatial_scale
+    box_ind = tf.cast(batch_indices, tf.int32)
+    if keras.backend.image_data_format() == 'channels_first':
+        fm_shape = tf.shape(feature_map)[2:] # H, W
+    else:
+        raise NotImplementedError("To support channels_last in RoiAlign - need to remove permutes")
+    # extract inputs
+    x0 = rois[:, 0:1]
+    y0 = rois[:, 1:2]
+    x1 = rois[:, 2:3]
+    y1 = rois[:, 3:4]
+    if not adaptive_ratio:
+        crop_shape = (
+            output_height * sampling_ratio,
+            output_width * sampling_ratio,
+        )
+        spacing_w = (x1 - x0) / tf.cast(crop_shape[1], dtype=tf.float32)
+        spacing_h = (y1 - y0) / tf.cast(crop_shape[0], dtype=tf.float32)
+        nx0 = (x0 + spacing_w / 2) / tf.cast(fm_shape[1] - 1, dtype=tf.float32)
+        ny0 = (y0 + spacing_h / 2) / tf.cast(fm_shape[0] - 1, dtype=tf.float32)
+
+        nw = spacing_w * tf.cast(
+            crop_shape[1] - 1,
+            dtype=tf.float32,
+        ) / tf.cast(
+            fm_shape[1] - 1,
+            dtype=tf.float32,
+        )
+        nh = spacing_h * tf.cast(
+            crop_shape[0] - 1,
+            dtype=tf.float32,
+        ) / tf.cast(
+            fm_shape[0] - 1,
+            dtype=tf.float32,
+        )
+    else:
+        roi_width = x1 - x0
+        roi_height = y1 - y0
+        nx0 = x0 / tf.cast(fm_shape[1] - 1, dtype=tf.float32)
+        ny0 = y0 / tf.cast(fm_shape[0] - 1, dtype=tf.float32)
+        nw = (roi_width - 1) / tf.cast(fm_shape[1] - 1, dtype=tf.float32)
+        nh = (roi_height - 1) / tf.cast(fm_shape[0] - 1, dtype=tf.float32)
+
+    boxes = tf.concat([ny0, nx0, ny0 + nh, nx0 + nw], axis=1)
+
+    permuted_features = keras.layers.Permute([2, 3, 1])(feature_map) # move to channels last
+    cropped_tensor = tf.image.crop_and_resize(
+        permuted_features,
+        boxes,
+        tf.cast(box_ind, dtype=tf.int32),
+        crop_size=(
+            output_height * sampling_ratio,
+            output_width * sampling_ratio,
+        ),
+        method='bilinear'
+    )
+
+    pooled_tensor = None
+    if mode.lower() == 'avg':
+        pooled_tensor = tf.nn.avg_pool(
+            input=cropped_tensor,
+            ksize=[1, sampling_ratio, sampling_ratio, 1],
+            strides=[1, sampling_ratio, sampling_ratio, 1],
+            padding='SAME',
+            name=node_name,
+            data_format='NHWC'
+        )
+    elif mode.lower() == 'max':
+        pooled_tensor = tf.nn.max_pool(
+            input=cropped_tensor,
+            ksize=[1, sampling_ratio, sampling_ratio, 1],
+            strides=[1, sampling_ratio, sampling_ratio, 1],
+            padding='SAME',
+            name=node_name,
+            data_format='NHWC'
+        )
+    layers[node_name] = keras.layers.Permute([3, 1, 2])(pooled_tensor)
