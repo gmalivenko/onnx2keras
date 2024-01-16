@@ -330,6 +330,7 @@ def convert_split(node, params, layers, lambda_func, node_name, keras_names):
         layers[node_name] = target_layer(input_0)
         cur += split
 
+
 def convert_cast(node, params, layers, lambda_func, node_name, keras_name):
     """
     Convert Cast layer
@@ -362,9 +363,9 @@ def convert_cast(node, params, layers, lambda_func, node_name, keras_name):
         }
         cast_result = layers[node.input[0]]
         result = (layers[node.input[0]] == None)
-        if isinstance(result, bool) and not result:
+        if isinstance(result, (bool, np.bool_)) and not result:
             cast_result = cast_map[params['to']](layers[node.input[0]])
-        elif not isinstance(result, bool) and not any(result):
+        elif not isinstance(result, (bool, np.bool_)) and not any(result):
             cast_result = cast_map[params['to']](layers[node.input[0]])
         layers[node_name] = cast_result
     else:
