@@ -37,25 +37,26 @@ def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
 
         if 'value' in params and params['value'] != 0.0:
             raise AssertionError('Cannot convert non-zero padding')
-
+        if pads.shape[0] == 6 and len(layers[node.input[0]].shape) == 3:
+            layers[node_name] = tf.pad(input_0, [[pads[0], pads[3]], [pads[1], pads[4]], [pads[2], pads[5]]])
         # Magic ordering
-        if len(pads) == 8:
-            padding_layer = keras.layers.ZeroPadding2D(
-                padding=((pads[2], pads[6]), (pads[3], pads[7])),
-                name=keras_name
-            )
         else:
-            logger.warning("Caution - no test yet")
-            padding_layer = keras.layers.ZeroPadding3D(
-                padding=((pads[2], pads[7]), (pads[3], pads[8]), (pads[4], pads[9])),
-                name=keras_name
-            )
-        layers[node_name] = padding_layer(input_0)
+            if pads.shape[0] == 8:
+                padding_layer = keras.layers.ZeroPadding2D(
+                    padding=((pads[2], pads[6]), (pads[3], pads[7])),
+                    name=keras_name
+                )
+            else:
+                logger.warning("Caution - no test yet")
+                padding_layer = keras.layers.ZeroPadding3D(
+                    padding=((pads[2], pads[7]), (pads[3], pads[8]), (pads[4], pads[9])),
+                    name=keras_name
+                )
+            layers[node_name] = padding_layer(input_0)
     elif params['mode'] == 'reflect':
 
         def target_layer(x, pads=pads):
-            import tensorflow as tf
-            if len(pads) == 8:
+            if pads.shape[0] == 8:
                 layer = tf.pad(x, [[0, 0], [0, 0], [pads[2], pads[6]], [pads[3], pads[7]]], 'REFLECT')
             else:
                 logger.warning("Caution - no test yet")
@@ -69,7 +70,7 @@ def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
 
         def target_layer(x, pads=pads):
             import tensorflow as tf
-            if len(pads) == 8:  # TODO not tested yet
+            if pads.shape[0] == 8:  # TODO not tested yet
                 layer = tf.pad(x, [[0, 0], [0, 0], [pads[2], pads[6]], [pads[3], pads[7]]], 'SYMMETRIC')
             else:
                 logger.warning("Caution - no test yet")
