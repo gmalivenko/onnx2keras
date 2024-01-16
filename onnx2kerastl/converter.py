@@ -59,6 +59,16 @@ def onnx_node_attributes_to_dict(args):
     return {arg.name: onnx_attribute_to_dict(arg) for arg in args}
 
 
+def flatten_onnx_nodes(onnx_nodes):
+    onnx_list = []
+    for node in onnx_nodes:
+        if node.op_type == "If":
+            onnx_list += flatten_onnx_nodes(node.attribute[0].g.node)
+            onnx_list += flatten_onnx_nodes(node.attribute[1].g.node)
+        onnx_list.append(node)
+    return onnx_list
+
+
 def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, change_ordering=False, input_types=None) \
         -> ConvertedResponse:
     """
@@ -86,8 +96,7 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
     onnx_weights = onnx_model.graph.initializer
     onnx_inputs = onnx_model.graph.input
     onnx_outputs = [i.name for i in onnx_model.graph.output]
-    onnx_nodes = onnx_model.graph.node
-
+    onnx_nodes = flatten_onnx_nodes(onnx_model.graph.node) # Pulls graph out of If nodes
     logger.debug('List inputs:')
     for i, input in enumerate(onnx_inputs):
         logger.debug('Input {0} -> {1}.'.format(i, input.name))
@@ -150,23 +159,6 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
         node_names = []
         embedding_weights_mapping = {}
         for node_index, node in enumerate(onnx_nodes):
-            if node.op_type == 'If':
-                cond = layers[node.input[0]][0]
-                if not isinstance(cond, bool) and not isinstance(cond, tf.Tensor) and keras.backend.is_keras_tensor(
-                        cond):
-                    # the condition in If is a KerasTensor and needs to be evlauated.
-                    inpt_sample = [tf.ones(inpt.shape) for inpt in keras_inputs]
-                    cond = keras.models.Model(keras_inputs, cond)(inpt_sample)
-                if cond:
-                    replace_node = node.attribute[0].g.node
-                else:
-                    replace_node = node.attribute[1].g.node
-                replace_node = extract_op_node(replace_node, layers, lambda_funcs, keras_names, change_ordering,
-                                               name_policy)
-                replace_node.output.pop()
-                for i in range(len(node.output)):
-                    replace_node.output.append(node.output[i])
-                node = replace_node
             node_type = node.op_type
             node_params = onnx_node_attributes_to_dict(node.attribute)
             # Add global converter info:
@@ -293,9 +285,7 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
             if layer in layers:
                 keras_outputs.append(layers[layer])
 
-        # Create model
         model = keras.models.Model(inputs=keras_inputs, outputs=keras_outputs)
-
     except Exception as e:
         if len(keras_middle_outputs) == 0:
             raise e
