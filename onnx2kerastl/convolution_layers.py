@@ -26,6 +26,14 @@ def permute_wrap_conv_if_constant(partial_func, conv_input, is_constant, conv_ch
     else:
         data_fmt = keras.backend.image_data_format()
         conv = partial_func(data_format=data_fmt)
+        if data_fmt == 'channels_first':
+            channels_idx = 1
+        else:
+            channels_idx = -1
+        if conv_input.shape[channels_idx] is None: # This will not serialize well unless we reshape input
+            conv_input_shape = tf.shape(conv_input)
+            conv_input = tf.reshape(conv_input, [*conv_input_shape[:channels_idx], conv_channels,
+                                                 *conv_input_shape[channels_idx + 1:]])
         if conv_input.shape[-1] is None:
             conv.build((None, conv_channels, *conv_input.shape[2:]))
         result = conv(conv_input)
