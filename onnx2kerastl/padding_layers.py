@@ -1,6 +1,8 @@
 import keras
 import logging
 from .utils import ensure_tf_type
+from .utils import is_numpy
+import tensorflow as tf
 
 
 def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
@@ -27,8 +29,7 @@ def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
     else:
         pads = layers[node.input[1]]
 
-    print(pads)
-    if not any(pads):
+    if (is_numpy(pads) or not keras.backend.is_keras_tensor(pads)) and not any(pads):
         layers[node_name] = input_0
         return
 
