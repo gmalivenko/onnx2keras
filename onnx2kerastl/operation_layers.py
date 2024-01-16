@@ -319,7 +319,8 @@ def convert_split(node, params, layers, lambda_func, node_name, keras_names):
 
     cur = 0
     for i, split in enumerate(splits):
-        node_name = params['_outputs'][i]
+        if len(splits) > 1:
+         node_name = params['_outputs'][i]
 
         def target_layer(x, axis=axis, start_i=cur, end_i=cur + split):
             slices = [slice(None, None)] * len(K.int_shape(x))
@@ -328,7 +329,6 @@ def convert_split(node, params, layers, lambda_func, node_name, keras_names):
 
         layers[node_name] = target_layer(input_0)
         cur += split
-
 
 def convert_cast(node, params, layers, lambda_func, node_name, keras_name):
     """
