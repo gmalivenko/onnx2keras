@@ -763,13 +763,13 @@ def convert_nms(node, params, layers, lambda_func, node_name, keras_name):
     for batch in range(batch_size):
         for c_class in range(num_classes):
             indices = tf.image.non_max_suppression(boxes=boxes[batch],
-                                                   scores=scores[batch, c_class, ...],
+                                                   scores=scores[batch, c_class],
                                                    max_output_size=tf.cast(max_output_size[0], tf.int32),
                                                    iou_threshold=iou_threshold[0],
                                                    score_threshold=score_threshold)
             class_tensor = c_class * tf.ones_like(indices)
             batch_tensor = batch * tf.ones_like(indices)
-            res = tf.concat([batch_tensor[..., None], class_tensor[..., None], indices[..., None]], axis=-1)
+            res = tf.stack([batch_tensor, class_tensor, indices], axis=-1)
             all_results.append(res)
     layers[node_name] = tf.concat(all_results, axis=0)
 
