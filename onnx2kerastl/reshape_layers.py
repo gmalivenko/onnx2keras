@@ -365,10 +365,18 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
             steps = list(layers[node.input[4]])
         except IndexError:
             steps = list(params.get("steps", [None] * len(axes)))
-
-    input_shape_len = len(layers[node.input[0]].shape)
-    axes_positives = [axis if axis >= 0 else input_shape_len + axis for axis in axes]
-
+    try:
+        max_len = len(layers[node.input[0]].shape)
+        axes_positives = [axis if axis >= 0 else max_len + axis for axis in axes]
+    except ValueError as e:
+        if layers[node.input[0]].shape == None: #tensor with unknown shape (not the same as dynamic)
+            max_len = max(axes)+1
+            if any([axis < 0 for axis in axes]):
+                raise NotImplementedError("For a tensor with unknown shape, can't use negative axis")
+            else:
+                axes_positives = axes
+        else:
+            raise NotImplementedError(f"Couldn't transform the axis in a slice layer {node_name}")
     slice_spec_param = []
     is_dynamic = False
     for i in range(len(starts)):
@@ -376,7 +384,7 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
             if index_li[i] is not None and not isinstance(index_li[i], int) and not is_numpy(index_li[i]) and K.is_keras_tensor(index_li[i]):
                 is_dynamic = True
     if not is_dynamic:
-        for axis in range(input_shape_len):
+        for axis in range(max_len):
             if axis in axes_positives:
                 axis_index = axes_positives.index(axis)
                 start = starts[axis_index]
@@ -396,17 +404,21 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
                 sliced = sliced.numpy()
         layers[node_name] = sliced
     else:
+        try:
+            steps = list(layers[node.input[4]])
+        except IndexError:
+            steps = list(params.get("steps", [1] * len(axes)))
         input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
         keras_shape = tf.shape(layers[node.input[0]])
-        start_vec = [0] * input_shape_len
-        end_vec = [keras_shape[i] for i in range(input_shape_len)]
-        step_vec = [1] * input_shape_len
-        for axis in range(input_shape_len):
+        start_vec = [0] * max_len
+        end_vec = [keras_shape[i] for i in range(max_len)]
+        step_vec = [1] * max_len
+        for axis in range(max_len):
             if axis in axes_positives:
                 axis_index = axes_positives.index(axis)
                 for res_list, input_list in zip([start_vec, step_vec, end_vec],[starts, steps, ends]):
                     slice_index = input_list[axis_index]
-                    if not is_numpy(input_list[axis_index]) and input_list[axis_index].dtype != tf.int32:
+                    if input_list[axis_index] is not None and not isinstance(slice_index, int) and not is_numpy(input_list[axis_index]) and input_list[axis_index].dtype != tf.int32:
                         slice_index = tf.cast(slice_index, tf.int32)
                     res_list[axis] = slice_index
         layers[node_name] = tf.strided_slice(input_0,
