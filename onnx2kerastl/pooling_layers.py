@@ -216,13 +216,13 @@ def convert_topk(node, params, layers, lambda_func, node_name, keras_name):
     else:
         in_tensor = x
 
-    def target_layer(in_tensor,k=k, to_sort=to_sort, axis=axis):
+    def target_layer(in_tensor, k=k, to_sort=to_sort, axis=axis):
         rank = len(in_tensor.shape)
-        if axis >= rank-1 or axis == -1:
+        if axis >= rank - 1 or axis == -1:
             permuted = in_tensor
         else:
             ord_permute = np.arange(rank)
-            ord_permute[axis] = rank-1
+            ord_permute[axis] = rank - 1
             ord_permute[-1] = axis
             permuted = tf.transpose(in_tensor, ord_permute)
         topk_res = tf.math.top_k(permuted, k=k, sorted=to_sort)
@@ -232,7 +232,7 @@ def convert_topk(node, params, layers, lambda_func, node_name, keras_name):
         if axis >= rank - 1 or axis == -1:
             out = topk_concat
         else:
-            ord_permute = [0] + (ord_permute+1).tolist()
+            ord_permute = [0] + (ord_permute + 1).tolist()
             out = tf.transpose(topk_concat, ord_permute)
         return out
 
