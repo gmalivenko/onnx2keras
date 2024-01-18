@@ -251,8 +251,8 @@ def convert_topk(node, params, layers, lambda_func, node_name, keras_name):
         out_tensor = -values
     else:
         out_tensor = values
-    layers[keras_name[0]] = out_tensor
-    layers[keras_name[1]] = indices
+    layers[params['_outputs'][0]] = out_tensor
+    layers[params['_outputs'][1]] = indices
 
 
 def convert_roi_align(node, params, layers, lambda_func, node_name, keras_name):
