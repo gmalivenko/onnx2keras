@@ -326,8 +326,7 @@ def convert_flatten(node, params, layers, lambda_func, node_name, keras_name):
 
     logger.debug('Convert inputs to Keras/TF layers if needed.')
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
-
-    input_dims = input_0.shape
+    input_dims = tf.shape(input_0)
     flatten_axis = params.get('axis', 1)
     reshaped_input = tf.reshape(input_0, [tf.reduce_prod(input_dims[:flatten_axis]),
                                           tf.reduce_prod(input_dims[flatten_axis:])])
