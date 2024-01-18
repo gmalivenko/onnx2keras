@@ -188,7 +188,7 @@ def convert_global_avg_pool(node, params, layers, lambda_func, node_name, keras_
     input_0 = global_pool(input_0)
     new_shape = input_0.shape.as_list()
     new_shape = new_shape[1:]
-    new_shape.extend([1]*(tensor_dim-2))
+    new_shape.extend([1] * (tensor_dim - 2))
     reshape_layer = keras.layers.Reshape(new_shape)
     input_0 = reshape_layer(input_0)
 
