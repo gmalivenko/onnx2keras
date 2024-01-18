@@ -252,7 +252,6 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
                     logger.debug('The first argument is Keras/tf layer. Apply keras.Reshape.')
                     logger.debug('Target shape :')
                     logger.debug(np.int32(input_1[1:]))
-
                     if len(np.int32(input_1[1:])) == 1 and np.int32(input_1[1:])[0] == -1:
                         if input_0.shape.rank == 1:
                             input_0 = tf.expand_dims(input_0, 0)
@@ -260,7 +259,7 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
                         flatten = keras.layers.Flatten(name=keras_name)
                         layers[node_name] = flatten(input_0)
                     else:
-                        if input_0.shape[0] != input_1[0]:  # keras reshape don't work
+                        if len(input_0.shape) == 0 or input_0.shape[0] != input_1[0]:  # keras reshape don't work
                             new_shape = input_1.copy()
                             if dims_to_set_as_zero is not None:
                                 new_shape[dims_to_set_as_zero] = 0
