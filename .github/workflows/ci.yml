@@ -1,6 +1,8 @@
 name: CI
-
 on: [push]
+permissions:
+    id-token: write # This is required for requesting the JWT
+    contents: read  # This is required for actions/checkout
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -32,6 +34,11 @@ jobs:
       - name: Install dependencies
         if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
         run: poetry install --no-interaction --no-root
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.1
+        with:
+          role-to-assume: arn:aws:iam::898022457080:role/TerraformAdmin
+          aws-region: us-east-1
       - name: Test with pytest
         run: |
           source .venv/bin/activate

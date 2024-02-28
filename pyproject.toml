@@ -15,6 +15,7 @@ keras-data-format-converter = "0.1.17"
 tensorflow-addons = {version = "^0.19.0", markers = "platform_machine  == 'x86_64'"}
 numpy = "1.23.5"
 fvcore = "^0.1.5.post20221221"
+boto3 = "^1.24.22"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1.2"
