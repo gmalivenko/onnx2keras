@@ -190,8 +190,10 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
     input_0 = layers[node.input[0]]
     input_1 = layers[node.input[1]]
 
-    if is_numpy(input_1):
+    logger.debug(f'input_0: {str(input_0)}')
+    logger.debug(f'input_1: {str(input_1)}')
 
+    if is_numpy(input_1):
         dims_to_set_as_zero = None
         dims_to_keep_unchanged = None
         allow_zero = params.get('allowzero', False)
@@ -266,8 +268,10 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
                         logger.debug('The first argument is Keras/tf layer. Apply keras.Flatten.')
                         flatten = keras.layers.Flatten(name=keras_name)
                         layers[node_name] = flatten(input_0)
+                    elif len(input_1) == 1 and input_1[0] == -1:
+                        layers[node_name] = tf.reshape(input_0, [-1])
                     else:
-                        if len(input_0.shape) == 0 or input_0.shape[0] != input_1[0]:  # keras reshape don't work
+                        if len(input_0.shape) == 0 or (input_0.shape[0] != input_1[0] and input_1[0] != 0):  # keras reshape don't work
                             new_shape = input_1.copy()
                             if dims_to_set_as_zero is not None:
                                 new_shape[dims_to_set_as_zero] = 0
