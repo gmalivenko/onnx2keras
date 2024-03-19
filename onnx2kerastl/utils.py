@@ -1,5 +1,8 @@
+from typing import List, Union
+
 import numpy as np
 import keras
+from keras.engine.keras_tensor import KerasTensor
 from keras_data_format_converter import convert_channels_first_to_last
 import tensorflow as tf
 
@@ -21,6 +24,7 @@ ONNX_ELEM_TO_TF_TYPE = {
     15: tf.complex128,
     16: tf.bfloat16
 }
+
 
 def is_numpy(obj):
     """

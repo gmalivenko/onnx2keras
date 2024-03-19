@@ -72,6 +72,7 @@ def convert_elementwise_add(node, params, layers, lambda_func, node_name, keras_
 
     input_0 = layers[node.input[0]]
     input_1 = layers[node.input[1]]
+
     input_0_is_non_keras = is_numpy(input_0) or isinstance(input_0, EagerTensor)
     input_1_is_non_keras = is_numpy(input_1) or isinstance(input_1, EagerTensor)
     try:
@@ -109,6 +110,7 @@ def convert_elementwise_mul(node, params, layers, lambda_func, node_name, keras_
 
     input_0 = layers[node.input[0]]
     input_1 = layers[node.input[1]]
+
     input_0_is_constant = is_numpy(input_0) or isinstance(input_0, EagerTensor)
     input_1_is_constant = is_numpy(input_1) or isinstance(input_1, EagerTensor)
     try:
@@ -233,7 +235,7 @@ def convert_where(node, params, layers, lambda_func, node_name, keras_name):
     else:
         casted = layers[node.input[0]]
     if layers[node.input[1]].dtype == np.int64 and is_numpy(layers[node.input[1]]):
-        #serialization doesn't work well for first argument if it is np array of type int64
+        # serialization doesn't work well for first argument if it is np array of type int64
         layers[node_name] = tf.where(tf.logical_not(casted), layers[node.input[2]], layers[node.input[1]])
     else:
         layers[node_name] = tf.where(casted, layers[node.input[1]], layers[node.input[2]])
@@ -271,7 +273,7 @@ def convert_mod(node, params, layers, lambda_func, node_name, keras_name):
         sign = tf.sign(layers[node.input[0]])
         input_0 = tf.abs(layers[node.input[0]])
         input_1 = tf.abs(layers[node.input[1]])
-        layers[node_name] = tf.math.mod(input_0, input_1)*sign
+        layers[node_name] = tf.math.mod(input_0, input_1) * sign
     else:
         layers[node_name] = tf.math.mod(input_0, input_1)
 
@@ -285,5 +287,5 @@ def convert_bitshift(node, params, layers, lambda_func, node_name, keras_name):
     else:
         raise AttributeError("Onnx2Kerras cannot convert the BitShift operator"
                              " since the 'direction' attribute was missing")
-    layers[node_name] = shifter_pointer(tf.cast(layers[node.input[0]], tf.uint64), tf.cast(layers[node.input[1]], tf.uint64))
-
+    layers[node_name] = shifter_pointer(tf.cast(layers[node.input[0]], tf.uint64),
+                                        tf.cast(layers[node.input[1]], tf.uint64))
