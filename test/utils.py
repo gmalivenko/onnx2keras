@@ -27,7 +27,7 @@ def torch2keras(model: torch.nn.Module, input_variable, verbose=True, change_ord
                       output_names=['test_out'])
     temp_f.seek(0)
     onnx_model = onnx.load(temp_f)
-    k_model = onnx_to_keras(onnx_model, input_names, change_ordering=change_ordering)
+    k_model = onnx_to_keras(onnx_model, input_names, change_ordering=change_ordering, allow_partial_compilation=False)
     k_model = k_model.converted_model
     return k_model
 
