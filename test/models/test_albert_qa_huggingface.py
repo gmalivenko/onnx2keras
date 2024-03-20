@@ -35,7 +35,8 @@ def test_albert_qa_huggingface():
         onnx_inputs, onnx_outputs = export(tokenizer, model, onnx_config, onnx_config.default_onnx_opset, onnx_path)
     onnx_model = onnx.load(onnx_path)
     keras_model = onnx_to_keras(onnx_model, ['input_ids', 'token_type_ids', 'attention_mask'],
-                                input_types=[tf.int32, tf.int32, tf.float32])
+                                input_types=[tf.int32, tf.int32, tf.float32],
+                                allow_partial_compilation=False)
     keras_model = keras_model.converted_model
     input_np = [inputs['input_ids'],
                 inputs['token_type_ids'],

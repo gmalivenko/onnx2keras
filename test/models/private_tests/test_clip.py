@@ -24,7 +24,8 @@ def test_clip_model(aws_s3_download):
     # extract feature names from the model
     input_features = list(input_data.keys())
     # convert onnx model to keras
-    keras_model = onnx_to_keras(onnx_model, input_names=input_features, name_policy='attach_weights_name').converted_model
+    keras_model = onnx_to_keras(onnx_model, input_names=input_features, name_policy='attach_weights_name',
+                                allow_partial_compilation=False).converted_model
     final_model = convert_channels_first_to_last(keras_model, should_transform_inputs_and_outputs=True, verbose=True)
     # final_model = tf.keras.models.Model(inputs=final_model.input, outputs=final_model.layers[-2].output)
     keras_output = keras_model(input_data)
