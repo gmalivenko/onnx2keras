@@ -69,7 +69,8 @@ def flatten_onnx_nodes(onnx_nodes):
     return onnx_list
 
 
-def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, change_ordering=False, input_types=None) \
+def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, change_ordering=False, input_types=None,
+                  allow_partial_compilation=True) \
         -> ConvertedResponse:
     """
     Convert ONNX graph to Keras model format
@@ -287,6 +288,9 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
 
         model = keras.models.Model(inputs=keras_inputs, outputs=keras_outputs)
     except Exception as e:
+        if not allow_partial_compilation:
+            raise
+
         if len(keras_middle_outputs) == 0:
             raise e
 
