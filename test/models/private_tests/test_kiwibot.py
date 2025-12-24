@@ -4,7 +4,7 @@ import onnxruntime as ort
 from onnx2kerastl import onnx_to_keras
 import tensorflow as tf
 from keras_data_format_converter import convert_channels_first_to_last
-from onnx2kerastl.customonnxlayer import onnx_custom_objects_map
+from onnx2kerastl.customonnxlayer import onnx_custom_layers
 import pytest
 
 from test.models.private_tests.aws_utils import aws_s3_download
@@ -28,7 +28,7 @@ def test_kiwibot(aws_s3_download):
 
     final_model.save(save_model_path)
 
-    loaded_keras_model = tf.keras.models.load_model(save_model_path, custom_objects=onnx_custom_objects_map)
+    loaded_keras_model = tf.keras.models.load_model(save_model_path, custom_objects=onnx_custom_layers)
     keras_output = loaded_keras_model(input_data)
     keras_output_np = [output.numpy().transpose((0, 2, 1)) for output in keras_output]
 

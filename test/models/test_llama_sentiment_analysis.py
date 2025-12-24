@@ -7,7 +7,7 @@ from transformers import AutoTokenizer
 import numpy as np
 from onnx2kerastl import onnx_to_keras
 from keras_data_format_converter import convert_channels_first_to_last
-from onnx2kerastl.customonnxlayer import onnx_custom_objects_map
+from onnx2kerastl.customonnxlayer import onnx_custom_layers
 #from test.utils import export_torch_to_onnx_optimum
 
 
@@ -44,7 +44,7 @@ def test_llama_32_1b_inst():
     keras_model = keras_model.converted_model
     flipped_model = convert_channels_first_to_last(keras_model, [])
     flipped_model.save('temp.h5')
-    model = tf.keras.models.load_model('temp.h5', custom_objects=onnx_custom_objects_map)
+    model = tf.keras.models.load_model('temp.h5', custom_objects=onnx_custom_layers)
     # --------------------------------- Evaluating Inference -------------------------------------
     outputs = model(keras_inputs)
     last_token_logits = outputs[0, -1]

@@ -13,7 +13,7 @@ import keras.backend
 import tensorflow as tf
 from keras.models import Model
 
-from .customonnxlayer import onnx_custom_objects_map
+from .customonnxlayer import onnx_custom_layers
 from .exceptions import UnsupportedLayer, OnnxUnsupported
 from .layers import AVAILABLE_CONVERTERS
 import re
@@ -388,7 +388,7 @@ def onnx_to_keras(onnx_model, input_names, name_policy=None, verbose=True, chang
                 layer['config']['function'] = tuple(kerasf)
 
         keras.backend.set_image_data_format('channels_last')
-        model_tf_ordering = keras.models.Model.from_config(conf, custom_objects=onnx_custom_objects_map)
+        model_tf_ordering = keras.models.Model.from_config(conf, custom_objects=onnx_custom_layers)
 
         for dst_layer, src_layer, conf in zip(model_tf_ordering.layers, model.layers, conf['layers']):
             W = src_layer.get_weights()

@@ -9,7 +9,7 @@ from transformers.onnx import export, OnnxConfig
 import numpy as np
 from onnx2kerastl import onnx_to_keras
 from keras_data_format_converter import convert_channels_first_to_last
-from onnx2kerastl.customonnxlayer import onnx_custom_objects_map
+from onnx2kerastl.customonnxlayer import onnx_custom_layers
 from transformers import AutoModelForSequenceClassification
 import torch
 
@@ -42,7 +42,7 @@ def test_bert_huggingface_classifcation():
         out = model(**real_inputs)
     flipped_model = convert_channels_first_to_last(keras_model, [])
     flipped_model.save('temp.h5')
-    model = tf.keras.models.load_model('temp.h5', custom_objects=onnx_custom_objects_map)
+    model = tf.keras.models.load_model('temp.h5', custom_objects=onnx_custom_layers)
     flipped_otpt = model(input_np)
     assert ((flipped_otpt-out.logits.detach().numpy()).__abs__().numpy().max() < 5*10**-6)
 

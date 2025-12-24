@@ -4,7 +4,7 @@ from onnx2kerastl import onnx_to_keras
 from keras_data_format_converter import convert_channels_first_to_last
 import tensorflow as tf
 import onnxruntime as ort
-from onnx2kerastl.customonnxlayer import onnx_custom_objects_map
+from onnx2kerastl.customonnxlayer import onnx_custom_layers
 from test.models.private_tests.aws_utils import aws_s3_download
 import pytest
 
@@ -32,7 +32,7 @@ def test_clip_model(aws_s3_download):
     final_model.save(save_model_path)
     ort_session = ort.InferenceSession(onnx_model_path, providers=ort.get_available_providers()[0])
     onnx_outputs = ort_session.run(None, input_data)
-    loaded_keras_model = tf.keras.models.load_model(save_model_path, custom_objects=onnx_custom_objects_map)
+    loaded_keras_model = tf.keras.models.load_model(save_model_path, custom_objects=onnx_custom_layers)
     loaded_keras_outputs = loaded_keras_model(input_data)
     onnx_embedding = onnx_outputs[1]
     keras_embedding = loaded_keras_outputs[1].numpy()
