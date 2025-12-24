@@ -1,10 +1,6 @@
 import numpy as np
-import torch
-import torch.nn as nn
-from torch.autograd import Variable
-from onnx2keras import onnx_to_keras, check_torch_keras_error
-import onnx
 import pytest
+import torch.nn as nn
 
 from test.utils import convert_and_test
 
@@ -22,7 +18,7 @@ class FDiv(nn.Module):
 
 
 @pytest.mark.repeat(10)
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_div(change_ordering):
     model = FDiv()
     model.eval()

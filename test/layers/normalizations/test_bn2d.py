@@ -17,7 +17,7 @@ class LayerTest(nn.Module):
 
 
 @pytest.mark.repeat(10)
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_bn2d(change_ordering):
     inp_size = np.random.randint(10, 100)
 

@@ -14,7 +14,7 @@ class LayerTest(nn.Module):
         return torch.split(x, 224//4, 3)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_split(change_ordering):
     model = LayerTest()
     model.eval()

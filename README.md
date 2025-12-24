@@ -1,4 +1,4 @@
-# onnx2keras
+# Tensorleap fork of onnx2keras
 
 ONNX to Keras deep neural network converter. 
 
@@ -21,7 +21,7 @@ TensorFlow 2.0
 
 `input_shapes`: override input shapes (experimental)
 
-`name_policy`: ['renumerate', 'short', 'default'] override layer names (experimental)
+`name_policy`: ['renumerate', 'short', 'default', 'attach_weights_name'] override layer names (experimental)
 
 `verbose`: detailed output
 
@@ -31,9 +31,10 @@ TensorFlow 2.0
 ## Getting started
 
 ### ONNX model
+
 ```python
 import onnx
-from onnx2keras import onnx_to_keras
+from onnx2kerastl import onnx_to_keras
 
 # Load ONNX model
 onnx_model = onnx.load('resnet18.onnx')

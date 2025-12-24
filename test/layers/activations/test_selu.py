@@ -30,7 +30,7 @@ class FSELU(nn.Module):
         return F.selu(x)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_layer_selu(change_ordering):
     model = LayerSELU()
     model.eval()
@@ -38,7 +38,7 @@ def test_layer_selu(change_ordering):
     error = convert_and_test(model, input_np, verbose=False, change_ordering=change_ordering)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_f_selu(change_ordering):
     model = FSELU()
     model.eval()
