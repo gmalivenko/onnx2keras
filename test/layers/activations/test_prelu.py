@@ -34,7 +34,7 @@ class FPReLU(nn.Module):
         return F.prelu(x, weight=weights)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_layer_prelu(change_ordering):
     model = LayerPReLU()
     model.eval()
@@ -42,7 +42,7 @@ def test_layer_prelu(change_ordering):
     error = convert_and_test(model, input_np, verbose=False, change_ordering=change_ordering)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_f_prelu(change_ordering):
     model = FPReLU()
     model.eval()

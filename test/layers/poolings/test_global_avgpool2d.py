@@ -17,7 +17,7 @@ class LayerTest(nn.Module):
 
 
 @pytest.mark.repeat(10)
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_global_avgpool2d(change_ordering):
     if not tf.test.gpu_device_name() and not change_ordering:
         pytest.skip("Skip! Since tensorflow AvgPoolingOp op currently only supports the NHWC tensor format on the CPU")

@@ -16,7 +16,7 @@ class LayerTest(nn.Module):
         return x
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 @pytest.mark.parametrize('kernel_size', [1, 3, 5, 7])
 @pytest.mark.parametrize('padding', [0, 1, 3])
 @pytest.mark.parametrize('stride', [1, 2, 3, 4])

@@ -4,4 +4,14 @@ __pycache__/
 *.egg-info
 *.onnx
 *.h5
+*.npy
+*.pth
+*.log
 dist/
+*.DS_Store
+.python-version
+test/models/custom_conversion_tests
+
+.vscode/
+gallery_models
+.DS_Store

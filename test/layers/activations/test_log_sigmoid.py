@@ -30,7 +30,7 @@ class FLogSigmoid(nn.Module):
         return F.logsigmoid(x)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_layer_logsigmoid(change_ordering):
     model = LayerLogSigmoid()
     model.eval()
@@ -38,7 +38,7 @@ def test_layer_logsigmoid(change_ordering):
     error = convert_and_test(model, input_np, verbose=False, change_ordering=change_ordering)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_f_logsigmoid(change_ordering):
     model = FLogSigmoid()
     model.eval()

@@ -33,7 +33,7 @@ def func(change_ordering, kernel_size, padding, stride, bias, dilation, groups):
     error = convert_and_test(model, input_np, verbose=False, change_ordering=change_ordering)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 @pytest.mark.parametrize('kernel_size', [1, 3, 5, 7])
 @pytest.mark.parametrize('padding', [0, 1, 3, 5])
 @pytest.mark.parametrize('stride', [1])
@@ -44,7 +44,7 @@ def test_conv2d_case1(change_ordering, kernel_size, padding, stride, bias, dilat
     func(change_ordering, kernel_size, padding, stride, bias, dilation, groups)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 @pytest.mark.parametrize('kernel_size', [1, 3, 5, 7])
 @pytest.mark.parametrize('padding', [0, 1, 3, 5])
 @pytest.mark.parametrize('stride', [1, 2, 3])

@@ -1,0 +1,182 @@
+name: Start End2End test
+on:
+  workflow_dispatch:
+    inputs:
+      model_name:
+        description: 'Model name'
+        required: true
+      cloud_dir:
+        description: 'Cloud directory'
+        required: true
+permissions:
+    id-token: write # This is required for requesting the JWT
+    contents: read  # This is required for actions/checkout
+    issues: write   # permits an action to add a comment to an issue.
+    pull-requests: write
+jobs:
+  update-leap-model-parser:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch name
+        id: check_branch
+        run: |
+          if [ "${{ github.event.inputs.branch }}" = "master" ]; then
+            echo "::error::Manual runs not allowed from master branch."
+            exit 1
+          fi
+      - name: Extract branch name
+        id: extract_branch
+        run: echo "::set-output name=branch_name::$(echo ${GITHUB_REF#refs/heads/})"
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Get package version from pyproject.toml
+        id: package_version
+        run: |
+          PACKAGE_VERSION=$(awk -F' = ' '$1 == "version" {gsub(/"/, "", $2); print $2}' pyproject.toml | head -n 1)
+          echo "PACKAGE_VERSION=$PACKAGE_VERSION" >> $GITHUB_ENV
+          echo "$PACKAGE_VERSION"
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8.12
+      - name: Set Poetry Lock Hash
+        run: |
+          echo "POETRY_HASH=$(sha256sum poetry.lock | cut -d ' ' -f 1)" >> $GITHUB_ENV
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.8.2
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache/restore@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ env.POETRY_HASH }}
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root
+      - name: Save cache
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .venv
+          key: venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-${{ env.POETRY_HASH }}
+      - name: Check if version exists on PyPI
+        id: check_version
+        run: |
+          URL="https://pypi.org/pypi/onnx2kerastl/$PACKAGE_VERSION/json"
+          echo "URL: $URL"
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
+          if [ $RESPONSE -eq 200 ]; then
+            echo "Version $PACKAGE_VERSION already exists on PyPI."
+            echo "IS_O2K_PUBLISHED=true" >> $GITHUB_ENV
+          else
+            echo "Version $PACKAGE_VERSION does not exist on PyPI."
+            echo "IS_O2K_PUBLISHED=false" >> $GITHUB_ENV
+          fi
+      - name: Build and publish O2K package
+        if: success()  # Only run this step if the previous steps were successful
+        run: |
+          if [ "$IS_O2K_PUBLISHED" != "true" ]; then
+          poetry build
+          poetry publish -u __token__ -p ${{ secrets.PYPI_O2K }}
+            echo "Published O2K version $PACKAGE_VERSION"
+          else
+            echo "Skipping publishing as version already exists on PyPI."
+          fi
+      - name: checkout leap model parser
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.TENSORLEAP_OPS_GITHUB_TOKEN }}
+          repository: tensorleap/leap-model-parser
+          path: leap-model-parser
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.1
+        with:
+          role-to-assume: arn:aws:iam::898022457080:role/github-action-test-s3-access-role
+          aws-region: us-east-1
+      - name: Configure GIT credentials
+        run: |
+          git config --global user.email github-actions@github.com
+          git config --global user.name github-actions
+      - name: leap-model-parser test and push
+        working-directory: leap-model-parser
+        id: parser_test
+        env:
+           PYTHONPATH: ${{ env.PYTHONPATH }}:${{ github.workspace }}/leap-model-parser
+        run: | #fetch or create branch, update-o2k-version
+          echo "Project version is $PACKAGE_VERSION"
+          BRANCH="${{ steps.extract_branch.outputs.branch_name }}-from-o2k"
+          echo "BRANCH=$BRANCH" >> $GITHUB_ENV
+          if git ls-remote --exit-code --heads origin "$BRANCH" >/dev/null 2>&1; then
+              git fetch origin "$BRANCH"
+              git checkout "$BRANCH"
+          else
+              git checkout -b "$BRANCH"
+          fi
+          # add packages with retry
+          clear_cache() {
+              echo "Clearing Poetry cache..."
+              poetry cache clear . --all --no-interaction
+          }
+          add_packages() {
+              poetry add onnx2kerastl==$PACKAGE_VERSION
+          }
+          max_retries=3
+          attempt=0
+          # Try to add packages
+          while [ $attempt -lt $max_retries ]; do
+              echo "Attempt $(($attempt + 1)) to add the package..."
+
+              # Attempt to add the package
+              if add_packages; then
+                  echo "Package added successfully."
+                  break
+              else
+                  echo "Package add failed."
+
+                  # Clear the cache before retrying
+                  clear_cache
+
+                  # Increment the attempt counter
+                  attempt=$((attempt + 1))
+                  
+                  # If this was the last attempt, exit with failure
+                  if [ $attempt -ge $max_retries ]; then
+                      echo "Failed to add the package after $max_retries attempts."
+                      exit 1
+                  fi
+              fi
+          done
+          source .venv/bin/activate
+          cd tests
+          if pytest -s test_branch_model.py --cloud_dir ${{ github.event.inputs.cloud_dir }} --model_name ${{ github.event.inputs.model_name }}; then
+              TEST_CONCLUSION=success
+              echo "Tests passed, Pushing Branch if needed"
+              cd ..
+              git add -u
+              if git status --porcelain | grep -q '^M'; then
+                  echo "Files are modified - updating branch"
+                  git commit -m "update O2K --model_name ${{ github.event.inputs.model_name }} --cloud_dir ${{ github.event.inputs.cloud_dir }} --sha $GITHUB_SHA"
+                  git push origin "$BRANCH" 
+              else
+                  echo "No changes were made to leap-model-parser - not pushing the branch"
+              fi
+          else
+              TEST_CONCLUSION=failure
+              echo "Tests Failed, check pytest output"
+          fi
+          echo "TEST_CONCLUSION=$TEST_CONCLUSION" >> $GITHUB_ENV
+      - name: add commit status
+        id: commit_status
+        run: | 
+            curl -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer ${{ secrets.TENSORLEAP_OPS_GITHUB_TOKEN }}" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/tensorleap/onnx2keras/statuses/$GITHUB_SHA \
+            -d '{"state":"'${TEST_CONCLUSION}'","target_url":"https://github.com/'${GITHUB_REPOSITORY}'/actions/runs/'${GITHUB_RUN_ID}'","description":"Leap model parser dynamic test result","context":"end2end/parser-dynamic-test"}'

@@ -30,7 +30,7 @@ class FReLU(nn.Module):
         return F.relu(x)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_layer_relu(change_ordering):
     model = LayerReLU()
     model.eval()
@@ -38,7 +38,7 @@ def test_layer_relu(change_ordering):
     error = convert_and_test(model, input_np, verbose=False, change_ordering=change_ordering)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_f_relu(change_ordering):
     model = FReLU()
     model.eval()

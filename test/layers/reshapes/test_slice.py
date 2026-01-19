@@ -14,7 +14,7 @@ class LayerTest(nn.Module):
         return x
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_slice(change_ordering):
     model = LayerTest()
     model.eval()

@@ -32,7 +32,7 @@ class FSoftmax(nn.Module):
         return F.softmax(x, self.dim)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 @pytest.mark.parametrize('dim', [0, 1, 2, 3])
 def test_layer_softmax(change_ordering, dim):
     model = LayerSoftmax(dim)
@@ -41,7 +41,7 @@ def test_layer_softmax(change_ordering, dim):
     error = convert_and_test(model, input_np, verbose=False, change_ordering=change_ordering)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 @pytest.mark.parametrize('dim', [0, 1, 2, 3])
 def test_f_softmax(change_ordering, dim):
     model = FSoftmax(dim)

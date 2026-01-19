@@ -1,0 +1,91 @@
+name: CI
+on: [push]
+permissions:
+    id-token: write # This is required for requesting the JWT
+    contents: read  # This is required for actions/checkout
+jobs:
+  python-setup:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      #---------------------------#
+      - name: Compute Cache Key (Ignoring Only [tool.poetry] version)
+        id: compute-cache-key
+        run: |
+          awk '
+            /^\[tool.poetry\]/ {p=1}
+            /^\[/ && !/^\[tool.poetry\]/ {p=0}
+            p && /^[[:space:]]*version[[:space:]]*=/ {next}
+            {print}
+          ' pyproject.toml | sha256sum | cut -d " " -f1 > cache_key.txt
+          echo "cache_key=venv-${{ runner.os }}-${{ steps.setup-python.outputs.python-version }}-$(cat cache_key.txt)" >> $GITHUB_OUTPUT
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.0
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: Load cached venv
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key:  ${{ steps.compute-cache-key.outputs.cache_key }}
+      - name: Install dependencies
+        if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+        run: poetry install --no-interaction --no-root --with=dev
+      - name: Debug Poetry Environment
+        run: |
+          poetry env info
+          ls -l .venv/bin/pytest
+    outputs:
+        python-version: ${{ steps.setup-python.outputs.python-version }}
+        cache_key: ${{ steps.compute-cache-key.outputs.cache_key }}
+  test:
+    runs-on: ubuntu-latest
+    needs: python-setup
+    strategy:
+      matrix:
+        os: [ubuntu-24.04]
+        pytest_target: [models, layers]
+    name: test-${{ matrix.pytest_target }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v2
+      - name: Set up python
+        id: setup-python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Install Poetry in Test Job
+        uses: snok/install-poetry@v1
+        with:
+          version: 1.4.0
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+          installer-parallel: true
+      - name: Load cached venv from setup job
+        id: cached-poetry-dependencies
+        uses: actions/cache@v3
+        with:
+          path: .venv
+          key: ${{ needs.python-setup.outputs.cache_key }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4.0.1
+        with:
+          role-to-assume: arn:aws:iam::898022457080:role/github-action-test-s3-access-role
+          aws-region: us-east-1
+      - name: Test with pytest
+        run: |
+          source .venv/bin/activate
+          pytest test/${{ matrix.pytest_target }}/

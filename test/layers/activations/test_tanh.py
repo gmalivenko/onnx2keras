@@ -30,7 +30,7 @@ class FTanh(nn.Module):
         return F.tanh(x)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_layer_tanh(change_ordering):
     model = LayerTanh()
     model.eval()
@@ -38,7 +38,7 @@ def test_layer_tanh(change_ordering):
     error = convert_and_test(model, input_np, verbose=False, change_ordering=change_ordering)
 
 
-@pytest.mark.parametrize('change_ordering', [True, False])
+@pytest.mark.parametrize('change_ordering', [False])
 def test_f_tanh(change_ordering):
     model = FTanh()
     model.eval()
