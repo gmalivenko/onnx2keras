@@ -57,6 +57,19 @@ def convert_shape(node, params, layers, lambda_func, node_name, keras_name):
 
     logger.debug('Actual shape:')
     logger.debug(np.array(input_0.shape))
+
+    # ONNX Shape (opset 15+) supports slicing the returned shape via the
+    # start/end attributes: the result is data_shape[start:end].
+    start = params.get('start', 0)
+    end = params.get('end', None)
+    if input_0.shape is not None:
+        rank = len(input_0.shape)
+        if start < 0:
+            start += rank
+        if end is not None and end < 0:
+            end += rank
+    sliced = start != 0 or end is not None
+
     is_unknown_tensor = input_0.shape == None
     if not is_unknown_tensor and (
             not K.is_keras_tensor(input_0) or not any([input_0.shape[i] == None for i in range(len(input_0.shape))])):
@@ -66,9 +79,14 @@ def convert_shape(node, params, layers, lambda_func, node_name, keras_name):
                 shapes.append(i)
             else:
                 shapes.append(None)
+        if sliced:
+            shapes = shapes[start:end]
         layers[node_name] = np.array(shapes)
     else:
-        layers[node_name] = tf_shape(input_0, out_type=tf.int64, tf_name=f"{params['cleaned_name']}_shape")
+        shape_tensor = tf_shape(input_0, out_type=tf.int64, tf_name=f"{params['cleaned_name']}_shape")
+        if sliced:
+            shape_tensor = shape_tensor[start:end]
+        layers[node_name] = shape_tensor
 
 
 def optimize_constant_array_for_serialization(input_0: tf.Tensor, params, indices: Union[np.ndarray, tf.Tensor], logger):
