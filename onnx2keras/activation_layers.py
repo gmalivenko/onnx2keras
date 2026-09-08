@@ -147,7 +147,6 @@ def convert_softmax(node, params, layers, lambda_func, node_name, keras_name):
 
     lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
     layers[node_name] = lambda_layer(input_0)
-    layers[node_name].set_shape(layers[node_name].shape)
     lambda_func[keras_name] = target_layer
 
 
@@ -179,5 +178,6 @@ def convert_prelu(node, params, layers, lambda_func, node_name, keras_name):
     # for case when W.shape (n,). When activation is used for single dimension vector.
     shared_axes = shared_axes if len(W.shape) > 1 else None
 
-    prelu = keras.layers.PReLU(weights=[W], shared_axes=shared_axes, name=keras_name)
+    prelu = keras.layers.PReLU(shared_axes=shared_axes, name=keras_name)
     layers[node_name] = prelu(input_0)
+    prelu.set_weights([W.reshape(prelu.alpha.shape)])

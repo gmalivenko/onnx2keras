@@ -3,13 +3,20 @@
 ONNX to Keras deep neural network converter. 
 
 [![GitHub License](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-2.7%2C3.6-lightgrey.svg)](https://github.com/gmalivenko/onnx2keras)
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-lightgrey.svg)](https://github.com/gmalivenko/onnx2keras)
 [![Downloads](https://pepy.tech/badge/onnx2keras)](https://pepy.tech/project/onnx2keras)
 ![PyPI](https://img.shields.io/pypi/v/onnx2keras.svg)
 
 ## Requirements
 
-TensorFlow 2.0
+Python 3.10+ and TensorFlow 2.16 or newer (the first release that ships Keras 3).
+
+Verified against Python 3.13, TensorFlow 2.21 / Keras 3.15, ONNX 1.22 and PyTorch 2.14,
+with ONNX opsets 9 to 23 and both PyTorch exporters (`torch.onnx.export` with and without `dynamo=True`).
+
+Note that TensorFlow only runs `channels_first` (NCHW) convolutions and poolings on a GPU.
+To convert and run a model on a CPU, either use `change_ordering=True` or enable oneDNN,
+which does implement them, by setting `TF_ENABLE_ONEDNN_OPTS=1` in the environment.
 
 ## API
 
@@ -73,6 +80,23 @@ if __name__ == '__main__':
         error = np.max(pytorch_output - keras_output)
         print('error -- ', error)  # Around zero :)
 ```
+
+### Deploying model to LiteRT (TensorFlow Lite)
+
+Export the converted model to a SavedModel first, then convert that:
+
+```python
+k_model = onnx_to_keras(onnx_model, ['input'], change_ordering=True)
+k_model.export('saved_model')
+
+converter = tf.lite.TFLiteConverter.from_saved_model('saved_model')
+open('model.tflite', 'wb').write(converter.convert())
+```
+
+`change_ordering=True` is required: LiteRT kernels are NHWC, and a `channels_first` model
+does not convert without the Flex delegate. The resulting model uses only builtin ops, so
+no `SELECT_TF_OPS` is needed. Remember that its input is NHWC, so feed it
+`np.transpose(input_np, [0, 2, 3, 1])`.
 
 ### Deplying model as frozen graph
 

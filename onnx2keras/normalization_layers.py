@@ -1,6 +1,4 @@
 from tensorflow import keras
-import tensorflow as tf
-import tensorflow_addons as tfa
 import logging
 from .utils import ensure_tf_type, ensure_numpy_type
 
@@ -43,17 +41,16 @@ def convert_batchnorm(node, params, layers, lambda_func, node_name, keras_name):
         bn = keras.layers.BatchNormalization(
             axis=1, momentum=momentum, epsilon=eps,
             center=False, scale=False,
-            weights=weights,
             name=keras_name
         )
     else:
         bn = keras.layers.BatchNormalization(
             axis=1, momentum=momentum, epsilon=eps,
-            weights=weights,
             name=keras_name
         )
 
     layers[node_name] = bn(input_0)
+    bn.set_weights(weights)
 
 
 def convert_instancenorm(node, params, layers, lambda_func, node_name, keras_name):
@@ -79,14 +76,17 @@ def convert_instancenorm(node, params, layers, lambda_func, node_name, keras_nam
 
     epsilon = params['epsilon']
 
-    instance_norm = tfa.layers.InstanceNormalization(
+    # GroupNormalization with a single group per channel is instance normalization.
+    # (tensorflow-addons, which used to provide InstanceNormalization, is EOL.)
+    instance_norm = keras.layers.GroupNormalization(
+        groups=-1,
         axis=1,
         epsilon=epsilon,
-        beta_initializer=tf.constant_initializer(beta),
-        gamma_initializer=tf.constant_initializer(gamma),
-        trainable=False
+        trainable=False,
+        name=keras_name
         )
     layers[node_name] = instance_norm(input_0)
+    instance_norm.set_weights([gamma, beta])
 
 
 def convert_dropout(node, params, layers, lambda_func, node_name, keras_name):
@@ -129,20 +129,19 @@ def convert_lrn(node, params, layers, lambda_func, node_name, keras_name):
 
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    def target_layer(x, depth_radius=params['size'], bias=params['bias'], alpha=params['alpha'], beta=params['beta']):
+    def target_layer(x, depth_radius=params['size'], bias=params['bias'], alpha=params['alpha'], beta=params['beta'],
+                     data_format=keras.backend.image_data_format()):
         import tensorflow as tf
-        from keras import backend as K
-        data_format = 'NCHW' if K.image_data_format() == 'channels_first' else 'NHWC'
 
-        if data_format == 'NCHW':
+        if data_format == 'channels_first':
             x = tf.transpose(x, [0, 2, 3, 1])
 
         layer = tf.nn.local_response_normalization(
             x, depth_radius=depth_radius, bias=bias, alpha=alpha, beta=beta
         )
 
-        if data_format == 'NCHW':
-            layer = tf.transpose(x, [0, 3, 1, 2])
+        if data_format == 'channels_first':
+            layer = tf.transpose(layer, [0, 3, 1, 2])
 
         return layer
 

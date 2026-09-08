@@ -39,7 +39,7 @@ def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
     if is_numpy(keras_weights[0]):
         dense = keras.layers.Dense(
             output_channels,
-            weights=keras_weights, name=keras_name, bias_initializer='zeros', kernel_initializer='zeros', use_bias=has_bias
+            name=keras_name, bias_initializer='zeros', kernel_initializer='zeros', use_bias=has_bias
         )
 
         # The first input - always X
@@ -49,6 +49,7 @@ def convert_gemm(node, params, layers, lambda_func, node_name, keras_name):
             reshape = keras.layers.Reshape([input_channels], name=keras_name + '_reshape')
             reshaped_x = reshape(layers[node.input[0]])
             layers[node_name] = dense(reshaped_x)
+        dense.set_weights(keras_weights)
     
     else:
         layers[node_name] = keras.layers.Multiply()([layers[node.input[0]], layers[node.input[1]]])

@@ -23,6 +23,34 @@ def ensure_numpy_type(obj):
         raise AttributeError('Not a numpy type.')
 
 
+_NO_DEFAULT = object()
+
+
+def param_or_input(node, params, layers, name, index, default=_NO_DEFAULT):
+    """
+    Read an operation argument that ONNX turned from an attribute into an input.
+    Opset 13 moved, among others, the `axes` of Squeeze / Unsqueeze / ReduceSum and
+    the `split` of Split; opset 18 did the same for the remaining reduce operations.
+    :param node: current operation node
+    :param params: operation attributes
+    :param layers: available keras layers
+    :param name: name of the attribute in older opsets
+    :param index: index of the input carrying the value in newer opsets
+    :param default: value to return when the argument is omitted altogether
+    :return: the argument value
+    """
+    if name in params:
+        return params[name]
+
+    if len(node.input) > index and node.input[index]:
+        return ensure_numpy_type(layers[node.input[index]])
+
+    if default is _NO_DEFAULT:
+        raise AttributeError('The `%s` argument of %s is not set.' % (name, node.op_type))
+
+    return default
+
+
 def ensure_tf_type(obj, fake_input_layer=None, name=None):
     """
     Convert to Keras Constant if needed

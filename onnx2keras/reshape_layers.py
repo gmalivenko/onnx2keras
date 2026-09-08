@@ -1,7 +1,7 @@
 from tensorflow import keras
 import numpy as np
 import logging
-from .utils import is_numpy, ensure_tf_type, ensure_numpy_type
+from .utils import is_numpy, ensure_tf_type, ensure_numpy_type, param_or_input
 
 
 def convert_transpose(node, params, layers, lambda_func, node_name, keras_name):
@@ -154,10 +154,15 @@ def convert_reshape(node, params, layers, lambda_func, node_name, keras_name):
             if params['change_ordering']:
                 input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
 
-                # Fix critical issue with NHWC
-                if input_1[0] is None and input_1[1] == -1:
+                # Fix critical issue with NHWC. A reshape to a flat vector depends on the
+                # element order, so the tensor has to be transposed back to NCHW first.
+                # Exporters spell the target shape either as [None, -1] or concretely.
+                flattens = (input_1[0] is None and input_1[1] == -1) or \
+                           (len(input_1) == 2 and len(input_0.shape) > 2)
+
+                if flattens:
                     logger.warning('!!! IMPORTANT INFORMATION !!!')
-                    logger.warning('The target shape if [None, -1] that means flatten.')
+                    logger.warning('The target shape is 2D, that means flatten.')
                     logger.warning('But the target ordering is NHWC, so we cant simply perform flatten')
                     logger.warning('The layer will be converted as lambda with tf.transpose')
                     logger.warning('---')
@@ -206,23 +211,23 @@ def convert_unsqueeze(node, params, layers, lambda_func, node_name, keras_name):
     """
     logger = logging.getLogger('onnx2keras.unsqueeze')
 
-    if len(node.input) != 1:
-        raise AttributeError('Number of inputs is not equal 1 for unsqueeze layer')
+    # Since opset 13 `axes` is an input instead of an attribute.
+    axes = param_or_input(node, params, layers, 'axes', 1)
 
     if is_numpy(layers[node.input[0]]):
         logger.debug('Work with numpy types.')
         layers[node_name] = layers[node.input[0]]
-        for axis in params['axes']:
+        for axis in axes:
             layers[node_name] = np.expand_dims(layers[node_name], axis)
     else:
 
-        if len(params['axes']) != 1:
+        if len(axes) != 1:
             raise AttributeError('Number of axes is not equal 1. Cannot unsqueeze')
 
-        # if params['axes'][0] != 0:
+        # if axes[0] != 0:
         #     raise AttributeError('Axes is not 0. Cannot unsqueeze')
 
-        def target_layer(x, axis=params['axes'][0]):
+        def target_layer(x, axis=int(axes[0])):
             from tensorflow import keras
             return keras.backend.expand_dims(x, axis)
 
@@ -281,28 +286,26 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
     logger = logging.getLogger('onnx2keras.slice')
 
     if is_numpy(layers[node.input[0]]):
-        if params['change_ordering']:
-            raise NotImplementedError("change_ordering for Slice is not implemented")
         logger.debug('Slice numpy constants')
-        if 'axes' in params:
-            if len(params["axes"]) != 1:
-                raise NotImplementedError("Multiple axes in Slice is not implemented")
-            axes = params["axes"][0]
-            ends = params["ends"][0]
-            starts = params["starts"][0]
-        else:
-            raise AttributeError('Not implemented')
 
-        if axes == 0:
-            layers[node_name] = layers[node.input[0]][starts:ends]
-        elif axes == 1:
-            layers[node_name] = layers[node.input[0]][:, starts:ends]
-        elif axes == 2:
-            layers[node_name] = layers[node.input[0]][:, :, starts:ends]
-        elif axes == 3:
-            layers[node_name] = layers[node.input[0]][:, :, :, starts:ends]
+        if 'axes' in params:
+            axes, starts, ends = params['axes'], params['starts'], params['ends']
+            steps = params['steps'] if 'steps' in params else [1] * len(axes)
         else:
-            raise AttributeError('Not implemented')
+            # Since opset 10 starts / ends / axes / steps are inputs instead of attributes.
+            starts = ensure_numpy_type(layers[node.input[1]])
+            ends = ensure_numpy_type(layers[node.input[2]])
+            axes = ensure_numpy_type(layers[node.input[3]]) \
+                if len(node.input) > 3 and node.input[3] else np.arange(len(starts))
+            steps = ensure_numpy_type(layers[node.input[4]]) \
+                if len(node.input) > 4 and node.input[4] else np.ones(len(starts), dtype=np.int64)
+
+        data = layers[node.input[0]]
+        slices = [slice(None)] * data.ndim
+        for start, end, axis, step in zip(starts, ends, axes, steps):
+            slices[int(axis)] = slice(int(start), int(end), int(step))
+
+        layers[node_name] = data[tuple(slices)]
     else:
         logger.debug('Convert inputs to Keras/TF layers if needed.')
         input_0 = ensure_tf_type(layers[node.input[0]], layers[list(layers)[0]], name="%s_const" % keras_name)
@@ -324,9 +327,6 @@ def convert_slice(node, params, layers, lambda_func, node_name, keras_name):
                     assert AttributeError('Cant slice permuted axes')
 
         if isinstance(axes, list) or isinstance(axes, np.ndarray):
-            if params['change_ordering']:
-                raise NotImplementedError("change_ordering for Slice is not implemented")
-
             def target_layer(x, axes=np.array(axes), starts=starts, ends=ends):
                 import tensorflow as tf
                 rank = max(axes)
@@ -370,12 +370,12 @@ def convert_squeeze(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
-    if len(node.input) != 1:
-        assert AttributeError('More than 1 input for squeeze layer.')
-
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
-    def target_layer(x, axis=params['axes'][0]):
+    # Since opset 13 `axes` is an input instead of an attribute.
+    axes = param_or_input(node, params, layers, 'axes', 1)
+
+    def target_layer(x, axis=int(axes[0])):
         from tensorflow import keras
         return keras.backend.squeeze(x, axis)
 

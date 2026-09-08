@@ -5,7 +5,8 @@ The ONNX to keras converter module
 from tensorflow import keras
 import logging
 import inspect
-import collections
+import types
+import numpy as np
 from onnx import numpy_helper
 
 from .layers import AVAILABLE_CONVERTERS
@@ -34,6 +35,131 @@ def onnx_node_attributes_to_dict(args):
             if getattr(onnx_attr, attr_type):
                 return list(getattr(onnx_attr, attr_type))
     return {arg.name: onnx_attribute_to_dict(arg) for arg in args}
+
+
+# Axis of a 4D channels-first tensor -> the same axis once the tensor is channels-last.
+NCHW_TO_NHWC_AXES = np.array([0, 3, 1, 2])
+
+CHANGE_ORD_AXES_MAP = {
+    0: 0,
+    1: 3,
+    2: 1,
+    3: 2,
+    -1: 2
+}
+
+
+def _to_channels_last(shape):
+    """
+    Move the channel dimension of a batch-free shape from the front to the back.
+    :param shape: shape without the batch dimension
+    :return: tuple with the channel dimension last
+    """
+    shape = list(shape)
+    return tuple(shape[1:] + shape[:1])
+
+
+def _relayout_lambda_function(func):
+    """
+    Copy a Lambda layer function, rewriting the arguments it captured at build time
+    so that the function operates on channels-last instead of channels-first tensors.
+    :param func: the function a Lambda layer was built from
+    :return: an equivalent function for a channels-last graph
+    """
+    defaults = list(func.__defaults__ or ())
+    if not defaults:
+        return func
+
+    # The first parameter is the tensor itself, the rest are the captured arguments.
+    # Only the arguments that name an axis are remapped: everything else the lambdas
+    # capture (a dtype, an exponent, a padding, ...) is layout independent.
+    names = list(inspect.signature(func).parameters)[1:]
+
+    for name in ('axis', 'axes'):
+        if name not in names:
+            continue
+        i = names.index(name)
+        # The argument holds either a single axis or a list of them (ReduceSum captures
+        # something like [1] when onnx uses it to reproduce SoftMax), so map elementwise.
+        # to list because some tf operations check only for core python types (e.g tf.norm)
+        defaults[i] = NCHW_TO_NHWC_AXES[np.array(defaults[i])].tolist()
+
+    # Lambdas that transpose to a fixed layout capture the data format they were built for.
+    if 'data_format' in names:
+        defaults[names.index('data_format')] = 'channels_last'
+
+    relayout = types.FunctionType(func.__code__, func.__globals__, func.__name__,
+                                  tuple(defaults), func.__closure__)
+    relayout.__kwdefaults__ = func.__kwdefaults__
+    return relayout
+
+
+def _clone_layer_channels_last(layer, lambda_funcs):
+    """
+    Recreate a single layer of a channels-first model for a channels-last graph.
+    :param layer: layer of the converted channels-first model
+    :param lambda_funcs: functions the Lambda layers were built from, by layer name
+    :return: an equivalent channels-last layer
+    """
+    if isinstance(layer, keras.layers.Lambda):
+        func = lambda_funcs.get(layer.name)
+        # Lambdas the converter did not register (wrapped constants) are layout independent,
+        # and are reused as they are - Keras cannot deserialize them from a config.
+        func = _relayout_lambda_function(func) if func is not None else layer.function
+        return keras.layers.Lambda(func, name=layer.name)
+
+    conf = layer.get_config()
+
+    if isinstance(layer, keras.layers.Permute) and len(conf['dims']) == 3:
+        # Permute dims are 1-based and batch free, which is exactly the ONNX permutation
+        # without its batch entry. Re-express it between channels-last axes:
+        # out_nhwc[i] = in_nhwc[perm_nhwc[i]] with perm_nhwc = A[perm[A^-1[i]]].
+        perm = np.array([0] + list(conf['dims']))
+        nhwc_to_nchw = np.argsort(NCHW_TO_NHWC_AXES)
+        conf['dims'] = tuple(NCHW_TO_NHWC_AXES[perm[nhwc_to_nchw]].tolist()[1:])
+
+    if 'shared_axes' in conf:
+        # TODO: check axes first (if it's not 4D tensor)
+        conf['shared_axes'] = [1, 2]
+
+    if 'target_shape' in conf and len(list(conf['target_shape'][1:][:])) > 0:
+        conf['target_shape'] = tuple(np.reshape(np.array(
+            list(conf['target_shape'][1:]) + [conf['target_shape'][0]]
+        ), -1))
+
+    if 'data_format' in conf:
+        conf['data_format'] = 'channels_last'
+
+    if 'axis' in conf:
+        axis = conf['axis']
+        # BatchNorm wrap axis with ListWrapper instead single INT value
+        if isinstance(axis, (tuple, list)):
+            axis = axis[0]
+        conf['axis'] = CHANGE_ORD_AXES_MAP.get(axis, conf['axis'])
+
+    return layer.__class__.from_config(conf)
+
+
+def sanitize_keras_name(name, used_names):
+    """
+    Make an ONNX tensor name usable as a Keras layer name.
+
+    Keras 3 rejects any name containing '/', which ONNX exporters emit routinely
+    (e.g. '/conv/Conv_output_0'), and requires layer names to be unique.
+    :param name: ONNX tensor name
+    :param used_names: set of already assigned Keras names, updated in place
+    :return: sanitized, unique Keras layer name
+    """
+    name = str(name).replace('/', '_')
+
+    if name in used_names:
+        suffix = 1
+        while '%s_%s' % (name, suffix) in used_names:
+            suffix += 1
+        name = '%s_%s' % (name, suffix)
+
+    used_names.add(name)
+    return name
 
 
 def onnx_to_keras(onnx_model, input_names,
@@ -96,6 +222,7 @@ def onnx_to_keras(onnx_model, input_names,
     lambda_funcs = dict()
     keras_outputs = []
     keras_inputs = []
+    used_keras_names = set()
 
     for i, input_name in enumerate(input_names):
         for onnx_i in onnx_inputs:
@@ -106,7 +233,7 @@ def onnx_to_keras(onnx_model, input_names,
                     input_shape = [i.dim_value for i in onnx_i.type.tensor_type.shape.dim][1:]
 
                 layers[input_name] = keras.layers.InputLayer(
-                    input_shape=input_shape, name=input_name
+                    shape=input_shape, name=sanitize_keras_name(input_name, used_keras_names)
                 ).output
 
                 keras_inputs.append(layers[input_name])
@@ -139,6 +266,8 @@ def onnx_to_keras(onnx_model, input_names,
             else:
                 keras_names.append(output)
 
+        keras_names = [sanitize_keras_name(n, used_keras_names) for n in keras_names]
+
         if len(node.output) != 1:
             logger.warning('Trying to convert multi-output node')
             node_params['_outputs'] = list(node.output)
@@ -161,6 +290,10 @@ def onnx_to_keras(onnx_model, input_names,
 
         for i, node_input in enumerate(node.input):
             logger.debug('Check input %i (name %s).', i, node_input)
+            if not node_input:
+                # An omitted optional input is encoded as an empty name (e.g. `roi` in Resize).
+                logger.debug('Optional input is not set, skip.')
+                continue
             if node_input not in layers:
                 logger.debug('The input not found in layers / model inputs.')
 
@@ -198,88 +331,28 @@ def onnx_to_keras(onnx_model, input_names,
     model = keras.models.Model(inputs=keras_inputs, outputs=keras_outputs)
 
     if change_ordering:
-        change_ord_axes_map = {
-            3: 2,
-            1: 3,
-            -1: 1
-        }
-
-        import numpy as np
-        conf = model.get_config()
-
-        for layer in conf['layers']:
-            if layer['config'] and 'shared_axes' in layer['config']:
-                # TODO: check axes first (if it's not 4D tensor)
-                layer['config']['shared_axes'] = [1, 2]
-
-            if layer['config'] and 'batch_input_shape' in layer['config']:
-                layer['config']['batch_input_shape'] = \
-                    tuple(np.reshape(np.array(
-                        [
-                            [None] +
-                            list(layer['config']['batch_input_shape'][2:][:]) +
-                            [layer['config']['batch_input_shape'][1]]
-                        ]), -1
-                    ))
-            if layer['config'] and 'target_shape' in layer['config']:
-                if len(list(layer['config']['target_shape'][1:][:])) > 0:
-                    layer['config']['target_shape'] = \
-                        tuple(np.reshape(np.array(
-                                list(layer['config']['target_shape'][1:]) +
-                                [layer['config']['target_shape'][0]]
-                            ), -1),)
-
-            if layer['config'] and 'data_format' in layer['config']:
-                layer['config']['data_format'] = 'channels_last'
-            if layer['config'] and 'axis' in layer['config']:
-                axis = layer['config']['axis']
-                # BatchNorm wrap axis with ListWrapper instead single INT value
-                if isinstance(axis, (tuple, list)):
-                    axis = axis[0]
-                layer['config']['axis'] = change_ord_axes_map.get(axis, layer['config']['axis'])
-
-        for layer in conf['layers']:
-            if 'function' in layer['config'] and layer['config']['function'][1] is not None:
-                kerasf = list(layer['config']['function'])
-                dargs = list(kerasf[1])
-                func = lambda_funcs.get(layer['name'])
-
-                if func:
-                    # ReduceSum operation has 'axis' param as array of ints. When onnx uses ReduceSum
-                    # to reproduce SoftMax - dargs become something like [[1]] (list of lists)
-                    # that why we handle collections.Iterable
-                    if len(dargs) > 1 or isinstance(dargs[0], (tuple, list)):
-                        params = inspect.signature(func).parameters
-                        i = list(params.keys()).index('axes') if ('axes' in params) else -1
-
-                        if i > 0:
-                            i -= 1
-                            axes = list(range(len(dargs[i].shape)))
-                            axes = axes[0:1] + axes[2:] + axes[1:2]
-                            dargs[i] = np.transpose(dargs[i], axes)
-
-                        i = list(params.keys()).index('axis') if ('axis' in params) else -1
-
-                        if i > 0:
-                            i -= 1
-                            axis = np.array(dargs[i])
-                            axes_map = np.array([0, 3, 1, 2])
-                            # to list because some tf operations check only for core python types (e.g tf.norm)
-                            dargs[i] = axes_map[axis].tolist()
-                    else:
-                        # if map exits will change else will remain the same
-                        dargs[0] = change_ord_axes_map.get(dargs[0], dargs[0])
-
-                kerasf[1] = tuple(dargs)
-                layer['config']['function'] = tuple(kerasf)
-
         keras.backend.set_image_data_format('channels_last')
-        model_tf_ordering = keras.models.Model.from_config(conf)
 
-        for dst_layer, src_layer, conf in zip(model_tf_ordering.layers, model.layers, conf['layers']):
+        # Rebuild the graph layer by layer with a channels-last configuration. The model
+        # cannot be round-tripped through get_config()/from_config(): Keras does not
+        # serialize the locally defined functions the Lambda layers are built from.
+        inputs_channels_last = [
+            keras.Input(shape=_to_channels_last(keras_input.shape[1:]),
+                        dtype=keras_input.dtype,
+                        name=keras_input.name)
+            for keras_input in model.inputs
+        ]
+
+        model_tf_ordering = keras.models.clone_model(
+            model,
+            input_tensors=inputs_channels_last,
+            clone_function=lambda layer: _clone_layer_channels_last(layer, lambda_funcs)
+        )
+
+        for dst_layer, src_layer in zip(model_tf_ordering.layers, model.layers):
             W = src_layer.get_weights()
             # TODO: check axes first (if it's not 4D tensor)
-            if conf['config'] and 'shared_axes' in conf['config']:
+            if 'shared_axes' in src_layer.get_config():
                 W[0] = W[0].transpose(1, 2, 0)
             dst_layer.set_weights(W)
 

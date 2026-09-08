@@ -1,6 +1,7 @@
 from tensorflow import keras
+import numpy as np
 import logging
-from .utils import ensure_tf_type
+from .utils import ensure_tf_type, ensure_numpy_type
 
 
 def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
@@ -16,19 +17,26 @@ def convert_padding(node, params, layers, lambda_func, node_name, keras_name):
     """
     # It's binary by-default
     logger = logging.getLogger("onnx2keras.padding")
-    params['mode'] = params['mode'].decode('ascii')
+    mode = params['mode'] if 'mode' in params else b'constant'
+    params['mode'] = mode.decode('ascii') if isinstance(mode, bytes) else mode
     input_0 = ensure_tf_type(layers[node.input[0]], name="%s_const" % keras_name)
 
     if 'pads' in params:
         pads = params['pads']
     else:
-        pads = layers[node.input[1]]
+        # Since opset 11 `pads` is an input instead of an attribute.
+        pads = ensure_numpy_type(layers[node.input[1]])
 
-    print(pads)
+    logger.debug('Paddings: %s', pads)
 
     if params['mode'] == 'constant':
 
-        if 'value' in params and params['value'] != 0.0:
+        # Since opset 11 the padding value is an (optional) third input.
+        constant_value = params['value'] if 'value' in params else 0.0
+        if len(node.input) > 2 and node.input[2]:
+            constant_value = ensure_numpy_type(layers[node.input[2]])
+
+        if np.any(constant_value != 0.0):
             raise AssertionError('Cannot convert non-zero padding')
 
         # Magic ordering

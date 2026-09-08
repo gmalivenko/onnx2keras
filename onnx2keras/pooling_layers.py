@@ -24,6 +24,10 @@ def convert_maxpool(node, params, layers, lambda_func, node_name, keras_name):
     pads = params['pads'] if 'pads' in params else [0, 0, 0, 0, 0, 0]
     pad = 'valid'
 
+    if params.get('ceil_mode'):
+        logger.warning('ceil_mode is not supported, the partial windows at the end of each '
+                       'axis will be dropped. The result may differ from the ONNX model.')
+
     if all([shape % 2 == 1 for shape in kernel_shape]) and \
        all([kernel_shape[i] // 2 == pads[i] for i in range(len(kernel_shape))]) and \
        all([shape == 1 for shape in stride_shape]):
@@ -93,9 +97,18 @@ def convert_avgpool(node, params, layers, lambda_func, node_name, keras_name):
     pads = params['pads'] if 'pads' in params else [0, 0, 0, 0, 0, 0]
     pad = 'valid'
 
+    # `same` padding in TF averages over the valid values only. When ONNX asks for the
+    # padding to be counted, the zeros have to be materialized with a ZeroPadding layer.
+    count_include_pad = params['count_include_pad'] if 'count_include_pad' in params else 0
+
+    if params.get('ceil_mode'):
+        logger.warning('ceil_mode is not supported, the partial windows at the end of each '
+                       'axis will be dropped. The result may differ from the ONNX model.')
+
     if all([shape % 2 == 1 for shape in kernel_shape]) and \
        all([kernel_shape[i] // 2 == pads[i] for i in range(len(kernel_shape))]) and \
-       all([shape == 1 for shape in stride_shape]):
+       all([shape == 1 for shape in stride_shape]) and \
+       not (count_include_pad and any(pads)):
         pad = 'same'
         logger.debug('Use `same` padding parameters.')
     else:

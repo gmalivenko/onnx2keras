@@ -61,7 +61,6 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
             kernel_size=(dimension, height, width),
             strides=(strides[0], strides[1], strides[2]),
             padding='valid',
-            weights=weights,
             use_bias=has_bias,
             activation=None,
             dilation_rate=dilation,
@@ -70,6 +69,7 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
             groups=n_groups
         )
         layers[node_name] = conv(input_0)
+        conv.set_weights(weights)
 
     elif len(W.shape) == 4:  # 2D conv
         logger.debug('2D convolution')
@@ -109,23 +109,24 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
                 use_bias=has_bias,
                 activation=None,
                 depth_multiplier=1,
-                weights=weights,
                 dilation_rate=dilation,
-                bias_initializer='zeros', kernel_initializer='zeros',
+                bias_initializer='zeros', depthwise_initializer='zeros',
                 name=keras_name
             )
             layers[node_name] = conv(input_0)
+            conv.set_weights(weights)
 
         elif n_groups != 1:
             logger.debug('Number of groups more than 1, but less than number of in_channel, use group convolution')
 
             # Example from https://kratzert.github.io/2017/02/24/finetuning-alexnet-with-tensorflow.html
-            def target_layer(x, groups=n_groups, stride_y=strides[0], stride_x=strides[1]):
+            # The data format is captured here, at build time: the converted model has to
+            # keep working regardless of the global Keras setting when it is later called.
+            def target_layer(x, groups=n_groups, stride_y=strides[0], stride_x=strides[1],
+                             data_format=keras.backend.image_data_format()):
                 import tensorflow as tf
-                from tensorflow.keras import backend as K
-                data_format = 'NCHW' if K.image_data_format() == 'channels_first' else 'NHWC'
 
-                if data_format == 'NCHW':
+                if data_format == 'channels_first':
                     x = tf.transpose(x, [0, 2, 3, 1])
 
                 def convolve_lambda_biased(i, k, b):
@@ -147,13 +148,14 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
                     output_groups = [convolve_lambda(i, k) for i, k in zip(input_groups, weight_groups)]
 
                 layer = tf.concat(axis=3, values=output_groups)
-                if data_format == 'NCHW':
+                if data_format == 'channels_first':
                     layer = tf.transpose(layer, [0, 3, 1, 2])
 
                 return layer
 
-            lambda_layer = keras.layers.Lambda(target_layer)
+            lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
             layers[node_name] = lambda_layer(input_0)
+            lambda_func[keras_name] = target_layer
 
         else:
             if has_bias:
@@ -166,7 +168,6 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
                 kernel_size=(height, width),
                 strides=(strides[0], strides[1]),
                 padding='valid',
-                weights=weights,
                 use_bias=has_bias,
                 activation=None,
                 dilation_rate=dilation,
@@ -175,11 +176,13 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
             )
 
             layers[node_name] = conv(input_0)
+            conv.set_weights(weights)
     else:
         # 1D conv
         W = W.transpose(2, 1, 0)
         width, channels, n_filters = W.shape
-        print(width, channels, n_filters, has_bias)
+        logger.debug('1D convolution: width %s, channels %s, filters %s, bias %s',
+                     width, channels, n_filters, has_bias)
 
         if has_bias:
             weights = [W, bias]
@@ -194,7 +197,7 @@ def convert_conv(node, params, layers, lambda_func, node_name, keras_name):
             return tf.transpose(x, [0, 2, 1])
 
         lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
-        lambda_layer[keras_name] = target_layer
+        lambda_func[keras_name] = target_layer
         layers[node_name] = lambda_layer(input_0)
 
         # padding_name = keras_name + '_pad'
@@ -281,7 +284,6 @@ def convert_convtranspose(node, params, layers,
             strides=strides,
             padding='valid',
             output_padding=0,
-            weights=weights,
             use_bias=has_bias,
             activation=None,
             dilation_rate=dilation,
@@ -295,6 +297,7 @@ def convert_convtranspose(node, params, layers,
                     strides[1] * (int(input_0.shape[3]) - 1) + 0 + (height - 1) * dilation - params['output_shape'][1]]
 
         layers[node_name] = input_0 = conv(input_0)
+        conv.set_weights(weights)
 
         # Magic ad-hoc.
         # See the Keras issue: https://github.com/keras-team/keras/issues/6777

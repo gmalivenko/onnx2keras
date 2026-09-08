@@ -72,7 +72,6 @@ def convert_elementwise_add(node, params, layers, lambda_func, node_name, keras_
 
         def target_layer(x):
             import tensorflow as tf
-            print(x[0], x[1])
             layer = tf.add(
                 x[0],
                 x[1]
@@ -179,6 +178,8 @@ def convert_min(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
+    logger = logging.getLogger('onnx2keras.min')
+
     if len(node.input) < 2:
         assert AttributeError('Less than 2 inputs for min layer.')
 
@@ -186,7 +187,21 @@ def convert_min(node, params, layers, lambda_func, node_name, keras_name):
     for i, inp in enumerate(node.input):
         input_ = ensure_tf_type(layers[inp], layers[list(layers)[0]], name="%s_const%i" % (keras_name, i+1))
         inputs.append(input_)
-    layers[node_name] = keras.layers.Minimum(name=keras_name)(inputs)
+
+    try:
+        layers[node_name] = keras.layers.Minimum(name=keras_name)(inputs)
+    except (IndexError, ValueError):
+        logger.warning('Failed to use keras.layers.Minimum. Fallback to TF lambda.')
+
+        # Doesn't work with constants of a different rank (e.g. a scalar bound).
+        def target_layer(x):
+            import functools
+            import tensorflow as tf
+            return functools.reduce(tf.minimum, x)
+
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(inputs)
+        lambda_func[keras_name] = target_layer
 
 
 def convert_max(node, params, layers, lambda_func, node_name, keras_name):
@@ -200,6 +215,8 @@ def convert_max(node, params, layers, lambda_func, node_name, keras_name):
     :param keras_name: resulting layer name
     :return: None
     """
+    logger = logging.getLogger('onnx2keras.max')
+
     if len(node.input) < 2:
         assert AttributeError('Less than 2 inputs for max layer.')
 
@@ -207,7 +224,21 @@ def convert_max(node, params, layers, lambda_func, node_name, keras_name):
     for i, inp in enumerate(node.input):
         input_ = ensure_tf_type(layers[inp], layers[list(layers)[0]], name="%s_const%i" % (keras_name, i+1))
         inputs.append(input_)
-    layers[node_name] = keras.layers.Maximum(name=keras_name)(inputs)
+
+    try:
+        layers[node_name] = keras.layers.Maximum(name=keras_name)(inputs)
+    except (IndexError, ValueError):
+        logger.warning('Failed to use keras.layers.Maximum. Fallback to TF lambda.')
+
+        # Doesn't work with constants of a different rank (e.g. a scalar bound).
+        def target_layer(x):
+            import functools
+            import tensorflow as tf
+            return functools.reduce(tf.maximum, x)
+
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(inputs)
+        lambda_func[keras_name] = target_layer
 
 
 def convert_mean(node, params, layers, lambda_func, node_name, keras_name):
@@ -222,6 +253,8 @@ def convert_mean(node, params, layers, lambda_func, node_name, keras_name):
     :return: None
     :TODO: Test if this supports multidirectional (i.e., Numpy-style) broadcasting as required
     """
+    logger = logging.getLogger('onnx2keras.mean')
+
     if len(node.input) < 2:
         assert AttributeError('Less than 2 inputs for mean layer.')
 
@@ -229,4 +262,18 @@ def convert_mean(node, params, layers, lambda_func, node_name, keras_name):
     for i, inp in enumerate(node.input):
         input_ = ensure_tf_type(layers[inp], layers[list(layers)[0]], name="%s_const%i" % (keras_name, i+1))
         inputs.append(input_)
-    layers[node_name] = keras.layers.Average(name=keras_name)(inputs)
+
+    try:
+        layers[node_name] = keras.layers.Average(name=keras_name)(inputs)
+    except (IndexError, ValueError):
+        logger.warning('Failed to use keras.layers.Average. Fallback to TF lambda.')
+
+        # Doesn't work with constants of a different rank.
+        def target_layer(x):
+            import functools
+            import tensorflow as tf
+            return functools.reduce(tf.add, x) / len(x)
+
+        lambda_layer = keras.layers.Lambda(target_layer, name=keras_name)
+        layers[node_name] = lambda_layer(inputs)
+        lambda_func[keras_name] = target_layer

@@ -1,4 +1,4 @@
-tensorflow
-tensorflow-addons
-numpy 
+# TensorFlow 2.16 is the first release that ships Keras 3, which this converter targets.
+tensorflow>=2.16
+numpy
 onnx

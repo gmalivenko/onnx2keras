@@ -27,11 +27,13 @@ class FPReLU(nn.Module):
     def __init__(self, num_params=3):
         super(FPReLU, self).__init__()
         self.num_params = num_params
+        # The weights have to be created outside of forward(): the ONNX exporter traces
+        # a tensor built inside forward() as a random op instead of folding it to a constant.
+        self.register_buffer('weight', torch.rand(num_params))
 
     def forward(self, x):
         from torch.nn import functional as F
-        weights = torch.FloatTensor(torch.rand(self.num_params).numpy())
-        return F.prelu(x, weight=weights)
+        return F.prelu(x, weight=self.weight)
 
 
 @pytest.mark.parametrize('change_ordering', [True, False])
