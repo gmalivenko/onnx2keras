@@ -15,7 +15,7 @@ with open('README.md') as f:
 
 
 setup(name='onnx2keras',
-      version='0.0.24',
+      version='0.0.25',
       description='The deep learning models converter',
       long_description=long_description,
       long_description_content_type='text/markdown',
